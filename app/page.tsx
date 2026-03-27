@@ -20,7 +20,7 @@ import RedditGlobalWidget from '@/components/widgets/RedditGlobalWidget'
 import SlovakFactsWidget from '@/components/widgets/SlovakFactsWidget'
 import TrafficWidget from '@/components/widgets/TrafficWidget'
 import EventsWidget from '@/components/widgets/EventsWidget'
-import MetricsWidget from '@/components/widgets/MetricsWidget'
+import FactsMetricsWidget from '@/components/widgets/FactsMetricsWidget'
 import RealEstateWidget from '@/components/widgets/RealEstateWidget'
 import WebcamsWidget from '@/components/widgets/WebcamsWidget'
 import RestaurantsWidget from '@/components/widgets/RestaurantsWidget'
@@ -40,6 +40,12 @@ export default function Home() {
 
         {/* Weather (full width) */}
         <WeatherPanel />
+
+        {/* Správy (full width) - under weather */}
+        <div>
+          <SectionLabel label={t('sec.news')} />
+          <NewsFeedWidget />
+        </div>
 
         {/* Slovensko & Financie */}
         <div>
@@ -72,7 +78,7 @@ export default function Home() {
               <EarthquakesWidget />
             </div>
             <LaunchesWidget />
-            <MetricsWidget />
+            <FactsMetricsWidget />
           </div>
         </div>
 
@@ -101,14 +107,7 @@ export default function Home() {
           <SectionLabel label={t('sec.history')} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <OnThisDayWidget />
-            <SlovakFactsWidget />
           </div>
-        </div>
-
-        {/* Správy (full width) */}
-        <div>
-          <SectionLabel label={t('sec.news')} />
-          <NewsFeedWidget />
         </div>
 
       </main>
@@ -118,9 +117,6 @@ export default function Home() {
           InfoSK © {new Date().getFullYear()} · Dáta: OpenMeteo · ECB · CoinGecko · Steam · ESPN · SME · Aktuality · BBC · Reuters · Reddit · Waze · OpenSky · USGS · Launch Library 2 · Wikimedia + ďalšie
         </p>
         <p className="mt-1">{t('footer.auto')}</p>
-        <a href="/admin" className="inline-block mt-2 text-slate-700 hover:text-slate-400 transition-colors text-[10px]">
-          ⚙️ Admin
-        </a>
       </footer>
     </div>
   )

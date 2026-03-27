@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 
 const SK_BBOX = { lamin: 47.7, lomin: 16.8, lamax: 49.6, lomax: 22.6 }
-const SERVER_START = Date.now()
+const BUILD_TIME = parseInt(process.env.NEXT_PUBLIC_BUILD_TIME ?? String(Date.now()), 10)
 
 export async function GET() {
   const [flightsRes, weatherRes, aqRes, btcRes] = await Promise.allSettled([
@@ -74,7 +74,7 @@ export async function GET() {
     btcEur,
     dayOfYear,
     daysInYear,
-    serverStartTime: SERVER_START,
+    serverStartTime: BUILD_TIME,
     timestamp: Date.now(),
   })
 }
