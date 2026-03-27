@@ -76,6 +76,34 @@ function generateListings(region: string, propertyType: string): Listing[] {
   // Use day-of-year as seed for deterministic but changing prices
   const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000)
 
+  // Thumbnail photos per property type (Unsplash/picsum placeholders)
+  const PHOTOS: Record<string, string[]> = {
+    'Garsónka': [
+      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=200&h=150&fit=crop',
+      'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=200&h=150&fit=crop',
+    ],
+    '1-izbový byt': [
+      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=200&h=150&fit=crop',
+      'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=200&h=150&fit=crop',
+    ],
+    '2-izbový byt': [
+      'https://images.unsplash.com/photo-1560185127-6ed189bf02f4?w=200&h=150&fit=crop',
+      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=200&h=150&fit=crop',
+    ],
+    '3-izbový byt': [
+      'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=200&h=150&fit=crop',
+      'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=200&h=150&fit=crop',
+    ],
+    '4-izbový byt': [
+      'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=200&h=150&fit=crop',
+      'https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=200&h=150&fit=crop',
+    ],
+    'Garáž': [
+      'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=200&h=150&fit=crop',
+      'https://images.unsplash.com/photo-1486006920555-c77dcf18193c?w=200&h=150&fit=crop',
+    ],
+  }
+
   return Array.from({ length: 8 }, (_, i) => {
     const type = allowedTypes[i % allowedTypes.length]
     const district = dists[i % dists.length]
@@ -108,12 +136,16 @@ function generateListings(region: string, propertyType: string): Listing[] {
     const regionSlug = nehnutelnostiRegion[region] ?? 'bratislava'
     const typeSlug = nehnutelnostiType[type] ?? 'byty'
 
+    const photos = PHOTOS[type] ?? PHOTOS['2-izbový byt']
+    const photo = photos[(dayOfYear + i) % photos.length]
+
     return {
       title: `${type} na predaj`,
       price: `${price.toLocaleString('sk-SK')} €`,
       location: isBA ? `Bratislava - ${district}` : `${regionName} - ${district}`,
       rooms,
       area: `${area} m²`,
+      photo,
       url: `https://www.nehnutelnosti.sk/${regionSlug}/${typeSlug}/predaj/`,
       source: 'nehnutelnosti.sk',
     }

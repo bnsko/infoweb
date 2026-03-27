@@ -108,7 +108,84 @@ function generateEvents(): SKEvent[] {
   }).slice(0, 20)
 }
 
-export async function GET() {
-  const events = generateEvents()
-  return NextResponse.json({ events })
+// Neighboring countries events
+const NEIGHBOR_EVENTS: Record<string, Omit<SKEvent, 'date' | 'emoji'>[]> = {
+  cz: [
+    { title: 'Rock for People', venue: 'Hradec Králové', city: 'Hradec Králové', category: 'festival' },
+    { title: 'Colours of Ostrava', venue: 'Dolní oblast Vítkovice', city: 'Ostrava', category: 'festival' },
+    { title: 'Národní divadlo', venue: 'Národní divadlo', city: 'Praha', category: 'culture' },
+    { title: 'Sparta Praha – fotbal', venue: 'Letná', city: 'Praha', category: 'sport' },
+    { title: 'HC Oceláři – hokej', venue: 'Ostravar Aréna', city: 'Třinec', category: 'sport' },
+    { title: 'Signal Festival', venue: 'Centrum', city: 'Praha', category: 'festival' },
+    { title: 'Koncert v Rudolfinu', venue: 'Rudolfinum', city: 'Praha', category: 'concert' },
+    { title: 'Brněnské Vánoce', venue: 'Náměstí Svobody', city: 'Brno', category: 'festival' },
+  ],
+  pl: [
+    { title: 'Open\'er Festival', venue: 'Lotnisko', city: 'Gdynia', category: 'festival' },
+    { title: 'OFF Festival', venue: 'Dolina Trzech Stawów', city: 'Katowice', category: 'festival' },
+    { title: 'Legia Warszawa – piłka nożna', venue: 'Stadion Legii', city: 'Warszawa', category: 'sport' },
+    { title: 'Teatr Wielki', venue: 'Teatr Wielki', city: 'Warszawa', category: 'culture' },
+    { title: 'Krakowski Festiwal Filmowy', venue: 'Kino Kijów', city: 'Kraków', category: 'culture' },
+    { title: 'Wrocław Jazz Festival', venue: 'Hala Stulecia', city: 'Wrocław', category: 'concert' },
+  ],
+  at: [
+    { title: 'Wiener Festwochen', venue: 'Rathaus', city: 'Wien', category: 'festival' },
+    { title: 'Donauinselfest', venue: 'Donauinsel', city: 'Wien', category: 'festival' },
+    { title: 'Salzburger Festspiele', venue: 'Großes Festspielhaus', city: 'Salzburg', category: 'culture' },
+    { title: 'Rapid Wien – Fußball', venue: 'Allianz Stadion', city: 'Wien', category: 'sport' },
+    { title: 'Konzert im Musikverein', venue: 'Musikverein', city: 'Wien', category: 'concert' },
+    { title: 'Ars Electronica', venue: 'Ars Electronica Center', city: 'Linz', category: 'culture' },
+  ],
+  hu: [
+    { title: 'Sziget Festival', venue: 'Hajógyári-sziget', city: 'Budapest', category: 'festival' },
+    { title: 'Ferencváros – labdarúgás', venue: 'Groupama Aréna', city: 'Budapest', category: 'sport' },
+    { title: 'VOLT Fesztivál', venue: 'Lővér kemping', city: 'Sopron', category: 'festival' },
+    { title: 'Operaház előadás', venue: 'Magyar Állami Operaház', city: 'Budapest', category: 'culture' },
+    { title: 'Budapest Jazz Klub', venue: 'Budapest Jazz Club', city: 'Budapest', category: 'concert' },
+    { title: 'Balaton Sound', venue: 'Zamárdi', city: 'Zamárdi', category: 'festival' },
+  ],
+}
+
+function generateNeighborEvents(country: string): SKEvent[] {
+  const templates = NEIGHBOR_EVENTS[country] ?? []
+  if (!templates.length) return []
+
+  const now = new Date()
+  const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000)
+  const emoji: Record<string, string> = { concert: '🎵', sport: '⚽', culture: '🎭', festival: '🎪', other: '📅' }
+  const events: SKEvent[] = []
+
+  for (let d = 0; d < 14; d++) {
+    const date = new Date(now)
+    date.setDate(date.getDate() + d)
+    const dateStr = date.toISOString().split('T')[0]
+    const seed = dayOfYear + d
+    const count = 1 + (seed % 3)
+    for (let e = 0; e < count; e++) {
+      const idx = (seed * 7 + e * 11) % templates.length
+      const t = templates[idx]
+      events.push({ ...t, date: dateStr, emoji: emoji[t.category] ?? '📅' })
+    }
+  }
+
+  const seen = new Set<string>()
+  return events.filter(e => {
+    const key = `${e.date}-${e.title}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  }).slice(0, 20)
+}
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const country = searchParams.get('country') ?? 'sk'
+
+  let events: SKEvent[]
+  if (country === 'sk') {
+    events = generateEvents()
+  } else {
+    events = generateNeighborEvents(country)
+  }
+  return NextResponse.json({ events, country })
 }

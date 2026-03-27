@@ -36,7 +36,7 @@ export default function Header() {
             🇸🇰
           </div>
           <div>
-            <h1 className="text-lg font-bold text-white leading-none tracking-tight">InfoSK</h1>
+            <h1 className="text-lg font-bold text-white leading-none tracking-tight">Slovakia Info</h1>
             <p className="text-[10px] text-slate-500 leading-none mt-0.5">{t('subtitle')}</p>
           </div>
         </div>

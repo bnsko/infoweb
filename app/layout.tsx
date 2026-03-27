@@ -3,7 +3,7 @@ import './globals.css'
 import Providers from '@/components/Providers'
 
 export const metadata: Metadata = {
-  title: 'InfoSK – Slovenský informačný dashboard',
+  title: 'Slovakia Info – Slovenský informačný dashboard',
   description:
     'Počasie, správy, kurzy mien, kryptomeny, letecká doprava a ďalšie aktuálne informácie o Slovensku na jednom mieste.',
   keywords: [
@@ -12,10 +12,10 @@ export const metadata: Metadata = {
     'kurzy mien EUR',
     'kryptomeny',
     'dashboard',
-    'infoweb',
+    'slovakia info',
   ],
   openGraph: {
-    title: 'InfoSK – Slovenský informačný dashboard',
+    title: 'Slovakia Info – Slovenský informačný dashboard',
     description: 'Všetky dôležité informácie na jednom mieste.',
     type: 'website',
     locale: 'sk_SK',
