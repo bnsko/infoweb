@@ -1,0 +1,81 @@
+'use client'
+
+import Header from '@/components/Header'
+import StatsWidget from '@/components/widgets/StatsWidget'
+import WeatherPanel from '@/components/widgets/WeatherPanel'
+import NewsFeedWidget from '@/components/widgets/NewsFeedWidget'
+import RedditWidget from '@/components/widgets/RedditWidget'
+import OnThisDayWidget from '@/components/widgets/OnThisDayWidget'
+import CurrencyWidget from '@/components/widgets/CurrencyWidget'
+import CryptoWidget from '@/components/widgets/CryptoWidget'
+import FlightsWidget from '@/components/widgets/FlightsWidget'
+import SpaceEnvWidget from '@/components/widgets/SpaceEnvWidget'
+import EarthquakesWidget from '@/components/widgets/EarthquakesWidget'
+import LaunchesWidget from '@/components/widgets/LaunchesWidget'
+import NamedayWidget from '@/components/widgets/NamedayWidget'
+import PopulationWidget from '@/components/widgets/PopulationWidget'
+
+export default function Home() {
+  return (
+    <div className="min-h-screen" style={{ background: 'var(--bg-root)' }}>
+      <Header />
+
+      <main className="max-w-[1680px] mx-auto px-4 pt-4 pb-10 space-y-5">
+
+        {/* Stats bar */}
+        <StatsWidget />
+
+        {/* Weather (full width) */}
+        <WeatherPanel />
+
+        {/* Row 2: Date/Nameday + Population + Finance */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <NamedayWidget />
+          <PopulationWidget />
+          <CurrencyWidget />
+          <CryptoWidget />
+        </div>
+
+        {/* Row 3: ISS+AQ combined + Flights + Earthquakes */}
+        <div>
+          <SectionLabel label="🌍 Doprava, Vesmír & Prostredie" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <SpaceEnvWidget />
+            <FlightsWidget />
+            <EarthquakesWidget />
+          </div>
+        </div>
+
+        {/* Row 4: Launches + Reddit + On This Day */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <LaunchesWidget />
+          <RedditWidget />
+          <OnThisDayWidget />
+        </div>
+
+        {/* Row 5: News at the bottom */}
+        <div>
+          <SectionLabel label="📰 Správy zo všetkých odvetví" />
+          <NewsFeedWidget />
+        </div>
+
+      </main>
+
+      <footer className="border-t border-white/5 py-6 text-center text-xs text-slate-600">
+        <p>
+          InfoSK © {new Date().getFullYear()} · Dáta: OpenMeteo · ECB · CoinGecko · SME.sk · Aktuality.sk · BBC · Reuters · Eurogamer · NME · HackerNews · OpenSky · WhereIsISS · USGS · Launch Library 2 · Wikipedia · Reddit
+        </p>
+        <p className="mt-1">Automatická obnova každých 30s–10 min. Všetky dáta sú verejne dostupné.</p>
+      </footer>
+    </div>
+  )
+}
+
+function SectionLabel({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-3 mb-3">
+      <span className="text-sm font-semibold text-slate-400">{label}</span>
+      <div className="flex-1 h-px bg-gradient-to-r from-white/10 to-transparent" />
+    </div>
+  )
+}

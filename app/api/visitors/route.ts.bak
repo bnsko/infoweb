@@ -1,0 +1,56 @@
+import { NextResponse } from 'next/server'
+import { readFileSync, writeFileSync, existsSync } from 'fs'
+import { join } from 'path'
+
+export const dynamic = 'force-dynamic'
+
+const DATA_FILE = join(process.cwd(), '.visitor-data.json')
+
+interface VisitorData {
+  totalVisits: number
+  activeVisitors: number
+  lastVisitors: number[] // timestamps of recent visits (last 5 mins)
+}
+
+function readData(): VisitorData {
+  if (!existsSync(DATA_FILE)) {
+    return { totalVisits: 0, activeVisitors: 0, lastVisitors: [] }
+  }
+  try {
+    return JSON.parse(readFileSync(DATA_FILE, 'utf-8'))
+  } catch {
+    return { totalVisits: 0, activeVisitors: 0, lastVisitors: [] }
+  }
+}
+
+function writeData(data: VisitorData) {
+  writeFileSync(DATA_FILE, JSON.stringify(data), 'utf-8')
+}
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const action = searchParams.get('action')
+
+  const data = readData()
+  const now = Date.now()
+  const FIVE_MIN = 5 * 60 * 1000
+
+  // Clean up old visitors (older than 5 min)
+  data.lastVisitors = data.lastVisitors.filter(t => now - t < FIVE_MIN)
+
+  if (action === 'visit') {
+    data.totalVisits++
+    data.lastVisitors.push(now)
+  } else if (action === 'ping') {
+    data.lastVisitors.push(now)
+  }
+
+  data.activeVisitors = data.lastVisitors.length
+
+  writeData(data)
+
+  return NextResponse.json({
+    totalVisits: data.totalVisits,
+    activeVisitors: data.activeVisitors,
+  })
+}

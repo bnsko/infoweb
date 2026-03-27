@@ -1,0 +1,231 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Theme: Midnight (deep navy) ──────────────────────────────────── */
+:root,
+[data-theme='midnight'] {
+  --bg-root: #0a0c14;
+  --bg-card: #10131e;
+  --bg-card-hover: #171c2a;
+  --border-card: rgba(100, 140, 220, 0.06);
+  --color-body: #c4c9d8;
+  --color-muted: #5e6578;
+  --color-faint: #8890a4;
+  --accent: #6b8fd4;
+  --accent-dim: rgba(107, 143, 212, 0.1);
+  --glow: rgba(70, 110, 200, 0.04);
+}
+
+/* ── Theme: Forest (emerald dark) ─────────────────────────────────── */
+[data-theme='forest'] {
+  --bg-root: #070d09;
+  --bg-card: #0d1610;
+  --bg-card-hover: #142018;
+  --border-card: rgba(90, 170, 110, 0.06);
+  --color-body: #bccec0;
+  --color-muted: #5e7a64;
+  --color-faint: #88a48e;
+  --accent: #4faa68;
+  --accent-dim: rgba(79, 170, 104, 0.1);
+  --glow: rgba(50, 150, 80, 0.04);
+}
+
+/* ── Theme: Ember (warm charcoal) ─────────────────────────────────── */
+[data-theme='ember'] {
+  --bg-root: #0e0a07;
+  --bg-card: #18120e;
+  --bg-card-hover: #221a14;
+  --border-card: rgba(200, 130, 60, 0.06);
+  --color-body: #d4c8bc;
+  --color-muted: #8a7a6a;
+  --color-faint: #a49484;
+  --accent: #cc8a4e;
+  --accent-dim: rgba(204, 138, 78, 0.1);
+  --glow: rgba(190, 110, 40, 0.04);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  transition: background-color 0.3s ease;
+}
+
+body {
+  background-color: var(--bg-root);
+  color: var(--color-body);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
+
+/* ── Weather animations ───────────────────────────────────────────────── */
+@keyframes weatherBounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-6px) scale(1.05); }
+}
+@keyframes weatherSway {
+  0%, 100% { transform: rotate(-4deg); }
+  50% { transform: rotate(4deg); }
+}
+@keyframes weatherShake {
+  0%, 100% { transform: translateX(0) rotate(-3deg); }
+  25% { transform: translateX(-3px) rotate(3deg); }
+  75% { transform: translateX(3px) rotate(-3deg); }
+}
+@keyframes weatherFloat {
+  0%, 100% { transform: translateY(0); opacity: 1; }
+  50% { transform: translateY(-4px); opacity: 0.9; }
+}
+@keyframes weatherDrop {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(3px); }
+}
+@keyframes counterUp {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.5; }
+}
+
+.anim-bounce { animation: weatherBounce 3s ease-in-out infinite; }
+.anim-sway   { animation: weatherSway 4s ease-in-out infinite; }
+.anim-shake  { animation: weatherShake 0.6s ease-in-out infinite; }
+.anim-float  { animation: weatherFloat 4s ease-in-out infinite; }
+.anim-drop   { animation: weatherDrop 1.5s ease-in-out infinite; }
+.anim-count-up { animation: counterUp 0.4s ease-out; }
+.anim-pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+
+/* Widget card base */
+.widget-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 14px;
+  padding: 1.15rem;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.widget-card:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2), inset 0 0 20px var(--glow);
+}
+
+/* Widget title */
+.widget-title {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0% { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card-hover) 50%, var(--bg-card) 75%);
+  background-size: 600px 100%;
+  animation: shimmer 1.8s infinite;
+  border-radius: 6px;
+}
+
+/* News item hover effect */
+.news-item {
+  transition: background 0.15s ease;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin: -0.25rem -0.75rem;
+}
+
+.news-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Number ticker */
+.num-positive { color: #22c55e; }
+.num-negative { color: #ef4444; }
+
+/* Subtle glow effects - toned down */
+.glow-blue { box-shadow: 0 0 20px rgba(59, 130, 246, 0.04) inset; }
+.glow-green { box-shadow: 0 0 20px rgba(34, 197, 94, 0.04) inset; }
+.glow-purple { box-shadow: 0 0 20px rgba(168, 85, 247, 0.04) inset; }
+.glow-orange { box-shadow: 0 0 20px rgba(232, 164, 74, 0.04) inset; }
+.glow-cyan { box-shadow: 0 0 20px rgba(6, 182, 212, 0.04) inset; }
+.glow-rose { box-shadow: 0 0 20px rgba(244, 63, 94, 0.04) inset; }
+
+/* ── Card entrance animation ──────────────────────────────────────── */
+@keyframes cardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-entrance {
+  animation: cardEntrance 0.4s ease-out both;
+}
+
+.card-entrance:nth-child(1) { animation-delay: 0.03s; }
+.card-entrance:nth-child(2) { animation-delay: 0.06s; }
+.card-entrance:nth-child(3) { animation-delay: 0.09s; }
+.card-entrance:nth-child(4) { animation-delay: 0.12s; }
+.card-entrance:nth-child(5) { animation-delay: 0.15s; }
+.card-entrance:nth-child(6) { animation-delay: 0.18s; }
+
+/* ── Slow spin for satellites ─────────────────────────────────────── */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 12s linear infinite;
+}
+
+/* ── Section header accent ────────────────────────────────────────── */
+.section-accent {
+  color: var(--accent);
+}
+
+/* ── Better scrollbar for widgets ─────────────────────────────────── */
+.widget-card::-webkit-scrollbar { width: 3px; }
+.widget-card::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.08); border-radius: 2px; }
+
+/* ── Population counter ───────────────────────────────────────────── */
+.pop-counter {
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.06);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .widget-card:hover {
+    transform: none;
+  }
+}

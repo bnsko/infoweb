@@ -1,0 +1,293 @@
+'use client'
+
+import { useMemo, useState, useEffect } from 'react'
+import { useWidget } from '@/hooks/useWidget'
+import { getWeatherInfo, formatShortDate } from '@/lib/utils'
+import type { WeatherData } from '@/lib/types'
+import WidgetCard from '@/components/ui/WidgetCard'
+
+function getWeatherAnimation(code: number): string {
+  if (code >= 95) return 'anim-shake'
+  if (code >= 71) return 'anim-float'
+  if (code >= 51) return 'anim-drop'
+  if (code >= 3)  return 'anim-float'
+  return 'anim-bounce'
+}
+
+function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' })
+}
+
+function uvColor(uv: number): string {
+  if (uv <= 2) return '#4ade80'
+  if (uv <= 5) return '#fbbf24'
+  if (uv <= 7) return '#f97316'
+  if (uv <= 10) return '#ef4444'
+  return '#a855f7'
+}
+
+function uvLabel(uv: number): string {
+  if (uv <= 2) return 'Nizke'
+  if (uv <= 5) return 'Stredne'
+  if (uv <= 7) return 'Vysoke'
+  if (uv <= 10) return 'Velmi vysoke'
+  return 'Extremne'
+}
+
+/* Mini SVG sun arc: shows sunrise -> current sun position -> sunset */
+function SunArc({ sunrise, sunset }: { sunrise: string; sunset: string }) {
+  const [nowMs, setNowMs] = useState<number | null>(null)
+
+  useEffect(() => {
+    setNowMs(Date.now())
+    const t = setInterval(() => setNowMs(Date.now()), 60_000)
+    return () => clearInterval(t)
+  }, [])
+
+  // Parse sunrise/sunset - append timezone if missing to avoid ambiguity
+  const riseMs = new Date(sunrise).getTime()
+  const setMs  = new Date(sunset).getTime()
+  const total  = setMs - riseMs
+  const now = nowMs ?? riseMs // fallback during SSR
+  const elapsed = Math.max(0, Math.min(total, now - riseMs))
+  const progress = total > 0 ? elapsed / total : 0
+  const isDaylight = nowMs !== null && now >= riseMs && now <= setMs
+
+  // Arc path: semicircle from left to right
+  const w = 220, h = 80, pad = 10
+  const cx = pad + progress * (w - 2 * pad)
+  const cy = h - pad - Math.sin(progress * Math.PI) * (h - 2 * pad)
+
+  const daylightMins = Math.round(total / 60000)
+  const daylightH = Math.floor(daylightMins / 60)
+  const daylightM = daylightMins % 60
+
+  return (
+    <div className="relative">
+      <svg viewBox={`0 0 ${w} ${h + 20}`} className="w-full h-auto" style={{ maxHeight: 80 }}>
+        {/* Horizon line */}
+        <line x1={pad} y1={h - pad} x2={w - pad} y2={h - pad} stroke="rgba(255,255,255,0.08)" strokeWidth={1} />
+        {/* Arc path */}
+        <path
+          d={`M ${pad} ${h - pad} Q ${w / 2} ${-h * 0.3} ${w - pad} ${h - pad}`}
+          fill="none"
+          stroke="rgba(251,191,36,0.2)"
+          strokeWidth={1.5}
+          strokeDasharray="4 3"
+        />
+        {/* Progress arc (filled portion) */}
+        {isDaylight && (
+          <path
+            d={`M ${pad} ${h - pad} Q ${w / 2} ${-h * 0.3} ${w - pad} ${h - pad}`}
+            fill="none"
+            stroke="rgba(251,191,36,0.5)"
+            strokeWidth={2}
+            strokeDasharray={`${progress * 280} 280`}
+          />
+        )}
+        {/* Sun position - only during daylight */}
+        {isDaylight && (
+          <>
+            <circle cx={cx} cy={cy} r={12} fill="rgba(251,191,36,0.15)" />
+            <circle cx={cx} cy={cy} r={6} fill="#fbbf24" className="anim-pulse-dot" />
+          </>
+        )}
+        {/* Moon indicator at night */}
+        {nowMs !== null && !isDaylight && (
+          <text x={w / 2} y={h / 2} textAnchor="middle" className="fill-slate-500 text-[11px]">
+            🌙 noc
+          </text>
+        )}
+        {/* Sunrise label */}
+        <text x={pad} y={h + 12} textAnchor="start" className="fill-slate-500 text-[9px]">
+          {'⬆'} {formatTime(sunrise)}
+        </text>
+        {/* Sunset label */}
+        <text x={w - pad} y={h + 12} textAnchor="end" className="fill-slate-500 text-[9px]">
+          {formatTime(sunset)} {'⬇'}
+        </text>
+        {/* Daylight duration */}
+        <text x={w / 2} y={h + 12} textAnchor="middle" className="fill-slate-400 text-[9px] font-semibold">
+          {daylightH}h {daylightM}m
+        </text>
+      </svg>
+    </div>
+  )
+}
+
+/* Mini UV chart for today's hourly UV values */
+function UVChart({ hourlyTime, hourlyUV }: { hourlyTime: string[]; hourlyUV: number[] }) {
+  // Get today's entries only (first 24)
+  const todayUV = hourlyUV.slice(0, 24)
+  const maxUV = Math.max(...todayUV, 1)
+  const barW = 7, gap = 1.5, h = 50, pad = 2
+  const totalW = todayUV.length * (barW + gap) + pad * 2
+
+  return (
+    <div className="overflow-x-auto">
+      <svg viewBox={`0 0 ${totalW} ${h + 18}`} className="w-full h-auto" style={{ maxHeight: 70 }}>
+        {todayUV.map((uv, i) => {
+          const barH = Math.max(1, (uv / maxUV) * (h - pad))
+          const x = pad + i * (barW + gap)
+          const y = h - barH
+          return (
+            <g key={i}>
+              <rect
+                x={x} y={y} width={barW} height={barH}
+                rx={2}
+                fill={uvColor(uv)}
+                opacity={0.7}
+              />
+              {i % 3 === 0 && (
+                <text x={x + barW / 2} y={h + 12} textAnchor="middle" className="fill-slate-600 text-[7px]">
+                  {i}h
+                </text>
+              )}
+            </g>
+          )
+        })}
+      </svg>
+    </div>
+  )
+}
+
+export default function WeatherPanel() {
+  const { data, loading, refetch } = useWidget<WeatherData>('/api/weather', 10 * 60 * 1000)
+
+  const currentInfo = data?.current ? getWeatherInfo(data.current.weather_code) : null
+  const animClass   = data?.current ? getWeatherAnimation(data.current.weather_code) : 'anim-float'
+
+  const todayUVMax = data?.daily?.uv_index_max?.[0] ?? null
+
+  return (
+    <WidgetCard accent="blue" className="relative overflow-hidden" onRefresh={refetch}>
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/8 via-transparent to-transparent pointer-events-none" />
+
+      <div className="relative">
+        <div className="widget-title mb-2">
+          <span>🌤️</span>
+          <span>Počasie · Bratislava</span>
+          <span className="ml-auto text-[10px] text-slate-600">OpenMeteo · obnova 10 min</span>
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-3">
+
+          {/* Left: current conditions + sun arc */}
+          <div className="flex-shrink-0 lg:w-52 space-y-2">
+            {loading ? (
+              <div className="space-y-2">
+                <div className="skeleton h-14 w-24 rounded" />
+                <div className="skeleton h-4 w-32 rounded" />
+              </div>
+            ) : data?.current ? (
+              <>
+                <div className="flex items-center gap-3">
+                  <span className={`text-5xl select-none ${animClass}`}>{currentInfo?.emoji}</span>
+                  <div>
+                    <div className="text-4xl font-thin text-white leading-none">
+                      {Math.round(data.current.temperature_2m)}<span className="text-xl text-slate-400">{'°'}C</span>
+                    </div>
+                    <div className="text-xs text-slate-400 mt-0.5">{currentInfo?.label}</div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                  <div className="flex items-center gap-1 text-slate-400">
+                    <span>🤔</span>
+                    <span>Pocit <span className="text-blue-300 font-semibold">{Math.round(data.current.apparent_temperature)}°C</span></span>
+                  </div>
+                  <div className="flex items-center gap-1 text-slate-400">
+                    <span>💧</span><span>{data.current.relative_humidity_2m}%</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-slate-400">
+                    <span>💨</span><span>{Math.round(data.current.wind_speed_10m)} km/h</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-slate-400">
+                    <span>🌧️</span><span>{data.current.precipitation} mm</span>
+                  </div>
+                </div>
+
+                {/* Sunrise/sunset arc */}
+                {data.daily?.sunrise?.[0] && data.daily?.sunset?.[0] && (
+                  <div className="bg-white/3 rounded-xl p-2">
+                    <div className="text-[9px] text-slate-500 uppercase tracking-wide mb-0.5">
+                      ☀️ Východ & Západ slnka
+                    </div>
+                    <SunArc sunrise={data.daily.sunrise[0]} sunset={data.daily.sunset[0]} />
+                  </div>
+                )}
+
+                {/* UV index */}
+                {todayUVMax !== null && (
+                  <div className="bg-white/3 rounded-xl p-2">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-[9px] text-slate-500 uppercase tracking-wide">☀️ UV dnes</span>
+                      <span className="text-[11px] font-bold" style={{ color: uvColor(todayUVMax) }}>
+                        {todayUVMax.toFixed(1)} · {uvLabel(todayUVMax)}
+                      </span>
+                    </div>
+                    {data.hourly?.uv_index && (
+                      <UVChart hourlyTime={data.hourly.time} hourlyUV={data.hourly.uv_index} />
+                    )}
+                  </div>
+                )}
+              </>
+            ) : null}
+          </div>
+
+          {/* Divider */}
+          <div className="hidden lg:block w-px bg-white/5 self-stretch" />
+
+          {/* Right: 7-day forecast */}
+          <div className="flex-1 min-w-0">
+            {loading ? (
+              <div className="grid grid-cols-7 gap-1">
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <div key={i} className="flex flex-col items-center gap-1 p-2">
+                    <div className="skeleton h-3 w-8 rounded" />
+                    <div className="skeleton h-6 w-6 rounded" />
+                    <div className="skeleton h-3 w-6 rounded" />
+                  </div>
+                ))}
+              </div>
+            ) : data?.daily ? (
+              <div className="grid grid-cols-7 gap-1">
+                {data.daily.time.map((day, i) => {
+                  const { emoji } = getWeatherInfo(data.daily.weather_code[i])
+                  const max = Math.round(data.daily.temperature_2m_max[i])
+                  const min = Math.round(data.daily.temperature_2m_min[i])
+                  const isToday = i === 0
+                  const uvMax = data.daily.uv_index_max?.[i]
+                  return (
+                    <div
+                      key={day}
+                      className={`flex flex-col items-center gap-0.5 p-2 rounded-xl text-center transition-all ${
+                        isToday ? 'bg-blue-500/15 border border-blue-500/20 scale-[1.02]' : 'hover:bg-white/4'
+                      }`}
+                    >
+                      <div className={`text-[10px] font-semibold uppercase tracking-wide ${isToday ? 'text-blue-400' : 'text-slate-500'}`}>
+                        {isToday ? 'Dnes' : formatShortDate(day).split(' ')[0]}
+                      </div>
+                      <div className="text-xl my-0.5">{emoji}</div>
+                      <div className="text-xs font-bold text-white">{max}°</div>
+                      <div className="text-[11px] text-slate-500">{min}°</div>
+                      {uvMax != null && uvMax > 0 && (
+                        <div className="text-[9px] font-semibold mt-0.5 px-1.5 py-0.5 rounded-full" style={{ color: uvColor(uvMax), background: uvColor(uvMax) + '20' }}>
+                          UV {uvMax.toFixed(0)}
+                        </div>
+                      )}
+                      {data.daily.precipitation_sum[i] > 0 && (
+                        <div className="text-[9px] text-blue-400 mt-0.5">
+                          💧{data.daily.precipitation_sum[i].toFixed(1)}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </WidgetCard>
+  )
+}

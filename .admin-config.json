@@ -1,0 +1,27 @@
+{
+  "siteName": "InfoSK",
+  "refreshRates": {},
+  "enabledWidgets": [
+    "weather",
+    "stats",
+    "currency",
+    "crypto",
+    "flights",
+    "iss",
+    "earthquakes",
+    "launches",
+    "reddit",
+    "onthisday",
+    "news",
+    "population",
+    "nameday",
+    "steam",
+    "slovakfacts",
+    "epic",
+    "ainews",
+    "sports",
+    "redditglobal"
+  ],
+  "announcement": "",
+  "maintenanceMode": false
+}
