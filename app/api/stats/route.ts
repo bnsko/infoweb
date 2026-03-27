@@ -3,10 +3,9 @@ import { NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 
 const SK_BBOX = { lamin: 47.7, lomin: 16.8, lamax: 49.6, lomax: 22.6 }
-const BUILD_TIME = parseInt(process.env.NEXT_PUBLIC_BUILD_TIME ?? String(Date.now()), 10)
 
 export async function GET() {
-  const [flightsRes, weatherRes, aqRes, btcRes] = await Promise.allSettled([
+  const [flightsRes, weatherRes, aqRes, eurUsdRes] = await Promise.allSettled([
     fetch(
       `https://opensky-network.org/api/states/all` +
         `?lamin=${SK_BBOX.lamin}&lomin=${SK_BBOX.lomin}&lamax=${SK_BBOX.lamax}&lomax=${SK_BBOX.lomax}`,
@@ -22,8 +21,8 @@ export async function GET() {
         `&current=european_aqi&timezone=Europe/Bratislava`,
       { next: { revalidate: 600 }, signal: AbortSignal.timeout(5000) }
     ),
-    fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=eur', {
-      next: { revalidate: 120 },
+    fetch('https://open.er-api.com/v6/latest/EUR', {
+      next: { revalidate: 3600 },
       signal: AbortSignal.timeout(5000),
     }),
   ])
@@ -31,7 +30,7 @@ export async function GET() {
   let flightsCount = null
   let tempBA = null
   let aqi = null
-  let btcEur = null
+  let eurToUsd = null
 
   if (flightsRes.status === 'fulfilled' && flightsRes.value.ok) {
     try {
@@ -55,10 +54,10 @@ export async function GET() {
     } catch { /* ignore */ }
   }
 
-  if (btcRes.status === 'fulfilled' && btcRes.value.ok) {
+  if (eurUsdRes.status === 'fulfilled' && eurUsdRes.value.ok) {
     try {
-      const j = await btcRes.value.json()
-      btcEur = j.bitcoin?.eur ?? null
+      const j = await eurUsdRes.value.json()
+      eurToUsd = j.rates?.USD ?? null
     } catch { /* ignore */ }
   }
 
@@ -71,10 +70,9 @@ export async function GET() {
     flightsCount,
     tempBA,
     aqi,
-    btcEur,
+    eurToUsd,
     dayOfYear,
     daysInYear,
-    serverStartTime: BUILD_TIME,
     timestamp: Date.now(),
   })
 }

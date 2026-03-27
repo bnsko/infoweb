@@ -19,7 +19,7 @@ export function useWidget<T>(url: string, refreshMs = 5 * 60 * 1000): WidgetStat
 
   const fetchData = useCallback(async () => {
     try {
-      const res = await fetch(url, { cache: 'no-store' })
+      const res = await fetch(url)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const json: T = await res.json()
       if (mountedRef.current) {

@@ -14,6 +14,7 @@ interface Listing {
   area: string
   url: string
   source: string
+  photo?: string
 }
 
 interface RealEstateData {
@@ -117,9 +118,14 @@ export default function RealEstateWidget() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-2.5 hover:bg-white/3 rounded-lg p-2 transition-colors group"
               >
-                <div className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-sm">
-                  {typeIcon}
-                </div>
+                {l.photo ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={l.photo} alt={l.title} className="flex-shrink-0 w-16 h-12 rounded-lg object-cover border border-white/10" />
+                ) : (
+                  <div className="flex-shrink-0 w-16 h-12 flex items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-lg">
+                    {typeIcon}
+                  </div>
+                )}
                 <div className="min-w-0 flex-1">
                   <p className="text-[11px] text-slate-200 group-hover:text-white leading-snug line-clamp-1 font-medium">
                     {l.title}

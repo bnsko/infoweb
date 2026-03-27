@@ -202,10 +202,9 @@ export interface StatsData {
   flightsCount: number | null
   tempBA: number | null
   aqi: number | null
-  btcEur: number | null
+  eurToUsd: number | null
   dayOfYear: number
   daysInYear: number
-  serverStartTime: number
   timestamp: number
 }
 

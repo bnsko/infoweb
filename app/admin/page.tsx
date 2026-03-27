@@ -49,10 +49,43 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [tab, setTab] = useState<'overview' | 'widgets' | 'settings' | 'security' | 'advanced'>('overview')
+  const [initializing, setInitializing] = useState(true)
+
+  // Restore auth from localStorage on mount
+  useEffect(() => {
+    const savedCode = localStorage.getItem('admin-code')
+    if (savedCode) {
+      setCode(savedCode)
+      // Verify the saved code is still valid
+      fetch(`/api/admin?code=${savedCode}&action=stats`)
+        .then(r => {
+          if (r.ok) return r.json()
+          throw new Error('Invalid')
+        })
+        .then((data: AdminStats) => {
+          setStats(data)
+          setConfig(data.config)
+          setAuthenticated(true)
+        })
+        .catch(() => {
+          localStorage.removeItem('admin-code')
+        })
+        .finally(() => setInitializing(false))
+    } else {
+      setInitializing(false)
+    }
+  }, [])
 
   const fetchStats = useCallback(async () => {
     const res = await fetch(`/api/admin?code=${code}&action=stats`)
-    if (!res.ok) return
+    if (!res.ok) {
+      // If auth fails, log out
+      if (res.status === 401 || res.status === 403) {
+        setAuthenticated(false)
+        localStorage.removeItem('admin-code')
+      }
+      return
+    }
     const data: AdminStats = await res.json()
     setStats(data)
     setConfig(data.config)
@@ -67,6 +100,7 @@ export default function AdminPage() {
         setStats(data)
         setConfig(data.config)
         setAuthenticated(true)
+        localStorage.setItem('admin-code', code)
       } else {
         setMessage('❌ Neplatný kód')
       }
@@ -108,13 +142,21 @@ export default function AdminPage() {
     setTimeout(() => setMessage(''), 2000)
   }
 
+  if (initializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0c0e14' }}>
+        <div className="text-slate-500 text-sm">Načítavam...</div>
+      </div>
+    )
+  }
+
   if (!authenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#0c0e14' }}>
         <div className="bg-[#13161f] border border-white/10 rounded-2xl p-8 w-full max-w-sm shadow-2xl">
           <div className="text-center mb-6">
             <div className="text-4xl mb-2">🔐</div>
-            <h1 className="text-xl font-bold text-white">InfoSK Admin</h1>
+            <h1 className="text-xl font-bold text-white">Slovakia Info Admin</h1>
             <p className="text-sm text-slate-500 mt-1">Zadajte prístupový kód</p>
           </div>
           <input
@@ -149,7 +191,7 @@ export default function AdminPage() {
           <div className="flex items-center gap-3">
             <span className="text-2xl">⚙️</span>
             <div>
-              <h1 className="text-lg font-bold text-white">InfoSK Admin</h1>
+              <h1 className="text-lg font-bold text-white">Slovakia Info Admin</h1>
               <p className="text-[10px] text-slate-500">Správa dashboardu</p>
             </div>
           </div>
@@ -157,7 +199,7 @@ export default function AdminPage() {
             <a href="/" className="text-sm text-slate-400 hover:text-white transition-colors px-3 py-1.5 rounded-lg hover:bg-white/5">
               📊 Dashboard
             </a>
-            <button onClick={() => setAuthenticated(false)} className="text-sm text-red-400 hover:text-red-300 px-3 py-1.5 rounded-lg hover:bg-white/5">
+            <button onClick={() => { setAuthenticated(false); localStorage.removeItem('admin-code') }} className="text-sm text-red-400 hover:text-red-300 px-3 py-1.5 rounded-lg hover:bg-white/5">
               🔒 Odhlásiť
             </button>
           </div>

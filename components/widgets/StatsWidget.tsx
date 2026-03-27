@@ -18,50 +18,50 @@ function getSessionId(): string {
   return sid
 }
 
+interface VisitorData {
+  totalPageViews: number
+  uniqueVisitors: number
+  activeNow: number
+  todayPageViews: number
+  uptimeMs: number
+}
+
 export default function StatsWidget() {
   const { data, loading, refetch } = useWidget<StatsData>('/api/stats', 60 * 1000)
   const [uptime, setUptime] = useState('00:00:00')
-  const [serverStart, setServerStart] = useState<number | null>(null)
-  const [visitors, setVisitors] = useState<{ totalPageViews: number; uniqueVisitors: number; activeNow: number; todayPageViews: number } | null>(null)
-  const { t } = useLang()
+  const [visitors, setVisitors] = useState<VisitorData | null>(null)
+  const { t, lang } = useLang()
 
-  // Get server start time from stats
-  useEffect(() => {
-    if (data?.serverStartTime && !serverStart) {
-      setServerStart(data.serverStartTime)
-    }
-  }, [data, serverStart])
-
-  const tick = useCallback(() => {
-    if (!serverStart) return
-    const elapsed = Math.floor((Date.now() - serverStart) / 1000)
-    const h = Math.floor(elapsed / 3600).toString().padStart(2, '0')
+  // Compute uptime from visitor response
+  const updateUptime = useCallback((v: VisitorData) => {
+    const elapsed = Math.floor(v.uptimeMs / 1000)
+    const d = Math.floor(elapsed / 86400)
+    const h = Math.floor((elapsed % 86400) / 3600).toString().padStart(2, '0')
     const m = Math.floor((elapsed % 3600) / 60).toString().padStart(2, '0')
     const s = (elapsed % 60).toString().padStart(2, '0')
-    setUptime(`${h}:${m}:${s}`)
-  }, [serverStart])
+    setUptime(d > 0 ? `${d}d ${h}:${m}:${s}` : `${h}:${m}:${s}`)
+  }, [])
 
-  useEffect(() => {
-    tick()
-    const t = setInterval(tick, 1000)
-    return () => clearInterval(t)
-  }, [tick])
-
-  // Track visitors
+  // Track visitors - visit on mount, then ping every 60s for accurate online count
   useEffect(() => {
     const sid = getSessionId()
-    fetch(`/api/visitors?action=visit&sid=${sid}`)
-      .then(r => r.json())
-      .then(setVisitors)
-      .catch(() => {})
-    const ping = setInterval(() => {
+    const doVisit = () => {
+      fetch(`/api/visitors?action=visit&sid=${sid}`)
+        .then(r => r.json())
+        .then((v: VisitorData) => { setVisitors(v); updateUptime(v) })
+        .catch(() => {})
+    }
+    const doPing = () => {
       fetch(`/api/visitors?action=ping&sid=${sid}`)
         .then(r => r.json())
-        .then(setVisitors)
+        .then((v: VisitorData) => { setVisitors(v); updateUptime(v) })
         .catch(() => {})
-    }, 2 * 60 * 1000)
+    }
+    doVisit()
+    // Ping every 60 seconds for accurate "online" count
+    const ping = setInterval(doPing, 60 * 1000)
     return () => clearInterval(ping)
-  }, [])
+  }, [updateUptime])
 
   const aqi = data?.aqi ?? null
   const aqiInfo = aqi !== null ? getAQIInfo(aqi) : null
@@ -73,7 +73,7 @@ export default function StatsWidget() {
         <Stat icon="🌡️" label={t('stat.temp')} value={loading ? '...' : data?.tempBA != null ? `${data.tempBA}°C` : 'N/A'} color="text-blue-300" />
         <Stat icon="💨" label={t('stat.air')} value={loading ? '...' : aqi != null ? `AQI ${aqi}` : 'N/A'} colorHex={aqiInfo?.color} badge={aqiInfo?.label} />
         <Stat icon="✈️" label={t('stat.flights')} value={loading ? '...' : data?.flightsCount != null ? String(data.flightsCount) : 'N/A'} color="text-cyan-400" />
-        <Stat icon="₿" label={t('stat.btc')} value={loading ? '...' : data?.btcEur != null ? `€${data.btcEur.toLocaleString('sk-SK')}` : 'N/A'} color="text-amber-400" />
+        <Stat icon="💶" label="EUR/USD" value={loading ? '...' : data?.eurToUsd != null ? `$${data.eurToUsd.toFixed(4)}` : 'N/A'} color="text-emerald-400" />
         <Stat icon="📅" label={t('stat.dayOfYear')} value={loading ? '...' : `${data?.dayOfYear ?? '?'}/${data?.daysInYear ?? 365}`} color="text-slate-400" />
         <Stat icon="🔄" label={t('stat.sources')} value={`${SOURCES}/${SOURCES}`} color="text-emerald-400" />
         <Stat icon="👥" label={t('stat.online')} value={visitors ? String(visitors.activeNow) : '...'} color="text-yellow-400" />

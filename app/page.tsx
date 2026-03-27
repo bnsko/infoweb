@@ -10,7 +10,6 @@ import CurrencyWidget from '@/components/widgets/CurrencyWidget'
 import CryptoWidget from '@/components/widgets/CryptoWidget'
 import FlightsWidget from '@/components/widgets/FlightsWidget'
 import SpaceEnvWidget from '@/components/widgets/SpaceEnvWidget'
-import EarthquakesWidget from '@/components/widgets/EarthquakesWidget'
 import LaunchesWidget from '@/components/widgets/LaunchesWidget'
 import NamedayWidget from '@/components/widgets/NamedayWidget'
 import PopulationWidget from '@/components/widgets/PopulationWidget'
@@ -23,7 +22,11 @@ import CountersWidget from '@/components/widgets/CountersWidget'
 import WikiWidget from '@/components/widgets/WikiWidget'
 import RealEstateWidget from '@/components/widgets/RealEstateWidget'
 import RestaurantsWidget from '@/components/widgets/RestaurantsWidget'
-import SlovakCultureWidget from '@/components/widgets/SlovakCultureWidget'
+import HackerNewsWidget from '@/components/widgets/HackerNewsWidget'
+import TwitterWidget from '@/components/widgets/TwitterWidget'
+import FuelPricesWidget from '@/components/widgets/FuelPricesWidget'
+import GroceriesWidget from '@/components/widgets/GroceriesWidget'
+import ToolOfTheDayWidget from '@/components/widgets/ToolOfTheDayWidget'
 import { useLang } from '@/hooks/useLang'
 
 export default function Home() {
@@ -41,7 +44,7 @@ export default function Home() {
         {/* Weather (full width) */}
         <WeatherPanel />
 
-        {/* Správy (full width) - under weather */}
+        {/* Správy (full width) */}
         <div>
           <SectionLabel label={t('sec.news')} />
           <NewsFeedWidget />
@@ -58,37 +61,54 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Doprava & Šport & Podujatia */}
+        {/* Doprava, Šport & Podujatia */}
         <div>
           <SectionLabel label={t('sec.transport')} />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <TrafficWidget />
             <FlightsWidget />
-            <SportsWidget />
+            <div className="md:col-span-2">
+              <SportsWidget />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             <EventsWidget />
+            <TwitterWidget />
           </div>
         </div>
 
-        {/* Vesmír, ISS & Prírodné javy */}
+        {/* Ceny & Nákupy */}
+        <div>
+          <SectionLabel label={t('sec.prices')} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FuelPricesWidget />
+            <GroceriesWidget />
+          </div>
+        </div>
+
+        {/* Živé štatistiky (full width) */}
+        <div>
+          <SectionLabel label={t('sec.counters')} />
+          <CountersWidget />
+        </div>
+
+        {/* Vesmír & Rakety */}
         <div>
           <SectionLabel label={t('sec.space')} />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <SpaceEnvWidget />
-            <div className="space-y-4">
-              <EarthquakesWidget />
-              <LaunchesWidget />
-            </div>
-            <CountersWidget />
+            <LaunchesWidget />
           </div>
         </div>
 
         {/* Zábava & Komunita */}
         <div>
           <SectionLabel label={t('sec.fun')} />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <SteamWidget />
             <RedditWidget />
             <RedditGlobalWidget />
+            <HackerNewsWidget />
           </div>
         </div>
 
@@ -101,12 +121,17 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Dnes v histórii & Slovensko & Wiki */}
+        {/* Tech & Nástroje */}
+        <div>
+          <SectionLabel label={t('sec.tech')} />
+          <ToolOfTheDayWidget />
+        </div>
+
+        {/* História & Objavuj */}
         <div>
           <SectionLabel label={t('sec.history')} />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <OnThisDayWidget />
-            <SlovakCultureWidget />
             <WikiWidget />
           </div>
         </div>
@@ -115,7 +140,7 @@ export default function Home() {
 
       <footer className="border-t border-white/5 py-6 text-center text-xs text-slate-600">
         <p>
-          InfoSK © {new Date().getFullYear()} · Dáta: OpenMeteo · ECB · CoinGecko · Steam · ESPN · SME · Aktuality · BBC · Reuters · Reddit · Waze · OpenSky · USGS · Launch Library 2 · Wikimedia + ďalšie
+          Slovakia Info © {new Date().getFullYear()} · Dáta: OpenMeteo · ECB · CoinGecko · Steam · ESPN · SME · Aktuality · TASR · Pravda · BBC · Reuters · Reddit · Waze · OpenSky · Launch Library 2 · Wikimedia + ďalšie
         </p>
         <p className="mt-1">{t('footer.auto')}</p>
       </footer>

@@ -11,11 +11,15 @@ const T: Record<string, { sk: string; en: string }> = {
   // Section labels
   'sec.finance': { sk: '🇸🇰 Slovensko & Financie', en: '🇸🇰 Slovakia & Finance' },
   'sec.transport': { sk: '🚗 Doprava, Šport & Podujatia', en: '🚗 Transport, Sports & Events' },
-  'sec.space': { sk: '🔭 Vesmír, Zem & Prírodné javy', en: '🔭 Space, Earth & Natural Phenomena' },
+  'sec.space': { sk: '🔭 Vesmír & Rakety', en: '🔭 Space & Rockets' },
   'sec.fun': { sk: '🎮 Zábava & Komunita', en: '🎮 Entertainment & Community' },
-  'sec.history': { sk: '📖 Dnes v histórii & Zaujímavosti', en: '📖 Today in History & Facts' },
+  'sec.history': { sk: '📖 História & Objavuj', en: '📖 History & Discover' },
   'sec.news': { sk: '📰 Správy z 18 odvetví', en: '📰 News from 18 Sectors' },
-  'sec.realestate': { sk: '🏠 Nehnuteľnosti & Objavuj', en: '🏠 Real Estate & Discover' },
+  'sec.realestate': { sk: '🏠 Nehnuteľnosti & Reštaurácie', en: '🏠 Real Estate & Restaurants' },
+  'sec.prices': { sk: '💰 Ceny & Nákupy', en: '💰 Prices & Shopping' },
+  'sec.tech': { sk: '💻 Tech & Nástroje', en: '💻 Tech & Tools' },
+  'sec.counters': { sk: '📊 Živé štatistiky', en: '📊 Live Statistics' },
+  'sec.crypto': { sk: '₿ Kryptomeny', en: '₿ Cryptocurrencies' },
   // Stats
   'stat.temp': { sk: 'Teplota BA', en: 'Temp BA' },
   'stat.air': { sk: 'Vzduch BA', en: 'Air BA' },
