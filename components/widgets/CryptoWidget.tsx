@@ -6,23 +6,25 @@ import type { CryptoAsset } from '@/lib/types'
 import WidgetCard from '@/components/ui/WidgetCard'
 import WidgetError from '@/components/ui/WidgetError'
 import SkeletonRows from '@/components/ui/SkeletonRows'
+import { useLang } from '@/hooks/useLang'
 
 export default function CryptoWidget() {
+  const { t } = useLang()
   const { data, loading, error, refetch } = useWidget<CryptoAsset[]>('/api/crypto', 5 * 60 * 1000)
 
   if (loading) return (
-    <WidgetCard accent="purple" title="Kryptomeny · EUR" icon="₿" onRefresh={refetch}>
+    <WidgetCard accent="purple" title={t('crypto.title')} icon="₿" onRefresh={refetch}>
       <SkeletonRows rows={5} cols={2} />
     </WidgetCard>
   )
   if (error || !data) return (
-    <WidgetCard accent="purple" title="Kryptomeny · EUR" icon="₿" onRefresh={refetch}>
+    <WidgetCard accent="purple" title={t('crypto.title')} icon="₿" onRefresh={refetch}>
       <WidgetError />
     </WidgetCard>
   )
 
   return (
-    <WidgetCard accent="purple" title="Kryptomeny · EUR" icon="₿" onRefresh={refetch}>
+    <WidgetCard accent="purple" title={t('crypto.title')} icon="₿" onRefresh={refetch}>
       <div className="space-y-1">
         {data.map((coin) => {
           const change = coin.price_change_percentage_24h
@@ -49,7 +51,7 @@ export default function CryptoWidget() {
           )
         })}
       </div>
-      <p className="text-[10px] text-slate-600 mt-2 text-right">CoinGecko · 24h zmena</p>
+      <p className="text-[10px] text-slate-600 mt-2 text-right">{t('crypto.source')}</p>
     </WidgetCard>
   )
 }

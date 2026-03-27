@@ -3,6 +3,7 @@
 import { useWidget } from '@/hooks/useWidget'
 import WidgetCard from '@/components/ui/WidgetCard'
 import SkeletonRows from '@/components/ui/SkeletonRows'
+import { useLang } from '@/hooks/useLang'
 
 interface TrafficItem {
   title: string
@@ -32,16 +33,17 @@ function getIcon(title: string): string {
 }
 
 export default function TrafficWidget() {
+  const { t } = useLang()
   const { data, loading, error, refetch } = useWidget<TrafficData>('/api/traffic', 2 * 60 * 1000)
 
   return (
-    <WidgetCard accent="rose" title="Dopravné udalosti" icon="🚗" onRefresh={refetch}>
+    <WidgetCard accent="rose" title={t('traffic.title')} icon="🚗" onRefresh={refetch}>
       {loading && <SkeletonRows rows={5} />}
-      {!loading && error && <p className="text-xs text-slate-500">Chyba načítania dopravných dát</p>}
+      {!loading && error && <p className="text-xs text-slate-500">{t('traffic.error')}</p>}
       {!loading && data && (
         <div className="space-y-0.5 max-h-[380px] overflow-y-auto">
           {data.items.length === 0 ? (
-            <p className="text-xs text-slate-500 py-3">Žiadne aktuálne dopravné udalosti</p>
+            <p className="text-xs text-slate-500 py-3">{t('traffic.none')}</p>
           ) : (
             data.items.map((item, i) => (
               <div key={i} className="news-item py-1.5 group">
@@ -57,7 +59,7 @@ export default function TrafficWidget() {
           )}
         </div>
       )}
-      <p className="text-[10px] text-slate-600 mt-2">Waze · Polícia SR · obnova 2 min</p>
+      <p className="text-[10px] text-slate-600 mt-2">{t('traffic.source')}</p>
     </WidgetCard>
   )
 }

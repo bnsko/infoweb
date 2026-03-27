@@ -3,6 +3,7 @@
 import { useWidget } from '@/hooks/useWidget'
 import WidgetCard from '@/components/ui/WidgetCard'
 import SkeletonRows from '@/components/ui/SkeletonRows'
+import { useLang } from '@/hooks/useLang'
 
 interface RedditGlobalPost {
   id: string
@@ -27,13 +28,15 @@ function formatScore(n: number): string {
 }
 
 export default function RedditGlobalWidget() {
+  const { t } = useLang()
   const { data, loading, error, refetch } = useWidget<RedditGlobalData>('/api/redditglobal', 5 * 60 * 1000)
 
   return (
-    <WidgetCard accent="orange" title="Reddit Top 10 dnes" icon="📈" onRefresh={refetch}>
+    <WidgetCard accent="orange" title={t('reddit.globalTitle')} icon="📈" onRefresh={refetch}>
       {loading && <SkeletonRows rows={6} />}
-      {!loading && error && <p className="text-xs text-slate-500">Chyba načítania</p>}
-      {!loading && data && (
+      {!loading && (error || !data) && <p className="text-xs text-slate-500">{t('error')}</p>}
+      {!loading && data && data.posts.length === 0 && <p className="text-xs text-slate-500 py-4 text-center">{t('reddit.noPosts')}</p>}
+      {!loading && data && data.posts.length > 0 && (
         <div className="space-y-0.5 max-h-[380px] overflow-y-auto">
           {data.posts.map((post, i) => (
             <a
@@ -62,7 +65,7 @@ export default function RedditGlobalWidget() {
           ))}
         </div>
       )}
-      <p className="text-[10px] text-slate-600 mt-2">reddit.com/r/all · top dnes</p>
+      <p className="text-[10px] text-slate-600 mt-2">reddit.com/r/all · {t('reddit.topToday')}</p>
     </WidgetCard>
   )
 }

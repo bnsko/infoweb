@@ -6,7 +6,8 @@ import WidgetCard from '@/components/ui/WidgetCard'
 import WidgetError from '@/components/ui/WidgetError'
 import SkeletonRows from '@/components/ui/SkeletonRows'
 import { format, formatDistanceToNow, isPast } from 'date-fns'
-import { sk } from 'date-fns/locale'
+import { sk, enUS } from 'date-fns/locale'
+import { useLang } from '@/hooks/useLang'
 
 function statusColor(abbrev: string): string {
   switch (abbrev) {
@@ -19,24 +20,26 @@ function statusColor(abbrev: string): string {
 }
 
 export default function LaunchesWidget() {
+  const { t, lang } = useLang()
+  const loc = lang === 'sk' ? sk : enUS
   const { data, loading, error, refetch } = useWidget<LaunchesResponse>('/api/launches', 60 * 60 * 1000)
 
   return (
-    <WidgetCard accent="purple" title="Najbližšie štarty rakiet" icon="🚀" className="h-full" onRefresh={refetch}>
+    <WidgetCard accent="purple" title={t('launches.title')} icon="🚀" className="h-full" onRefresh={refetch}>
       {loading && <SkeletonRows rows={4} cols={2} />}
       {!loading && (error || !data) && <WidgetError />}
       {!loading && data && (
         <div className="space-y-3 max-h-[420px] overflow-y-auto">
           {data.results.length === 0 && (
-            <p className="text-slate-500 text-sm py-4 text-center">Žiadne naplánované štarty.</p>
+            <p className="text-slate-500 text-sm py-4 text-center">{t('launches.none')}</p>
           )}
           {data.results.map((launch, i) => {
             const netDate = new Date(launch.net)
             const alreadyFlown = isPast(netDate)
             const relative = alreadyFlown
-              ? 'Práve štartovalo'
-              : formatDistanceToNow(netDate, { addSuffix: true, locale: sk })
-            const formatted = format(netDate, 'd. MMM yyyy HH:mm', { locale: sk })
+              ? t('launches.justLaunched')
+              : formatDistanceToNow(netDate, { addSuffix: true, locale: loc })
+            const formatted = format(netDate, 'd. MMM yyyy HH:mm', { locale: loc })
 
             return (
               <div key={launch.id} className={`rounded-xl p-3 border ${i === 0 ? 'bg-purple-500/10 border-purple-500/20' : 'bg-white/3 border-white/5'}`}>
@@ -62,7 +65,7 @@ export default function LaunchesWidget() {
           })}
         </div>
       )}
-      <p className="text-[10px] text-slate-600 mt-2">Launch Library 2 · obnova 1 hod</p>
+      <p className="text-[10px] text-slate-600 mt-2">{t('launches.source')}</p>
     </WidgetCard>
   )
 }

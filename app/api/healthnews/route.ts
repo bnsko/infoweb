@@ -5,8 +5,9 @@ export const revalidate = 300
 
 const FEEDS = [
   { name: 'WHO', url: 'https://www.who.int/rss-feeds/news-english.xml' },
-  { name: 'Medical News', url: 'https://www.medicalnewstoday.com/rss' },
-  { name: 'WebMD', url: 'https://rssfeeds.webmd.com/rss/rss.aspx?RSSFeed=RSS_Public' },
+  { name: 'Medical News', url: 'https://www.medicalnewstoday.com/newsfeeds/rss' },
+  { name: 'NHS', url: 'https://www.nhs.uk/news/rss/' },
+  { name: 'Healthline', url: 'https://www.healthline.com/rss/health-news' },
 ]
 
 const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_' })
