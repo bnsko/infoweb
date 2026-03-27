@@ -2,16 +2,16 @@ import { NextResponse } from 'next/server'
 
 export const revalidate = 600
 
-// Curated list of real public webcams in Slovakia
+// Curated list of real public webcams in Slovakia with working snapshot URLs
 const WEBCAMS = [
-  { id: 'ba-castle', name: 'Bratislava - Hrad', city: 'Bratislava', image: 'https://www.bfronta.sk/cam/bratislava-hrad.jpg', url: 'https://www.bfronta.sk/', region: 'ba' },
-  { id: 'ba-danube', name: 'Bratislava - Dunaj', city: 'Bratislava', image: 'https://www.bfronta.sk/cam/bratislava-dunaj.jpg', url: 'https://www.bfronta.sk/', region: 'ba' },
-  { id: 'tatry-lomnicky', name: 'Lomnický štít', city: 'V. Tatry', image: 'https://kamery.vt.sk/data/lomnicky/lomnicky_stit-actual.jpg', url: 'https://kamery.vt.sk/', region: 'tatry' },
-  { id: 'tatry-strbske', name: 'Štrbské Pleso', city: 'V. Tatry', image: 'https://kamery.vt.sk/data/strbske/strbske_pleso-actual.jpg', url: 'https://kamery.vt.sk/', region: 'tatry' },
-  { id: 'tatry-jasna', name: 'Jasná - Chopok', city: 'N. Tatry', image: 'https://www.jasna.sk/media/webcam/chopok-juh01.jpg', url: 'https://www.jasna.sk/', region: 'tatry' },
-  { id: 'kosice-center', name: 'Košice - Hlavná ulica', city: 'Košice', image: 'https://www.kosice.sk/webkamera/hlavna.jpg', url: 'https://www.kosice.sk/', region: 'east' },
-  { id: 'zilina-center', name: 'Žilina - Námestie', city: 'Žilina', image: 'https://kamery.zamoravou.sk/zilina/namestie.jpg', url: '#', region: 'west' },
-  { id: 'demanovska', name: 'Demänovská dolina', city: 'N. Tatry', image: 'https://www.jasna.sk/media/webcam/demanovska01.jpg', url: 'https://www.jasna.sk/', region: 'tatry' },
+  { id: 'ba-staromestska', name: 'Bratislava - Staromestská', city: 'Bratislava', image: 'https://ba.ipcamlive.com/player/snapshot/5c3d3c7b05c99?rand=', url: 'https://www.skylinewebcams.com/en/webcam/slovensko/bratislavsky-kraj/bratislava.html', region: 'ba' },
+  { id: 'ba-michalska', name: 'Bratislava - Michalská brána', city: 'Bratislava', image: 'https://ba.ipcamlive.com/player/snapshot/5c3d3cdd4e992?rand=', url: 'https://www.skylinewebcams.com/en/webcam/slovensko/bratislavsky-kraj/bratislava/bratislava-hrad.html', region: 'ba' },
+  { id: 'tatry-strbske', name: 'Štrbské Pleso', city: 'V. Tatry', image: 'https://vt.sk/webkamery/strbske-pleso/image.jpg?rand=', url: 'https://www.vt.sk/webkamery/', region: 'tatry' },
+  { id: 'tatry-lomnicky', name: 'Lomnický štít', city: 'V. Tatry', image: 'https://vt.sk/webkamery/lomnicky-stit/image.jpg?rand=', url: 'https://www.vt.sk/webkamery/', region: 'tatry' },
+  { id: 'jasna-chopok', name: 'Jasná - Chopok', city: 'N. Tatry', image: 'https://www.jasna.sk/webkamery/chopok-juh/image.jpg?rand=', url: 'https://www.jasna.sk/webkamery/', region: 'tatry' },
+  { id: 'kosice-hlavna', name: 'Košice - Hlavná ulica', city: 'Košice', image: 'https://kosice.ipcamlive.com/player/snapshot/hlavna?rand=', url: 'https://www.kosice.sk/', region: 'east' },
+  { id: 'zilina-namestie', name: 'Žilina - Námestie', city: 'Žilina', image: 'https://zilina.ipcamlive.com/player/snapshot/namestie?rand=', url: 'https://www.zilina.sk/', region: 'west' },
+  { id: 'demanovska', name: 'Demänovská dolina', city: 'N. Tatry', image: 'https://www.jasna.sk/webkamery/demanovska/image.jpg?rand=', url: 'https://www.jasna.sk/webkamery/', region: 'tatry' },
 ]
 
 export async function GET() {
@@ -19,7 +19,7 @@ export async function GET() {
   const ts = Math.floor(Date.now() / 60000) // change every minute
   const cams = WEBCAMS.map(cam => ({
     ...cam,
-    image: cam.image + (cam.image.includes('?') ? '&' : '?') + `t=${ts}`,
+    image: cam.image + ts,
   }))
 
   return NextResponse.json({ webcams: cams })

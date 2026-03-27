@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  env: {
+    NEXT_PUBLIC_BUILD_TIME: String(Date.now()),
+  },
   async headers() {
     return [
       {

@@ -75,8 +75,18 @@ export default function WebcamsWidget() {
               className="w-full h-full object-cover"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none'
+                const placeholder = (e.target as HTMLImageElement).nextElementSibling as HTMLElement
+                if (placeholder) placeholder.style.display = 'flex'
               }}
             />
+            {/* Placeholder when image fails */}
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 items-center justify-center flex-col gap-2 hidden" style={{ display: 'none' }}>
+              <span className="text-3xl">📹</span>
+              <span className="text-[11px] text-slate-400 font-medium">{cam.name}</span>
+              <a href={cam.url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-cyan-400 hover:text-cyan-300 underline mt-1">
+                {lang === 'sk' ? 'Zobraziť na webe →' : 'View online →'}
+              </a>
+            </div>
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
               <div className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
@@ -98,7 +108,12 @@ export default function WebcamsWidget() {
                 style={{ width: 52, height: 36 }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={c.image} alt={c.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                <img src={c.image} alt={c.name} className="w-full h-full object-cover" onError={(e) => {
+                  const el = e.target as HTMLImageElement
+                  el.style.display = 'none'
+                  el.parentElement!.classList.add('bg-slate-800')
+                  el.parentElement!.innerHTML = '<span class="text-[8px] text-slate-500 flex items-center justify-center h-full">📹</span>'
+                }} />
               </button>
             ))}
           </div>

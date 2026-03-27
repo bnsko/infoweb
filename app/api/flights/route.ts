@@ -40,10 +40,7 @@ export async function GET() {
       }))
 
     return NextResponse.json({ flights, count: flights.length })
-  } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Flights fetch failed' },
-      { status: 500 }
-    )
+  } catch {
+    return NextResponse.json({ flights: [], count: 0 })
   }
 }

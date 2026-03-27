@@ -11,7 +11,7 @@ const T: Record<string, { sk: string; en: string }> = {
   // Section labels
   'sec.finance': { sk: '🇸🇰 Slovensko & Financie', en: '🇸🇰 Slovakia & Finance' },
   'sec.transport': { sk: '🚗 Doprava, Šport & Podujatia', en: '🚗 Transport, Sports & Events' },
-  'sec.space': { sk: '🔭 Vesmír, Zem & Ovzdušie', en: '🔭 Space, Earth & Atmosphere' },
+  'sec.space': { sk: '🔭 Vesmír, Zem & Prírodné javy', en: '🔭 Space, Earth & Natural Phenomena' },
   'sec.fun': { sk: '🎮 Zábava & Komunita', en: '🎮 Entertainment & Community' },
   'sec.history': { sk: '📖 Dnes v histórii & Zaujímavosti', en: '📖 Today in History & Facts' },
   'sec.news': { sk: '📰 Správy z 18 odvetví', en: '📰 News from 18 Sectors' },
@@ -49,7 +49,7 @@ const T: Record<string, { sk: string; en: string }> = {
   // Webcams
   'webcams.title': { sk: 'Live kamery · Slovensko', en: 'Live cameras · Slovakia' },
   // Restaurants
-  'restaurants.title': { sk: 'Odporúčané reštaurácie · BA', en: 'Recommended Restaurants · BA' },
+  'restaurants.title': { sk: 'Odporúčané reštaurácie', en: 'Recommended Restaurants' },
   // On this day
   'onthisday.title': { sk: 'Dnes v histórii', en: 'Today in history' },
   'onthisday.onThisDay': { sk: 'V tento deň –', en: 'On this day –' },

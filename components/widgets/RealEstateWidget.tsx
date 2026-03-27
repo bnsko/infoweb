@@ -34,11 +34,22 @@ const REGION_PILLS = [
   { key: 'trencin', label: 'TN' },
 ]
 
+const TYPE_PILLS = [
+  { key: 'all', sk: 'Všetky', en: 'All' },
+  { key: '1-izb', sk: '1-izb', en: '1-room' },
+  { key: '2-izb', sk: '2-izb', en: '2-room' },
+  { key: '3-izb', sk: '3-izb', en: '3-room' },
+  { key: '4-izb', sk: '4-izb', en: '4-room' },
+  { key: 'garsonka', sk: 'Garsónka', en: 'Studio' },
+  { key: 'garaz', sk: 'Garáž', en: 'Garage' },
+]
+
 export default function RealEstateWidget() {
   const [region, setRegion] = useState('bratislava')
-  const { t } = useLang()
+  const [propertyType, setPropertyType] = useState('all')
+  const { t, lang } = useLang()
   const { data, loading, error, refetch } = useWidget<RealEstateData>(
-    `/api/realestate?region=${region}`,
+    `/api/realestate?region=${region}&type=${propertyType}`,
     30 * 60 * 1000
   )
 
@@ -51,7 +62,7 @@ export default function RealEstateWidget() {
         </div>
       </div>
       {/* Region pills */}
-      <div className="flex flex-wrap gap-1 mb-3">
+      <div className="flex flex-wrap gap-1 mb-2">
         {REGION_PILLS.map(r => (
           <button
             key={r.key}
@@ -63,6 +74,22 @@ export default function RealEstateWidget() {
             }`}
           >
             {r.label}
+          </button>
+        ))}
+      </div>
+      {/* Property type pills */}
+      <div className="flex flex-wrap gap-1 mb-3">
+        {TYPE_PILLS.map(tp => (
+          <button
+            key={tp.key}
+            onClick={() => setPropertyType(tp.key)}
+            className={`text-[10px] font-bold px-2 py-0.5 rounded-md transition-all ${
+              propertyType === tp.key
+                ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                : 'text-slate-600 hover:text-slate-400 border border-transparent'
+            }`}
+          >
+            {lang === 'sk' ? tp.sk : tp.en}
           </button>
         ))}
       </div>
