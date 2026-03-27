@@ -2,47 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Theme: Midnight (deep navy) ──────────────────────────────────── */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Theme: Klasik (warm dark – main theme) ──────────────────────── */
 :root,
-[data-theme='midnight'] {
-  --bg-root: #0a0c14;
-  --bg-card: #10131e;
-  --bg-card-hover: #171c2a;
-  --border-card: rgba(100, 140, 220, 0.06);
-  --color-body: #c4c9d8;
-  --color-muted: #5e6578;
-  --color-faint: #8890a4;
-  --accent: #6b8fd4;
-  --accent-dim: rgba(107, 143, 212, 0.1);
-  --glow: rgba(70, 110, 200, 0.04);
+[data-theme='klasik'] {
+  --bg-root: #0d0e12;
+  --bg-card: #141518;
+  --bg-card-hover: #1c1d22;
+  --border-card: rgba(180, 160, 130, 0.06);
+  --color-body: #d0ccc4;
+  --color-muted: #7a7568;
+  --color-faint: #a09888;
+  --accent: #c4956a;
+  --accent-dim: rgba(196, 149, 106, 0.08);
+  --glow: rgba(180, 130, 80, 0.03);
+  --theme-bg-image: none;
 }
 
-/* ── Theme: Forest (emerald dark) ─────────────────────────────────── */
-[data-theme='forest'] {
-  --bg-root: #070d09;
-  --bg-card: #0d1610;
-  --bg-card-hover: #142018;
-  --border-card: rgba(90, 170, 110, 0.06);
-  --color-body: #bccec0;
-  --color-muted: #5e7a64;
-  --color-faint: #88a48e;
-  --accent: #4faa68;
-  --accent-dim: rgba(79, 170, 104, 0.1);
-  --glow: rgba(50, 150, 80, 0.04);
+/* ── Theme: Bratislava (city theme with blue/white Slovak colors) ── */
+[data-theme='bratislava'] {
+  --bg-root: #080b12;
+  --bg-card: rgba(14, 18, 28, 0.92);
+  --bg-card-hover: rgba(22, 28, 42, 0.92);
+  --border-card: rgba(80, 120, 180, 0.08);
+  --color-body: #c8d0dc;
+  --color-muted: #6878a0;
+  --color-faint: #8898b8;
+  --accent: #5b8fd8;
+  --accent-dim: rgba(91, 143, 216, 0.08);
+  --glow: rgba(60, 100, 180, 0.04);
+  --theme-bg-image: radial-gradient(ellipse at 30% 80%, rgba(20, 40, 80, 0.3) 0%, transparent 60%),
+                    radial-gradient(ellipse at 70% 20%, rgba(30, 50, 90, 0.2) 0%, transparent 50%);
 }
 
-/* ── Theme: Ember (warm charcoal) ─────────────────────────────────── */
-[data-theme='ember'] {
-  --bg-root: #0e0a07;
-  --bg-card: #18120e;
-  --bg-card-hover: #221a14;
-  --border-card: rgba(200, 130, 60, 0.06);
-  --color-body: #d4c8bc;
-  --color-muted: #8a7a6a;
-  --color-faint: #a49484;
-  --accent: #cc8a4e;
-  --accent-dim: rgba(204, 138, 78, 0.1);
-  --glow: rgba(190, 110, 40, 0.04);
+/* ── Theme: Tatry (mountain green/stone) ──────────────────────────── */
+[data-theme='tatry'] {
+  --bg-root: #090c08;
+  --bg-card: rgba(12, 18, 12, 0.92);
+  --bg-card-hover: rgba(20, 30, 20, 0.92);
+  --border-card: rgba(100, 150, 90, 0.07);
+  --color-body: #c4d0be;
+  --color-muted: #688060;
+  --color-faint: #90a888;
+  --accent: #6aaa5c;
+  --accent-dim: rgba(106, 170, 92, 0.08);
+  --glow: rgba(60, 140, 50, 0.03);
+  --theme-bg-image: radial-gradient(ellipse at 50% 100%, rgba(20, 40, 20, 0.4) 0%, transparent 60%),
+                    radial-gradient(ellipse at 80% 30%, rgba(30, 50, 30, 0.2) 0%, transparent 40%);
 }
 
 * {

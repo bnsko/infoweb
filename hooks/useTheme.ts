@@ -2,20 +2,20 @@
 
 import { useState, useEffect, useCallback } from 'react'
 
-export type Theme = 'midnight' | 'forest' | 'ember'
+export type Theme = 'klasik' | 'bratislava' | 'tatry'
 
-export const THEMES: { key: Theme; label: string; emoji: string }[] = [
-  { key: 'midnight', label: 'Polnoc', emoji: '🌙' },
-  { key: 'forest', label: 'Les', emoji: '🌲' },
-  { key: 'ember', label: 'Žeravý', emoji: '🔥' },
+export const THEMES: { key: Theme; label: string; labelEn: string; color: string }[] = [
+  { key: 'klasik', label: 'Klasik', labelEn: 'Classic', color: '#c4956a' },
+  { key: 'bratislava', label: 'Bratislava', labelEn: 'Bratislava', color: '#5b8fd8' },
+  { key: 'tatry', label: 'Tatry', labelEn: 'Tatras', color: '#6aaa5c' },
 ]
 
 export function useTheme(): { theme: Theme; setTheme: (t: Theme) => void; isDark: boolean } {
-  const [theme, setThemeState] = useState<Theme>('midnight')
+  const [theme, setThemeState] = useState<Theme>('klasik')
 
   useEffect(() => {
-    const stored = (localStorage.getItem('infoweb-theme') as Theme) ?? 'midnight'
-    if (['midnight', 'forest', 'ember'].includes(stored)) {
+    const stored = (localStorage.getItem('infoweb-theme') as Theme) ?? 'klasik'
+    if (['klasik', 'bratislava', 'tatry'].includes(stored)) {
       setThemeState(stored)
       document.documentElement.setAttribute('data-theme', stored)
     }

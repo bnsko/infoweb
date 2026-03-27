@@ -28,8 +28,8 @@ export default function FlightsWidget() {
       {airborne.length === 0 ? (
         <p className="text-slate-500 text-sm">Žiadne aktívne lety.</p>
       ) : (
-        <div className="space-y-1 overflow-auto max-h-[280px]">
-          <div className="grid grid-cols-4 text-[10px] uppercase tracking-wide text-slate-600 pb-1 border-b border-white/5">
+        <div className="space-y-1 max-h-[280px] overflow-y-auto scrollbar-hide">
+          <div className="grid grid-cols-4 text-[10px] uppercase tracking-wide text-slate-600 pb-1 border-b border-white/5 sticky top-0 bg-[var(--bg-card)] z-[1]">
             <span>Volacia zn.</span>
             <span>Krajina</span>
             <span className="text-right">Výška</span>

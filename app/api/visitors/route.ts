@@ -14,18 +14,31 @@ interface ActiveSession {
 
 interface VisitorData {
   totalPageViews: number
-  uniqueVisitors: string[]      // hashed IPs
+  uniqueVisitors: string[]
   activeSessions: ActiveSession[]
+  todayDate: string
+  todayPageViews: number
+}
+
+function todayStr(): string {
+  return new Date().toISOString().slice(0, 10)
 }
 
 function readData(): VisitorData {
   if (!existsSync(DATA_FILE)) {
-    return { totalPageViews: 0, uniqueVisitors: [], activeSessions: [] }
+    return { totalPageViews: 0, uniqueVisitors: [], activeSessions: [], todayDate: todayStr(), todayPageViews: 0 }
   }
   try {
-    return JSON.parse(readFileSync(DATA_FILE, 'utf-8'))
+    const raw = JSON.parse(readFileSync(DATA_FILE, 'utf-8'))
+    return {
+      totalPageViews: raw.totalPageViews ?? 0,
+      uniqueVisitors: raw.uniqueVisitors ?? [],
+      activeSessions: raw.activeSessions ?? [],
+      todayDate: raw.todayDate ?? todayStr(),
+      todayPageViews: raw.todayPageViews ?? 0,
+    }
   } catch {
-    return { totalPageViews: 0, uniqueVisitors: [], activeSessions: [] }
+    return { totalPageViews: 0, uniqueVisitors: [], activeSessions: [], todayDate: todayStr(), todayPageViews: 0 }
   }
 }
 
@@ -42,7 +55,6 @@ export async function GET(request: Request) {
   const action = searchParams.get('action')
   const sessionId = searchParams.get('sid') ?? ''
 
-  // Get client IP
   const forwarded = request.headers.get('x-forwarded-for')
   const ip = forwarded?.split(',')[0]?.trim() ?? '127.0.0.1'
   const hashedIP = hashIP(ip)
@@ -51,19 +63,24 @@ export async function GET(request: Request) {
   const now = Date.now()
   const FIVE_MIN = 5 * 60 * 1000
 
+  // Reset today counter if new day
+  const today = todayStr()
+  if (data.todayDate !== today) {
+    data.todayDate = today
+    data.todayPageViews = 0
+  }
+
   // Clean expired sessions
   data.activeSessions = data.activeSessions.filter(s => now - s.lastSeen < FIVE_MIN)
 
   if (action === 'visit') {
-    // Increment page views
     data.totalPageViews++
+    data.todayPageViews++
 
-    // Track unique visitor by hashed IP
     if (!data.uniqueVisitors.includes(hashedIP)) {
       data.uniqueVisitors.push(hashedIP)
     }
 
-    // Add/update active session
     const existing = data.activeSessions.find(s => s.id === sessionId)
     if (existing) {
       existing.lastSeen = now
@@ -85,5 +102,6 @@ export async function GET(request: Request) {
     totalPageViews: data.totalPageViews,
     uniqueVisitors: data.uniqueVisitors.length,
     activeNow: data.activeSessions.length,
+    todayPageViews: data.todayPageViews,
   })
 }
