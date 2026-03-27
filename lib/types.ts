@@ -4,9 +4,11 @@ export interface WeatherCurrent {
   apparent_temperature: number
   relative_humidity_2m: number
   wind_speed_10m: number
+  wind_direction_10m: number
   weather_code: number
   precipitation: number
   cloud_cover: number
+  surface_pressure: number
 }
 
 export interface WeatherDaily {

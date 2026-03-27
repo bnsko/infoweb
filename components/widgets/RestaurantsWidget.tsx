@@ -15,6 +15,7 @@ interface Restaurant {
   description: string
   url: string
   city: string
+  tags?: string[]
 }
 
 interface Data {
@@ -50,7 +51,8 @@ function ratingStars(rating: number): string {
 export default function RestaurantsWidget() {
   const [city, setCity] = useState('bratislava')
   const [price, setPrice] = useState('all')
-  const { data, loading, refetch } = useWidget<Data>(`/api/restaurants?city=${city}&price=${encodeURIComponent(price)}`, 60 * 60 * 1000)
+  const [diet, setDiet] = useState('all')
+  const { data, loading, refetch } = useWidget<Data>(`/api/restaurants?city=${city}&price=${encodeURIComponent(price)}&diet=${diet}`, 60 * 60 * 1000)
   const { t, lang } = useLang()
 
   return (
@@ -78,7 +80,7 @@ export default function RestaurantsWidget() {
         ))}
       </div>
       {/* Price filter */}
-      <div className="flex items-center gap-1 mb-3">
+      <div className="flex items-center gap-1 mb-2">
         {PRICE_FILTERS.map(p => (
           <button
             key={p.key}
@@ -92,6 +94,21 @@ export default function RestaurantsWidget() {
             {p.label}
           </button>
         ))}
+      </div>
+      {/* Diet filter */}
+      <div className="flex items-center gap-1 mb-3">
+        <button onClick={() => setDiet('all')}
+          className={`text-[10px] font-bold px-2 py-0.5 rounded-md transition-all ${diet === 'all' ? 'bg-green-500/20 text-green-300 border border-green-500/30' : 'text-slate-600 hover:text-slate-400 border border-transparent'}`}>
+          🍴 {lang === 'sk' ? 'Všetky' : 'All'}
+        </button>
+        <button onClick={() => setDiet('vegetarian')}
+          className={`text-[10px] font-bold px-2 py-0.5 rounded-md transition-all ${diet === 'vegetarian' ? 'bg-green-500/20 text-green-300 border border-green-500/30' : 'text-slate-600 hover:text-slate-400 border border-transparent'}`}>
+          🥬 Vegetarian
+        </button>
+        <button onClick={() => setDiet('vegan')}
+          className={`text-[10px] font-bold px-2 py-0.5 rounded-md transition-all ${diet === 'vegan' ? 'bg-green-500/20 text-green-300 border border-green-500/30' : 'text-slate-600 hover:text-slate-400 border border-transparent'}`}>
+          🌱 Vegan
+        </button>
       </div>
       {loading && <SkeletonRows rows={6} />}
       {!loading && data && data.restaurants.length > 0 && (
@@ -110,6 +127,8 @@ export default function RestaurantsWidget() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] text-slate-200 group-hover:text-white font-semibold line-clamp-1">{r.name}</span>
+                  {r.tags?.includes('vegan') && <span className="text-[8px] bg-green-500/15 text-green-400 px-1 py-0.5 rounded-full font-bold">🌱</span>}
+                  {r.tags?.includes('vegetarian') && !r.tags?.includes('vegan') && <span className="text-[8px] bg-lime-500/15 text-lime-400 px-1 py-0.5 rounded-full font-bold">🥬</span>}
                   <span className="text-[10px] text-slate-600 shrink-0">{r.priceRange}</span>
                 </div>
                 <div className="flex items-center gap-2 mt-0.5">

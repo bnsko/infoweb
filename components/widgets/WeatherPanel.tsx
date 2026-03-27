@@ -55,7 +55,7 @@ function SunArc({ sunrise, sunset, nightLabel }: { sunrise: string; sunset: stri
   const progress = total > 0 ? elapsed / total : 0
   const isDaylight = nowMs !== null && now >= riseMs && now <= setMs
 
-  const w = 200, h = 60, pad = 10
+  const w = 260, h = 90, pad = 14
   const cx = pad + progress * (w - 2 * pad)
   const cy = h - pad - Math.sin(progress * Math.PI) * (h - 2 * pad)
   const daylightMins = Math.round(total / 60000)
@@ -63,33 +63,39 @@ function SunArc({ sunrise, sunset, nightLabel }: { sunrise: string; sunset: stri
   const dM = daylightMins % 60
 
   return (
-    <div>
-      <svg viewBox={`0 0 ${w} ${h + 14}`} className="w-full" style={{ maxHeight: 70 }}>
+    <div className="bg-white/[0.03] border border-white/5 rounded-xl p-3">
+      <svg viewBox={`0 0 ${w} ${h + 18}`} className="w-full" style={{ maxHeight: 110 }}>
         <defs>
           <linearGradient id="sunGrad" x1="0" y1="0" x2="1" y2="0">
             <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.15" />
-            <stop offset="50%" stopColor="var(--accent)" stopOpacity="0.4" />
+            <stop offset="50%" stopColor="var(--accent)" stopOpacity="0.5" />
             <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.15" />
           </linearGradient>
         </defs>
-        <line x1={pad} y1={h - pad} x2={w - pad} y2={h - pad} stroke="rgba(255,255,255,0.04)" strokeWidth={0.5} />
-        <path d={`M ${pad} ${h - pad} Q ${w / 2} ${-h * 0.5} ${w - pad} ${h - pad}`}
-              fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={1} strokeDasharray="3 4" />
+        <line x1={pad} y1={h - pad} x2={w - pad} y2={h - pad} stroke="rgba(255,255,255,0.06)" strokeWidth={0.5} />
+        <path d={`M ${pad} ${h - pad} Q ${w / 2} ${-h * 0.55} ${w - pad} ${h - pad}`}
+              fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={1.2} strokeDasharray="4 5" />
         {isDaylight && (
           <>
-            <path d={`M ${pad} ${h - pad} Q ${w / 2} ${-h * 0.5} ${w - pad} ${h - pad}`}
-                  fill="none" stroke="url(#sunGrad)" strokeWidth={2}
-                  strokeDasharray={`${progress * 300} 300`} />
-            <circle cx={cx} cy={cy} r={8} fill="var(--accent-dim)" />
+            <path d={`M ${pad} ${h - pad} Q ${w / 2} ${-h * 0.55} ${w - pad} ${h - pad}`}
+                  fill="none" stroke="url(#sunGrad)" strokeWidth={2.5}
+                  strokeDasharray={`${progress * 400} 400`} />
+            <circle cx={cx} cy={cy} r={11} fill="var(--accent-dim)" opacity="0.3" />
+            <circle cx={cx} cy={cy} r={6} fill="var(--accent-dim)" />
             <circle cx={cx} cy={cy} r={3.5} fill="var(--accent)" />
           </>
         )}
         {nowMs !== null && !isDaylight && (
-          <text x={w / 2} y={h / 2 + 2} textAnchor="middle" className="fill-slate-500 text-[9px]">🌙 {nightLabel}</text>
+          <text x={w / 2} y={h / 2 + 4} textAnchor="middle" className="fill-slate-500 text-[11px]">🌙 {nightLabel}</text>
         )}
-        <text x={pad} y={h + 10} textAnchor="start" className="fill-slate-500 text-[7px]">{formatTime(sunrise)}</text>
-        <text x={w - pad} y={h + 10} textAnchor="end" className="fill-slate-500 text-[7px]">{formatTime(sunset)}</text>
-        <text x={w / 2} y={h + 10} textAnchor="middle" className="text-[7px] font-semibold" fill="var(--accent)">{dH}h {dM}m</text>
+        {/* Sunrise icon + time */}
+        <text x={pad} y={h + 4} textAnchor="start" className="fill-amber-400 text-[9px]">☀️↗</text>
+        <text x={pad + 20} y={h + 4} textAnchor="start" className="fill-slate-400 text-[9px] font-semibold">{formatTime(sunrise)}</text>
+        {/* Sunset icon + time */}
+        <text x={w - pad} y={h + 4} textAnchor="end" className="fill-orange-400 text-[9px]">↘🌅</text>
+        <text x={w - pad - 22} y={h + 4} textAnchor="end" className="fill-slate-400 text-[9px] font-semibold">{formatTime(sunset)}</text>
+        {/* Duration */}
+        <text x={w / 2} y={h + 15} textAnchor="middle" className="text-[10px] font-bold" fill="var(--accent)">☀ {dH}h {dM}m</text>
       </svg>
     </div>
   )
@@ -118,7 +124,7 @@ function TempBar({ min, max, absMin, absMax }: { min: number; max: number; absMi
 
 /* ── Main WeatherPanel ──────────────────────────────────────────────── */
 export default function WeatherPanel() {
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const { data, loading, refetch } = useWidget<WeatherData>('/api/weather', 10 * 60 * 1000)
   const [showExtended, setShowExtended] = useState(false)
 
@@ -182,10 +188,14 @@ export default function WeatherPanel() {
                 {data.daily?.temperature_2m_max?.[0] != null && (
                   <Pill icon="🌡️" label={t('weather.maxMin')} value={`${Math.round(data.daily.temperature_2m_max[0])}°/${Math.round(data.daily.temperature_2m_min[0])}°`} />
                 )}
+                {data.current.surface_pressure != null && (
+                  <Pill icon="🌀" label={lang === 'sk' ? 'Tlak' : 'Pressure'} value={`${Math.round(data.current.surface_pressure)} hPa`} />
+                )}
+                <Pill icon="🧭" label={lang === 'sk' ? 'Smer vetra' : 'Wind dir'} value={`${data.current.wind_direction_10m ?? 0}°`} />
               </div>
 
-              {/* Right: Sun arc */}
-              <div className="lg:ml-auto flex-shrink-0 lg:w-48">
+              {/* Right: Sun arc - bigger */}
+              <div className="lg:ml-auto flex-shrink-0 lg:w-64">
                 {data.daily?.sunrise?.[0] && data.daily?.sunset?.[0] && (
                   <SunArc sunrise={data.daily.sunrise[0]} sunset={data.daily.sunset[0]} nightLabel={t('weather.night')} />
                 )}

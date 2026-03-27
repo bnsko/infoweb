@@ -11,6 +11,7 @@ interface Restaurant {
   description: string
   url: string
   city: string
+  tags?: string[]
 }
 
 // Curated real restaurants for all regional capitals
@@ -27,12 +28,18 @@ const ALL_RESTAURANTS: Restaurant[] = [
   { name: 'Hradná Hviezda', cuisine: 'Slovenská / Grécka', rating: 4.3, priceRange: '€€', location: 'Staré Mesto', description: 'Terasa s výhľadom na Dunaj pod Bratislavským hradom', url: 'https://www.google.com/maps/search/Hradna+Hviezda+Bratislava', city: 'bratislava' },
   { name: 'KORZO Gastropub', cuisine: 'Gastropub', rating: 4.5, priceRange: '€€', location: 'Staré Mesto', description: 'Moderný gastropub servírujúci lokálne špeciality a craft pivo', url: 'https://www.google.com/maps/search/KORZO+Gastropub+Bratislava', city: 'bratislava' },
   { name: 'U Kubistu', cuisine: 'Slovenská', rating: 4.2, priceRange: '€', location: 'Staré Mesto', description: 'Jednoduché a autentické slovenské jedlá za rozumnú cenu', url: 'https://www.google.com/maps/search/U+Kubistu+Bratislava', city: 'bratislava' },
+  // Bratislava - veg/vegan
+  { name: 'Veg Life', cuisine: 'Vegánska', rating: 4.7, priceRange: '€', location: 'Staré Mesto', description: 'Plne vegánska reštaurácia s dennými menu a raw dezertmi', url: 'https://www.google.com/maps/search/Veg+Life+Bratislava', city: 'bratislava', tags: ['vegan'] },
+  { name: 'Green Buddha', cuisine: 'Ázijská / Vegánska', rating: 4.6, priceRange: '€€', location: 'Staré Mesto', description: 'Ázijská vegánska kuchyňa, tofu, tempeh a čerstvé šaláty', url: 'https://www.google.com/maps/search/Green+Buddha+Bratislava', city: 'bratislava', tags: ['vegan'] },
+  { name: 'Veggie Garden', cuisine: 'Vegetariánska', rating: 4.5, priceRange: '€', location: 'Ružinov', description: 'Vegetariánske obedy s bohatým saládovým barom', url: 'https://www.google.com/maps/search/Veggie+Garden+Bratislava', city: 'bratislava', tags: ['vegetarian'] },
+  { name: 'Nutri Bistro', cuisine: 'Healthy / Vegan', rating: 4.4, priceRange: '€€', location: 'Nové Mesto', description: 'Zdravé jedlá, smoothie bowls, vegánske koláče', url: 'https://www.google.com/maps/search/Nutri+Bistro+Bratislava', city: 'bratislava', tags: ['vegan'] },
   // Košice
   { name: 'Med Malina', cuisine: 'Medzinárodná', rating: 4.7, priceRange: '€€€', location: 'Centrum', description: 'Fine dining reštaurácia s degustačným menu', url: 'https://www.google.com/maps/search/Med+Malina+Kosice', city: 'kosice' },
   { name: 'Villa Regia', cuisine: 'Slovenská / Medzinárodná', rating: 4.6, priceRange: '€€', location: 'Hlavná', description: 'Elegantná reštaurácia v historickej budove na Hlavnej', url: 'https://www.google.com/maps/search/Villa+Regia+Kosice', city: 'kosice' },
   { name: 'Hostinec', cuisine: 'Slovenská', rating: 4.5, priceRange: '€', location: 'Centrum', description: 'Tradičná slovenská kuchyňa v útulnom prostredí', url: 'https://www.google.com/maps/search/Hostinec+Kosice', city: 'kosice' },
   { name: 'Kaviareň Slávia', cuisine: 'Kaviareň / Bistro', rating: 4.4, priceRange: '€€', location: 'Hlavná', description: 'Ikonická košická kaviareň s bohatým brunčom', url: 'https://www.google.com/maps/search/Kaviaren+Slavia+Kosice', city: 'kosice' },
   { name: 'Twelve Sport Bar & Grill', cuisine: 'Americká / Grill', rating: 4.3, priceRange: '€€', location: 'Centrum', description: 'Výborné burgery a steak v športovej atmosfére', url: 'https://www.google.com/maps/search/Twelve+Sport+Bar+Kosice', city: 'kosice' },
+  { name: 'Ajvega', cuisine: 'Vegánska', rating: 4.5, priceRange: '€', location: 'Centrum', description: 'Vegánske jedlá a raw dezerty v centre Košíc', url: 'https://www.google.com/maps/search/Ajvega+Kosice', city: 'kosice', tags: ['vegan'] },
   // Žilina
   { name: 'Brasserie', cuisine: 'Francúzska / Modern', rating: 4.6, priceRange: '€€€', location: 'Centrum', description: 'Francúzsky inšpirovaná kuchyňa s modernými prvkami', url: 'https://www.google.com/maps/search/Brasserie+Zilina', city: 'zilina' },
   { name: 'Majolika', cuisine: 'Slovenská / Modern', rating: 4.5, priceRange: '€€', location: 'Centrum', description: 'Slovenská kuchyňa v modernom prevedení', url: 'https://www.google.com/maps/search/Majolika+Zilina', city: 'zilina' },
@@ -73,17 +80,25 @@ const CITY_NAMES: Record<string, string> = {
 
 const VALID_CITIES = Object.keys(CITY_NAMES)
 const VALID_PRICES = ['all', '€', '€€', '€€€']
+const VALID_DIETS = ['all', 'vegetarian', 'vegan']
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const rawCity = searchParams.get('city') ?? 'bratislava'
   const rawPrice = searchParams.get('price') ?? 'all'
+  const rawDiet = searchParams.get('diet') ?? 'all'
   const city = VALID_CITIES.includes(rawCity) ? rawCity : 'bratislava'
   const price = VALID_PRICES.includes(rawPrice) ? rawPrice : 'all'
+  const diet = VALID_DIETS.includes(rawDiet) ? rawDiet : 'all'
 
   let restaurants = ALL_RESTAURANTS.filter(r => r.city === city)
   if (price !== 'all') {
     restaurants = restaurants.filter(r => r.priceRange === price)
+  }
+  if (diet === 'vegan') {
+    restaurants = restaurants.filter(r => r.tags?.includes('vegan'))
+  } else if (diet === 'vegetarian') {
+    restaurants = restaurants.filter(r => r.tags?.includes('vegetarian') || r.tags?.includes('vegan'))
   }
 
   return NextResponse.json({
