@@ -71,7 +71,10 @@ export default function RedditWidget() {
 
       {loading && <SkeletonRows rows={7} />}
       {!loading && (error || !data) && <WidgetError />}
-      {!loading && data && (
+      {!loading && data && data.posts.length === 0 && (
+        <p className="text-sm text-slate-500 py-4 text-center">Žiadne príspevky k dispozícii</p>
+      )}
+      {!loading && data && data.posts.length > 0 && (
         <div className="space-y-0.5 max-h-[440px] overflow-y-auto">
           {data.posts.slice(0, 20).map((post, i) => (
             <a

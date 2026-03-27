@@ -20,18 +20,27 @@ function getSessionId(): string {
 export default function StatsWidget() {
   const { data, loading, refetch } = useWidget<StatsData>('/api/stats', 60 * 1000)
   const [uptime, setUptime] = useState('00:00:00')
-  const [startTime] = useState(() => Date.now())
-  const [visitors, setVisitors] = useState<{ totalPageViews: number; uniqueVisitors: number; activeNow: number } | null>(null)
+  const [serverStart, setServerStart] = useState<number | null>(null)
+  const [visitors, setVisitors] = useState<{ totalPageViews: number; uniqueVisitors: number; activeNow: number; todayPageViews: number } | null>(null)
+
+  // Get server start time from stats
+  useEffect(() => {
+    if (data?.serverStartTime && !serverStart) {
+      setServerStart(data.serverStartTime)
+    }
+  }, [data, serverStart])
 
   const tick = useCallback(() => {
-    const elapsed = Math.floor((Date.now() - startTime) / 1000)
+    if (!serverStart) return
+    const elapsed = Math.floor((Date.now() - serverStart) / 1000)
     const h = Math.floor(elapsed / 3600).toString().padStart(2, '0')
     const m = Math.floor((elapsed % 3600) / 60).toString().padStart(2, '0')
     const s = (elapsed % 60).toString().padStart(2, '0')
     setUptime(`${h}:${m}:${s}`)
-  }, [startTime])
+  }, [serverStart])
 
   useEffect(() => {
+    tick()
     const t = setInterval(tick, 1000)
     return () => clearInterval(t)
   }, [tick])
@@ -62,12 +71,12 @@ export default function StatsWidget() {
         <Stat icon="🌡️" label="Teplota BA" value={loading ? '...' : data?.tempBA != null ? `${data.tempBA}°C` : 'N/A'} color="text-blue-300" />
         <Stat icon="💨" label="Vzduch BA" value={loading ? '...' : aqi != null ? `AQI ${aqi}` : 'N/A'} colorHex={aqiInfo?.color} badge={aqiInfo?.label} />
         <Stat icon="✈️" label="Lety nad SK" value={loading ? '...' : data?.flightsCount != null ? String(data.flightsCount) : 'N/A'} color="text-cyan-400" />
-        <Stat icon="🛰️" label="ISS" value={loading ? '...' : data?.issAlt != null ? `${data.issAlt} km` : 'N/A'} color="text-purple-400" />
         <Stat icon="₿" label="BTC" value={loading ? '...' : data?.btcEur != null ? `€${data.btcEur.toLocaleString('sk-SK')}` : 'N/A'} color="text-amber-400" />
         <Stat icon="📅" label="Deň roka" value={loading ? '...' : `${data?.dayOfYear ?? '?'}/${data?.daysInYear ?? 365}`} color="text-slate-400" />
         <Stat icon="🔄" label="Zdroje" value={`${SOURCES}/${SOURCES}`} color="text-emerald-400" />
         <Stat icon="👥" label="Online" value={visitors ? String(visitors.activeNow) : '...'} color="text-yellow-400" />
         <Stat icon="👁️" label="Návštevy" value={visitors ? visitors.totalPageViews.toLocaleString('sk-SK') : '...'} color="text-pink-400" />
+        <Stat icon="📊" label="Dnes" value={visitors ? String(visitors.todayPageViews) : '...'} color="text-orange-300" />
         <Stat icon="🧑" label="Unikátni" value={visitors ? String(visitors.uniqueVisitors) : '...'} color="text-emerald-300" />
         <Stat icon="⏱️" label="Uptime" value={uptime} color="text-slate-400" mono />
 

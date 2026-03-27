@@ -9,61 +9,78 @@ export async function GET(request: Request) {
   const rawSort = searchParams.get('sort') ?? 'hot'
   const sort = VALID_SORTS.includes(rawSort) ? rawSort : 'hot'
 
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), 15000)
-  try {
-    const url = sort === 'best'
-      ? `https://old.reddit.com/r/Slovakia/top.json?limit=25&t=week&raw_json=1`
-      : `https://old.reddit.com/r/Slovakia/${sort}.json?limit=25&raw_json=1`
-    
-    let res: Response | null = null
-    for (const ua of [
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)',
-      'Mozilla/5.0 (compatible; InfoSK/1.0)',
-    ]) {
+  const urls = sort === 'best'
+    ? [
+        `https://old.reddit.com/r/Slovakia/top.json?limit=25&t=week&raw_json=1`,
+        `https://www.reddit.com/r/Slovakia/top.json?limit=25&t=week&raw_json=1`,
+      ]
+    : [
+        `https://old.reddit.com/r/Slovakia/${sort}.json?limit=25&raw_json=1`,
+        `https://www.reddit.com/r/Slovakia/${sort}.json?limit=25&raw_json=1`,
+      ]
+
+  const userAgents = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
+  ]
+
+  let lastError = ''
+
+  for (const url of urls) {
+    for (const ua of userAgents) {
       try {
-        res = await fetch(url, {
+        const controller = new AbortController()
+        const timer = setTimeout(() => controller.abort(), 10000)
+
+        const res = await fetch(url, {
           cache: 'no-store',
-          headers: { 'User-Agent': ua, Accept: 'application/json' },
+          headers: {
+            'User-Agent': ua,
+            Accept: 'application/json',
+          },
           signal: controller.signal,
         })
-        if (res.ok) break
-      } catch { /* try next */ }
-    }
-    clearTimeout(timer)
-    if (!res || !res.ok) throw new Error(`Reddit API ${res?.status ?? 'unreachable'}`)
-    const json = await res.json()
+        clearTimeout(timer)
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const posts = (json.data?.children ?? []).map((child: any) => {
-      const d = child.data
-      return {
-        id: d.id,
-        title: d.title,
-        url: d.url,
-        permalink: `https://reddit.com${d.permalink}`,
-        score: d.score,
-        numComments: d.num_comments,
-        author: d.author,
-        createdUtc: d.created_utc,
-        flair: d.link_flair_text ?? null,
-        isSelf: d.is_self,
-        selftext: (d.selftext ?? '').slice(0, 250),
-        thumbnail:
-          d.thumbnail &&
-          !['self', 'default', 'nsfw', '', 'image'].includes(d.thumbnail) &&
-          d.thumbnail.startsWith('http')
-            ? d.thumbnail
-            : null,
+        if (!res.ok) {
+          lastError = `HTTP ${res.status}`
+          continue
+        }
+
+        const json = await res.json()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const posts = (json.data?.children ?? []).map((child: any) => {
+          const d = child.data
+          return {
+            id: d.id,
+            title: d.title,
+            url: d.url,
+            permalink: `https://reddit.com${d.permalink}`,
+            score: d.score,
+            numComments: d.num_comments,
+            author: d.author,
+            createdUtc: d.created_utc,
+            flair: d.link_flair_text ?? null,
+            isSelf: d.is_self,
+            selftext: (d.selftext ?? '').slice(0, 250),
+            thumbnail: null,
+          }
+        })
+
+        if (posts.length === 0) {
+          lastError = 'Empty response'
+          continue
+        }
+
+        return NextResponse.json({ posts, sort })
+      } catch (err) {
+        lastError = err instanceof Error ? err.message : 'fetch failed'
       }
-    })
-
-    return NextResponse.json({ posts, sort })
-  } catch (err) {
-    clearTimeout(timer)
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Reddit fetch failed' },
-      { status: 500 }
-    )
+    }
   }
+
+  return NextResponse.json(
+    { error: `Reddit fetch failed: ${lastError}`, posts: [], sort },
+    { status: 200 } // Return 200 with empty posts so widget shows gracefully
+  )
 }
