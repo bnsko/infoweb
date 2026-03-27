@@ -17,13 +17,13 @@ import PopulationWidget from '@/components/widgets/PopulationWidget'
 import SteamWidget from '@/components/widgets/SteamWidget'
 import SportsWidget from '@/components/widgets/SportsWidget'
 import RedditGlobalWidget from '@/components/widgets/RedditGlobalWidget'
-import SlovakFactsWidget from '@/components/widgets/SlovakFactsWidget'
 import TrafficWidget from '@/components/widgets/TrafficWidget'
 import EventsWidget from '@/components/widgets/EventsWidget'
-import FactsMetricsWidget from '@/components/widgets/FactsMetricsWidget'
+import CountersWidget from '@/components/widgets/CountersWidget'
+import WikiWidget from '@/components/widgets/WikiWidget'
 import RealEstateWidget from '@/components/widgets/RealEstateWidget'
-import WebcamsWidget from '@/components/widgets/WebcamsWidget'
 import RestaurantsWidget from '@/components/widgets/RestaurantsWidget'
+import SlovakCultureWidget from '@/components/widgets/SlovakCultureWidget'
 import { useLang } from '@/hooks/useLang'
 
 export default function Home() {
@@ -69,16 +69,16 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Vesmír, Zem & Ovzdušie — earthquakes stacked with space widget */}
+        {/* Vesmír, ISS & Prírodné javy */}
         <div>
           <SectionLabel label={t('sec.space')} />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <SpaceEnvWidget />
             <div className="space-y-4">
-              <SpaceEnvWidget />
               <EarthquakesWidget />
+              <LaunchesWidget />
             </div>
-            <LaunchesWidget />
-            <FactsMetricsWidget />
+            <CountersWidget />
           </div>
         </div>
 
@@ -92,21 +92,22 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Nehnuteľnosti & Objavuj */}
+        {/* Nehnuteľnosti & Reštaurácie */}
         <div>
           <SectionLabel label={t('sec.realestate')} />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <RealEstateWidget />
-            <WebcamsWidget />
             <RestaurantsWidget />
           </div>
         </div>
 
-        {/* Dnes & Zaujímavosti */}
+        {/* Dnes v histórii & Slovensko & Wiki */}
         <div>
           <SectionLabel label={t('sec.history')} />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <OnThisDayWidget />
+            <SlovakCultureWidget />
+            <WikiWidget />
           </div>
         </div>
 

@@ -94,13 +94,27 @@ function generateListings(region: string, propertyType: string): Listing[] {
     const area = (areas[type] ?? 50) + ((dayOfYear + i * 3) % 15)
     const rooms = type === 'Garáž' ? '-' : type.includes('Garsónka') ? '1' : type.charAt(0)
 
+    // Build a realistic direct search URL per region + type
+    const nehnutelnostiRegion: Record<string, string> = {
+      'bratislava': 'bratislava', 'kosice': 'kosice', 'zilina': 'zilina',
+      'presov': 'presov', 'nitra': 'nitra', 'banska-bystrica': 'banska-bystrica',
+      'trnava': 'trnava', 'trencin': 'trencin',
+    }
+    const nehnutelnostiType: Record<string, string> = {
+      '1-izbový byt': '1-izbove-byty', '2-izbový byt': '2-izbove-byty',
+      '3-izbový byt': '3-izbove-byty', '4-izbový byt': '4-izbove-byty',
+      'Garsónka': 'garsonky', 'Garáž': 'garaze',
+    }
+    const regionSlug = nehnutelnostiRegion[region] ?? 'bratislava'
+    const typeSlug = nehnutelnostiType[type] ?? 'byty'
+
     return {
       title: `${type} na predaj`,
       price: `${price.toLocaleString('sk-SK')} €`,
       location: isBA ? `Bratislava - ${district}` : `${regionName} - ${district}`,
       rooms,
       area: `${area} m²`,
-      url: `https://www.nehnutelnosti.sk/bratislava/byty/predaj/?q=${encodeURIComponent(type)}`,
+      url: `https://www.nehnutelnosti.sk/${regionSlug}/${typeSlug}/predaj/`,
       source: 'nehnutelnosti.sk',
     }
   })

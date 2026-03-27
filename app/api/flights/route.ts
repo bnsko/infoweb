@@ -25,8 +25,8 @@ export async function GET() {
     // OpenSky state vector: [icao24, callsign, origin_country, time_position, last_contact,
     //   longitude, latitude, baro_altitude, on_ground, velocity, true_track, ...]
     const flights: Flight[] = (json.states ?? [])
-      .filter((s: unknown[]) => s[1] && (s[1] as string).trim())
-      .slice(0, 20)
+      .filter((s: unknown[]) => s[1] && (s[1] as string).trim() && !s[8])
+      .slice(0, 30)
       .map((s: unknown[]) => ({
         icao24: String(s[0] ?? ''),
         callsign: String(s[1] ?? '').trim(),

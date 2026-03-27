@@ -23,11 +23,11 @@ export default function FlightsWidget() {
     </WidgetCard>
   )
 
-  const airborne = data.flights.filter((f) => !f.on_ground)
+  const flights = data.flights
 
   return (
-    <WidgetCard accent="cyan" title={t('flights.title')} icon="✈️" badge={airborne.length} className="h-full" onRefresh={refetch}>
-      {airborne.length === 0 ? (
+    <WidgetCard accent="cyan" title={t('flights.title')} icon="✈️" badge={data.count} className="h-full" onRefresh={refetch}>
+      {flights.length === 0 ? (
         <p className="text-slate-500 text-sm">{t('flights.noFlights')}</p>
       ) : (
         <div className="space-y-1 max-h-[280px] overflow-y-auto scrollbar-hide">
@@ -37,7 +37,7 @@ export default function FlightsWidget() {
             <span className="text-right">{t('flights.alt')}</span>
             <span className="text-right">{t('flights.speed')}</span>
           </div>
-          {airborne.slice(0, 15).map((f) => (
+          {flights.slice(0, 20).map((f) => (
             <div key={f.icao24} className="grid grid-cols-4 items-center py-1 border-b border-white/4 last:border-0">
               <div className="flex items-center gap-1">
                 <span className="text-cyan-400 text-xs font-mono font-bold leading-none">

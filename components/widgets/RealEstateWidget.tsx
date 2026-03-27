@@ -35,14 +35,23 @@ const REGION_PILLS = [
 ]
 
 const TYPE_PILLS = [
-  { key: 'all', sk: 'Všetky', en: 'All' },
-  { key: '1-izb', sk: '1-izb', en: '1-room' },
-  { key: '2-izb', sk: '2-izb', en: '2-room' },
-  { key: '3-izb', sk: '3-izb', en: '3-room' },
-  { key: '4-izb', sk: '4-izb', en: '4-room' },
-  { key: 'garsonka', sk: 'Garsónka', en: 'Studio' },
-  { key: 'garaz', sk: 'Garáž', en: 'Garage' },
+  { key: 'all', sk: 'Všetky', en: 'All', icon: '🏘️' },
+  { key: '1-izb', sk: '1-izb', en: '1-room', icon: '🛏️' },
+  { key: '2-izb', sk: '2-izb', en: '2-room', icon: '🏠' },
+  { key: '3-izb', sk: '3-izb', en: '3-room', icon: '🏡' },
+  { key: '4-izb', sk: '4-izb', en: '4-room', icon: '🏰' },
+  { key: 'garsonka', sk: 'Garsónka', en: 'Studio', icon: '📦' },
+  { key: 'garaz', sk: 'Garáž', en: 'Garage', icon: '🚗' },
 ]
+
+const TYPE_ICON_MAP: Record<string, string> = {
+  '1-izbový byt': '🛏️',
+  '2-izbový byt': '🏠',
+  '3-izbový byt': '🏡',
+  '4-izbový byt': '🏰',
+  'Garsónka': '📦',
+  'Garáž': '🚗',
+}
 
 export default function RealEstateWidget() {
   const [region, setRegion] = useState('bratislava')
@@ -98,7 +107,9 @@ export default function RealEstateWidget() {
       {!loading && data && (
         <>
           <div className="space-y-1 max-h-[360px] overflow-y-auto scrollbar-hide">
-            {data.listings.map((l, i) => (
+            {data.listings.map((l, i) => {
+              const typeIcon = TYPE_ICON_MAP[l.title.replace(' na predaj', '')] ?? '🏠'
+              return (
               <a
                 key={i}
                 href={l.url}
@@ -107,7 +118,7 @@ export default function RealEstateWidget() {
                 className="flex items-center gap-2.5 hover:bg-white/3 rounded-lg p-2 transition-colors group"
               >
                 <div className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-sm">
-                  🏠
+                  {typeIcon}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[11px] text-slate-200 group-hover:text-white leading-snug line-clamp-1 font-medium">
@@ -121,7 +132,8 @@ export default function RealEstateWidget() {
                   <span className="text-[10px] text-slate-500">{l.location}</span>
                 </div>
               </a>
-            ))}
+              )
+            })}
           </div>
           <p className="text-[10px] text-slate-600 mt-2">nehnutelnosti.sk · {data.regionName}</p>
         </>
