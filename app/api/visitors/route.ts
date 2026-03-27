@@ -1,49 +1,21 @@
 import { NextResponse } from 'next/server'
-import { readFileSync, writeFileSync, existsSync } from 'fs'
-import { join } from 'path'
 import { createHash } from 'crypto'
 
 export const dynamic = 'force-dynamic'
 
-const DATA_FILE = join(process.cwd(), '.visitor-data.json')
+// In-memory storage (persists across requests in same serverless instance)
+interface ActiveSession { id: string; lastSeen: number }
 
-interface ActiveSession {
-  id: string
-  lastSeen: number
-}
-
-interface VisitorData {
-  totalPageViews: number
-  uniqueVisitors: string[]
-  activeSessions: ActiveSession[]
-  todayDate: string
-  todayPageViews: number
+const store = {
+  totalPageViews: 0,
+  uniqueVisitors: new Set<string>(),
+  activeSessions: new Map<string, number>(),
+  todayDate: new Date().toISOString().slice(0, 10),
+  todayPageViews: 0,
 }
 
 function todayStr(): string {
   return new Date().toISOString().slice(0, 10)
-}
-
-function readData(): VisitorData {
-  if (!existsSync(DATA_FILE)) {
-    return { totalPageViews: 0, uniqueVisitors: [], activeSessions: [], todayDate: todayStr(), todayPageViews: 0 }
-  }
-  try {
-    const raw = JSON.parse(readFileSync(DATA_FILE, 'utf-8'))
-    return {
-      totalPageViews: raw.totalPageViews ?? 0,
-      uniqueVisitors: raw.uniqueVisitors ?? [],
-      activeSessions: raw.activeSessions ?? [],
-      todayDate: raw.todayDate ?? todayStr(),
-      todayPageViews: raw.todayPageViews ?? 0,
-    }
-  } catch {
-    return { totalPageViews: 0, uniqueVisitors: [], activeSessions: [], todayDate: todayStr(), todayPageViews: 0 }
-  }
-}
-
-function writeData(data: VisitorData) {
-  writeFileSync(DATA_FILE, JSON.stringify(data), 'utf-8')
 }
 
 function hashIP(ip: string): string {
@@ -59,49 +31,37 @@ export async function GET(request: Request) {
   const ip = forwarded?.split(',')[0]?.trim() ?? '127.0.0.1'
   const hashedIP = hashIP(ip)
 
-  const data = readData()
   const now = Date.now()
   const FIVE_MIN = 5 * 60 * 1000
 
   // Reset today counter if new day
   const today = todayStr()
-  if (data.todayDate !== today) {
-    data.todayDate = today
-    data.todayPageViews = 0
+  if (store.todayDate !== today) {
+    store.todayDate = today
+    store.todayPageViews = 0
   }
 
   // Clean expired sessions
-  data.activeSessions = data.activeSessions.filter(s => now - s.lastSeen < FIVE_MIN)
+  Array.from(store.activeSessions.entries()).forEach(([sid, lastSeen]) => {
+    if (now - lastSeen > FIVE_MIN) store.activeSessions.delete(sid)
+  })
 
   if (action === 'visit') {
-    data.totalPageViews++
-    data.todayPageViews++
+    store.totalPageViews++
+    store.todayPageViews++
+    store.uniqueVisitors.add(hashedIP)
 
-    if (!data.uniqueVisitors.includes(hashedIP)) {
-      data.uniqueVisitors.push(hashedIP)
-    }
-
-    const existing = data.activeSessions.find(s => s.id === sessionId)
-    if (existing) {
-      existing.lastSeen = now
-    } else if (sessionId) {
-      data.activeSessions.push({ id: sessionId, lastSeen: now })
+    if (sessionId) {
+      store.activeSessions.set(sessionId, now)
     }
   } else if (action === 'ping' && sessionId) {
-    const existing = data.activeSessions.find(s => s.id === sessionId)
-    if (existing) {
-      existing.lastSeen = now
-    } else {
-      data.activeSessions.push({ id: sessionId, lastSeen: now })
-    }
+    store.activeSessions.set(sessionId, now)
   }
 
-  writeData(data)
-
   return NextResponse.json({
-    totalPageViews: data.totalPageViews,
-    uniqueVisitors: data.uniqueVisitors.length,
-    activeNow: data.activeSessions.length,
-    todayPageViews: data.todayPageViews,
+    totalPageViews: store.totalPageViews,
+    uniqueVisitors: store.uniqueVisitors.size,
+    activeNow: store.activeSessions.size,
+    todayPageViews: store.todayPageViews,
   })
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useWidget } from '@/hooks/useWidget'
 import { getAQIInfo } from '@/lib/utils'
+import { useLang } from '@/hooks/useLang'
 import type { StatsData } from '@/lib/types'
 
 const SOURCES = 32
@@ -22,6 +23,7 @@ export default function StatsWidget() {
   const [uptime, setUptime] = useState('00:00:00')
   const [serverStart, setServerStart] = useState<number | null>(null)
   const [visitors, setVisitors] = useState<{ totalPageViews: number; uniqueVisitors: number; activeNow: number; todayPageViews: number } | null>(null)
+  const { t } = useLang()
 
   // Get server start time from stats
   useEffect(() => {
@@ -68,20 +70,19 @@ export default function StatsWidget() {
     <div className="widget-card !py-3 !px-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-amber-500/10 card-entrance relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-r from-amber-600/3 via-transparent to-transparent pointer-events-none" />
       <div className="relative flex flex-wrap items-center gap-x-5 gap-y-2 w-full">
-        <Stat icon="🌡️" label="Teplota BA" value={loading ? '...' : data?.tempBA != null ? `${data.tempBA}°C` : 'N/A'} color="text-blue-300" />
-        <Stat icon="💨" label="Vzduch BA" value={loading ? '...' : aqi != null ? `AQI ${aqi}` : 'N/A'} colorHex={aqiInfo?.color} badge={aqiInfo?.label} />
-        <Stat icon="✈️" label="Lety nad SK" value={loading ? '...' : data?.flightsCount != null ? String(data.flightsCount) : 'N/A'} color="text-cyan-400" />
-        <Stat icon="₿" label="BTC" value={loading ? '...' : data?.btcEur != null ? `€${data.btcEur.toLocaleString('sk-SK')}` : 'N/A'} color="text-amber-400" />
-        <Stat icon="📅" label="Deň roka" value={loading ? '...' : `${data?.dayOfYear ?? '?'}/${data?.daysInYear ?? 365}`} color="text-slate-400" />
-        <Stat icon="🔄" label="Zdroje" value={`${SOURCES}/${SOURCES}`} color="text-emerald-400" />
-        <Stat icon="👥" label="Online" value={visitors ? String(visitors.activeNow) : '...'} color="text-yellow-400" />
-        <Stat icon="👁️" label="Návštevy" value={visitors ? visitors.totalPageViews.toLocaleString('sk-SK') : '...'} color="text-pink-400" />
-        <Stat icon="📊" label="Dnes" value={visitors ? String(visitors.todayPageViews) : '...'} color="text-orange-300" />
-        <Stat icon="🧑" label="Unikátni" value={visitors ? String(visitors.uniqueVisitors) : '...'} color="text-emerald-300" />
-        <Stat icon="⏱️" label="Uptime" value={uptime} color="text-slate-400" mono />
+        <Stat icon="🌡️" label={t('stat.temp')} value={loading ? '...' : data?.tempBA != null ? `${data.tempBA}°C` : 'N/A'} color="text-blue-300" />
+        <Stat icon="💨" label={t('stat.air')} value={loading ? '...' : aqi != null ? `AQI ${aqi}` : 'N/A'} colorHex={aqiInfo?.color} badge={aqiInfo?.label} />
+        <Stat icon="✈️" label={t('stat.flights')} value={loading ? '...' : data?.flightsCount != null ? String(data.flightsCount) : 'N/A'} color="text-cyan-400" />
+        <Stat icon="₿" label={t('stat.btc')} value={loading ? '...' : data?.btcEur != null ? `€${data.btcEur.toLocaleString('sk-SK')}` : 'N/A'} color="text-amber-400" />
+        <Stat icon="📅" label={t('stat.dayOfYear')} value={loading ? '...' : `${data?.dayOfYear ?? '?'}/${data?.daysInYear ?? 365}`} color="text-slate-400" />
+        <Stat icon="🔄" label={t('stat.sources')} value={`${SOURCES}/${SOURCES}`} color="text-emerald-400" />
+        <Stat icon="👥" label={t('stat.online')} value={visitors ? String(visitors.activeNow) : '...'} color="text-yellow-400" />
+        <Stat icon="📊" label={t('stat.todayVisits')} value={visitors ? String(visitors.todayPageViews) : '...'} color="text-orange-300" />
+        <Stat icon="🧑" label={t('stat.unique')} value={visitors ? String(visitors.uniqueVisitors) : '...'} color="text-emerald-300" />
+        <Stat icon="⏱️" label={t('stat.uptime')} value={uptime} color="text-slate-400" mono />
 
         <div className="ml-auto flex items-center gap-3">
-          <button onClick={refetch} className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-all" title="Obnovit">
+          <button onClick={refetch} className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-all" title={t('refresh')}>
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>

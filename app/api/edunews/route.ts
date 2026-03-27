@@ -5,8 +5,9 @@ export const revalidate = 300
 
 const FEEDS = [
   { name: 'EdSurge', url: 'https://www.edsurge.com/news.rss' },
-  { name: 'Inside Higher Ed', url: 'https://www.insidehighered.com/rss/feed' },
-  { name: 'Ed Week', url: 'https://www.edweek.org/feed' },
+  { name: 'Times Higher Ed', url: 'https://www.timeshighereducation.com/news/feed' },
+  { name: 'Edutopia', url: 'https://www.edutopia.org/rss.xml' },
+  { name: 'Chronicle', url: 'https://www.chronicle.com/section/news/3/rss' },
 ]
 
 const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_' })

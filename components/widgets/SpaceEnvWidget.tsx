@@ -4,12 +4,14 @@ import { useWidget } from '@/hooks/useWidget'
 import { getAQIInfo } from '@/lib/utils'
 import type { ISSData, AirQualityData } from '@/lib/types'
 import WidgetCard from '@/components/ui/WidgetCard'
+import { useLang } from '@/hooks/useLang'
 
 function formatCoord(val: number, posLabel: string, negLabel: string) {
   return `${Math.abs(val).toFixed(2)}° ${val >= 0 ? posLabel : negLabel}`
 }
 
 export default function SpaceEnvWidget() {
+  const { t } = useLang()
   const iss = useWidget<ISSData>('/api/iss', 30 * 1000)
   const aq = useWidget<AirQualityData>('/api/airquality', 10 * 60 * 1000)
 
@@ -27,16 +29,16 @@ export default function SpaceEnvWidget() {
   const nearEurope = lat !== null && lon !== null && lat > 30 && lat < 75 && lon > -20 && lon < 50
 
   return (
-    <WidgetCard accent="purple" title="Vesmír & Ovzdušie" icon={'🌌'} onRefresh={handleRefresh}>
+    <WidgetCard accent="purple" title={t('space.title')} icon={'🌌'} onRefresh={handleRefresh}>
       <div className="space-y-3">
         {/* ISS Section */}
         <div className="bg-purple-500/8 border border-purple-500/15 rounded-xl p-3">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-lg animate-spin-slow">{'🛰️'}</span>
-            <span className="text-[10px] font-semibold text-purple-400 uppercase tracking-wide">ISS Stanica</span>
+            <span className="text-[10px] font-semibold text-purple-400 uppercase tracking-wide">{t('space.iss')}</span>
             {nearEurope && (
               <span className="text-[9px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded-full border border-purple-500/20 ml-auto">
-                {'🇪🇺'} Nad Európou
+                {'🇪🇺'} {t('space.overEurope')}
               </span>
             )}
           </div>
@@ -49,14 +51,14 @@ export default function SpaceEnvWidget() {
               {/* Mini world map */}
               <ISSMiniMap lat={lat!} lon={lon!} />
               <div className="grid grid-cols-2 gap-2 mt-2">
-                <MiniStat label="Sírka" value={formatCoord(lat!, 'S', 'J')} />
-                <MiniStat label="Dĺžka" value={formatCoord(lon!, 'V', 'Z')} />
-                <MiniStat label="Výška" value={`${Math.round(issData.altitude)} km`} accent />
-                <MiniStat label="Rýchlosť" value={`${Math.round(issData.velocity)} km/h`} />
+                <MiniStat label={t('space.lat')} value={formatCoord(lat!, 'S', 'J')} />
+                <MiniStat label={t('space.lon')} value={formatCoord(lon!, 'V', 'Z')} />
+                <MiniStat label={t('space.alt')} value={`${Math.round(issData.altitude)} km`} accent />
+                <MiniStat label={t('space.speed')} value={`${Math.round(issData.velocity)} km/h`} />
               </div>
             </>
           ) : (
-            <p className="text-xs text-slate-500">ISS dáta nedostupné</p>
+            <p className="text-xs text-slate-500">{t('space.dataUnavailable')}</p>
           )}
         </div>
 
@@ -64,7 +66,7 @@ export default function SpaceEnvWidget() {
         <div className="rounded-xl p-3" style={{ background: aqiInfo ? aqiInfo.bg : 'rgba(255,255,255,0.03)', borderWidth: 1, borderStyle: 'solid', borderColor: aqiInfo ? aqiInfo.color + '30' : 'rgba(255,255,255,0.05)' }}>
           <div className="flex items-center gap-2 mb-2">
             <span className="text-lg">{'💨'}</span>
-            <span className="text-[10px] font-semibold text-green-400 uppercase tracking-wide">Kvalita Vzduchu BA</span>
+            <span className="text-[10px] font-semibold text-green-400 uppercase tracking-wide">{t('space.airQuality')}</span>
           </div>
           {aq.loading ? (
             <div className="grid grid-cols-2 gap-2">
@@ -77,17 +79,17 @@ export default function SpaceEnvWidget() {
                   <span className="text-2xl font-bold" style={{ color: aqiInfo.color }}>{aqData.european_aqi}</span>
                   <span className="text-xs font-semibold" style={{ color: aqiInfo.color }}>{aqiInfo.label}</span>
                 </div>
-                <span className="text-[10px] text-slate-500">Európsky AQI</span>
+                <span className="text-[10px] text-slate-500">{t('space.europeanAQI')}</span>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <MiniStat label="PM2.5" value={`${aqData.pm2_5?.toFixed(1)} µg/m³`} />
                 <MiniStat label="PM10" value={`${aqData.pm10?.toFixed(1)} µg/m³`} />
-                <MiniStat label="Ozón" value={`${aqData.ozone?.toFixed(0)} µg/m³`} />
+                <MiniStat label={t('space.ozone')} value={`${aqData.ozone?.toFixed(0)} µg/m³`} />
                 <MiniStat label={`NO₂`} value={`${aqData.nitrogen_dioxide?.toFixed(1)} µg/m³`} />
               </div>
             </>
           ) : (
-            <p className="text-xs text-slate-500">Dáta nedostupné</p>
+            <p className="text-xs text-slate-500">{t('space.dataUnavailable')}</p>
           )}
         </div>
       </div>

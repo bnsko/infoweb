@@ -5,6 +5,7 @@ import type { EarthquakesResponse } from '@/lib/types'
 import WidgetCard from '@/components/ui/WidgetCard'
 import WidgetError from '@/components/ui/WidgetError'
 import SkeletonRows from '@/components/ui/SkeletonRows'
+import { useLang } from '@/hooks/useLang'
 
 function magColor(mag: number): string {
   if (mag >= 4.5) return 'text-red-400'
@@ -21,10 +22,11 @@ function magBg(mag: number): string {
 }
 
 export default function EarthquakesWidget() {
+  const { t } = useLang()
   const { data, loading, error, refetch } = useWidget<EarthquakesResponse>('/api/earthquakes', 10 * 60 * 1000)
 
   return (
-    <WidgetCard accent="orange" title="Zemetrasenia · Karpaty & okolie" icon="🌍" className="h-full" onRefresh={refetch}>
+    <WidgetCard accent="orange" title={t('eq.title')} icon="🌍" className="h-full" onRefresh={refetch}>
       {loading && <SkeletonRows rows={6} cols={2} />}
       {!loading && (error || !data) && <WidgetError />}
       {!loading && data && (
@@ -32,7 +34,7 @@ export default function EarthquakesWidget() {
           {data.earthquakes.length === 0 ? (
             <div className="text-slate-500 text-sm py-4 text-center">
               <div className="text-2xl mb-1">✅</div>
-              Žiadne zemetrasenia v poslednom čase.
+              {t('eq.none')}
             </div>
           ) : (
             <div className="space-y-1.5 max-h-[380px] overflow-y-auto">
@@ -59,14 +61,14 @@ export default function EarthquakesWidget() {
                       <span className="text-[10px] text-slate-500">
                         {new Date(eq.time).toLocaleString('sk-SK', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                       </span>
-                      <span className="text-[10px] text-slate-600">hĺbka: {eq.depth} km</span>
+                      <span className="text-[10px] text-slate-600">{t('eq.depth')}: {eq.depth} km</span>
                     </div>
                   </div>
                 </a>
               ))}
             </div>
           )}
-          <p className="text-[10px] text-slate-600 mt-2">USGS · min. M1.5 · obnova 10 min</p>
+          <p className="text-[10px] text-slate-600 mt-2">{t('eq.source')}</p>
         </>
       )}
     </WidgetCard>

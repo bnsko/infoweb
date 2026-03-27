@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useWidget } from '@/hooks/useWidget'
 import WidgetCard from '@/components/ui/WidgetCard'
+import { useLang } from '@/hooks/useLang'
 
 interface SKFact {
   icon: string
@@ -27,13 +28,14 @@ interface SKFactsData {
 }
 
 export default function SlovakFactsWidget() {
+  const { t } = useLang()
   const { data, loading, refetch } = useWidget<SKFactsData>('/api/slovakfacts', 5 * 60 * 1000)
   const [tab, setTab] = useState<'static' | 'dynamic'>('dynamic')
 
   const facts = tab === 'static' ? data?.staticFacts : data?.dynamicFacts
 
   return (
-    <WidgetCard accent="rose" title="Slovensko v číslach" icon="🇸🇰" onRefresh={refetch}>
+    <WidgetCard accent="rose" title={t('facts.title')} icon="🇸🇰" onRefresh={refetch}>
       {/* Tab switcher */}
       <div className="flex items-center gap-1 mb-3 bg-white/[0.03] rounded-lg p-0.5 border border-white/5">
         <button
@@ -42,7 +44,7 @@ export default function SlovakFactsWidget() {
             tab === 'dynamic' ? 'bg-white/8 text-white' : 'text-slate-500 hover:text-slate-300'
           }`}
         >
-          📊 Živé počítadlá
+          📊 {t('facts.liveCounters')}
         </button>
         <button
           onClick={() => setTab('static')}
@@ -50,7 +52,7 @@ export default function SlovakFactsWidget() {
             tab === 'static' ? 'bg-white/8 text-white' : 'text-slate-500 hover:text-slate-300'
           }`}
         >
-          📌 Fakty o SR
+          📌 {t('facts.factsAbout')}
         </button>
       </div>
 
@@ -76,15 +78,15 @@ export default function SlovakFactsWidget() {
           {/* Mini stats bar */}
           <div className="flex flex-wrap items-center gap-3 bg-white/[0.03] rounded-xl p-2 text-[10px]">
             <span className="text-slate-500">🗺️ {data.generalStats.area.toLocaleString('sk-SK')} km²</span>
-            <span className="text-slate-500">🏰 {data.generalStats.castles} hradov</span>
-            <span className="text-slate-500">♨️ {data.generalStats.thermalSprings.toLocaleString('sk-SK')} prameňov</span>
-            <span className="text-slate-500">🚗 {(data.generalStats.carsPerYear / 1000000).toFixed(0)}M áut/rok</span>
+            <span className="text-slate-500">🏰 {data.generalStats.castles} {t('facts.castles')}</span>
+            <span className="text-slate-500">♨️ {data.generalStats.thermalSprings.toLocaleString('sk-SK')} {t('facts.springs')}</span>
+            <span className="text-slate-500">🚗 {(data.generalStats.carsPerYear / 1000000).toFixed(0)}M {t('facts.carsYear')}</span>
             <span className="text-slate-500">✝️ {data.generalStats.unescoSites} UNESCO</span>
           </div>
         </>
       ) : null}
       <p className="text-[10px] text-slate-600 mt-2">
-        {tab === 'dynamic' ? 'Odhad na základe ročných štatistík SR · obnovuje sa automaticky' : 'Zaujímavosti o Slovensku · mení sa denne'}
+        {tab === 'dynamic' ? t('facts.sourceCounters') : t('facts.sourceFacts')}
       </p>
     </WidgetCard>
   )

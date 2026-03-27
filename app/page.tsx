@@ -22,6 +22,8 @@ import TrafficWidget from '@/components/widgets/TrafficWidget'
 import EventsWidget from '@/components/widgets/EventsWidget'
 import MetricsWidget from '@/components/widgets/MetricsWidget'
 import RealEstateWidget from '@/components/widgets/RealEstateWidget'
+import WebcamsWidget from '@/components/widgets/WebcamsWidget'
+import RestaurantsWidget from '@/components/widgets/RestaurantsWidget'
 import { useLang } from '@/hooks/useLang'
 
 export default function Home() {
@@ -31,7 +33,7 @@ export default function Home() {
     <div className="min-h-screen" style={{ background: 'var(--bg-root)', backgroundImage: 'var(--theme-bg-image, none)' }}>
       <Header />
 
-      <main className="max-w-[1680px] mx-auto px-4 pt-4 pb-10 space-y-5">
+      <main className="max-w-[1680px] mx-auto px-4 pt-4 pb-10 space-y-6">
 
         {/* Stats bar */}
         <StatsWidget />
@@ -61,7 +63,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Vesmír & Ovzdušie — stacked vertically with Earthquakes */}
+        {/* Vesmír, Zem & Ovzdušie — earthquakes stacked with space widget */}
         <div>
           <SectionLabel label={t('sec.space')} />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -74,7 +76,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Zábava & Komunita — without Epic */}
+        {/* Zábava & Komunita */}
         <div>
           <SectionLabel label={t('sec.fun')} />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -84,13 +86,22 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Nehnuteľnosti & Zaujímavosti */}
+        {/* Nehnuteľnosti & Objavuj */}
+        <div>
+          <SectionLabel label={t('sec.realestate')} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <RealEstateWidget />
+            <WebcamsWidget />
+            <RestaurantsWidget />
+          </div>
+        </div>
+
+        {/* Dnes & Zaujímavosti */}
         <div>
           <SectionLabel label={t('sec.history')} />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <OnThisDayWidget />
             <SlovakFactsWidget />
-            <RealEstateWidget />
           </div>
         </div>
 
@@ -104,9 +115,9 @@ export default function Home() {
 
       <footer className="border-t border-white/5 py-6 text-center text-xs text-slate-600">
         <p>
-          InfoSK © {new Date().getFullYear()} · Dáta: OpenMeteo · ECB · CoinGecko · Steam · ESPN · SME · Aktuality · BBC · Reuters · Reddit · Waze · HackerNews · OpenSky · USGS · Launch Library 2 · Wikimedia · Wikipedia + ďalšie
+          InfoSK © {new Date().getFullYear()} · Dáta: OpenMeteo · ECB · CoinGecko · Steam · ESPN · SME · Aktuality · BBC · Reuters · Reddit · Waze · OpenSky · USGS · Launch Library 2 · Wikimedia + ďalšie
         </p>
-        <p className="mt-1">Automatická obnova každých 30s–10 min. Všetky dáta sú verejne dostupné.</p>
+        <p className="mt-1">{t('footer.auto')}</p>
         <a href="/admin" className="inline-block mt-2 text-slate-700 hover:text-slate-400 transition-colors text-[10px]">
           ⚙️ Admin
         </a>
@@ -117,9 +128,9 @@ export default function Home() {
 
 function SectionLabel({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-3 mb-3">
-      <span className="text-sm font-semibold text-slate-400">{label}</span>
-      <div className="flex-1 h-px bg-gradient-to-r from-white/8 to-transparent" />
+    <div className="flex items-center gap-3 mb-4 mt-2">
+      <span className="text-sm font-bold tracking-wide" style={{ color: 'var(--color-faint)' }}>{label}</span>
+      <div className="flex-1 h-px bg-gradient-to-r from-white/10 via-white/5 to-transparent" />
     </div>
   )
 }

@@ -5,23 +5,25 @@ import type { CurrencyResponse } from '@/lib/types'
 import WidgetCard from '@/components/ui/WidgetCard'
 import WidgetError from '@/components/ui/WidgetError'
 import SkeletonRows from '@/components/ui/SkeletonRows'
+import { useLang } from '@/hooks/useLang'
 
 export default function CurrencyWidget() {
+  const { t } = useLang()
   const { data, loading, error, refetch } = useWidget<CurrencyResponse>('/api/currency', 60 * 60 * 1000)
 
   if (loading) return (
-    <WidgetCard accent="green" title="Kurzy mien · EUR" icon="💱" onRefresh={refetch}>
+    <WidgetCard accent="green" title={t('currency.title')} icon="💱" onRefresh={refetch}>
       <SkeletonRows rows={5} cols={2} />
     </WidgetCard>
   )
   if (error || !data) return (
-    <WidgetCard accent="green" title="Kurzy mien · EUR" icon="💱" onRefresh={refetch}>
+    <WidgetCard accent="green" title={t('currency.title')} icon="💱" onRefresh={refetch}>
       <WidgetError />
     </WidgetCard>
   )
 
   return (
-    <WidgetCard accent="green" title="Kurzy mien · EUR" icon="💱" onRefresh={refetch}>
+    <WidgetCard accent="green" title={t('currency.title')} icon="💱" onRefresh={refetch}>
       <div className="space-y-1">
         {data.rates.map((r) => (
           <div key={r.code} className="flex items-center justify-between py-1 border-b border-white/4 last:border-0">

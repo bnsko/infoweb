@@ -2,6 +2,7 @@
 
 import { useWidget } from '@/hooks/useWidget'
 import WidgetCard from '@/components/ui/WidgetCard'
+import { useLang } from '@/hooks/useLang'
 
 interface SKEvent {
   title: string
@@ -16,14 +17,14 @@ interface EventsData {
   events: SKEvent[]
 }
 
-function formatEventDate(dateStr: string): string {
+function formatEventDate(dateStr: string, t: (k: string) => string): string {
   const d = new Date(dateStr + 'T12:00:00')
   const today = new Date()
   today.setHours(12, 0, 0, 0)
   const diffDays = Math.round((d.getTime() - today.getTime()) / 86400000)
 
-  if (diffDays === 0) return 'Dnes'
-  if (diffDays === 1) return 'Zajtra'
+  if (diffDays === 0) return t('today')
+  if (diffDays === 1) return t('tomorrow')
   if (diffDays < 7) {
     const days = ['Ne', 'Po', 'Ut', 'St', 'Št', 'Pi', 'So']
     return days[d.getDay()]
@@ -40,10 +41,11 @@ const categoryColors: Record<string, string> = {
 }
 
 export default function EventsWidget() {
+  const { t } = useLang()
   const { data, loading, refetch } = useWidget<EventsData>('/api/events', 60 * 60 * 1000)
 
   return (
-    <WidgetCard accent="purple" title="Podujatia na Slovensku" icon="🎪" onRefresh={refetch}>
+    <WidgetCard accent="purple" title={t('events.title')} icon="🎪" onRefresh={refetch}>
       {loading ? (
         <div className="space-y-2">
           {[1,2,3,4,5].map(i => <div key={i} className="skeleton h-12 rounded-lg" />)}
@@ -51,9 +53,9 @@ export default function EventsWidget() {
       ) : data?.events ? (
         <div className="space-y-1.5 max-h-[340px] overflow-y-auto pr-1">
           {data.events.slice(0, 12).map((event, i) => {
-            const dateLabel = formatEventDate(event.date)
-            const isToday = dateLabel === 'Dnes'
-            const isTomorrow = dateLabel === 'Zajtra'
+            const dateLabel = formatEventDate(event.date, t)
+            const isToday = dateLabel === t('today')
+            const isTomorrow = dateLabel === t('tomorrow')
             return (
               <div
                 key={i}
@@ -83,10 +85,10 @@ export default function EventsWidget() {
         </div>
       ) : null}
       <div className="flex items-center gap-2 mt-2 text-[10px] text-slate-600">
-        <span className="flex items-center gap-1">🎵 koncerty</span>
-        <span className="flex items-center gap-1">⚽ šport</span>
-        <span className="flex items-center gap-1">🎭 kultúra</span>
-        <span className="flex items-center gap-1">🎪 festivaly</span>
+        <span className="flex items-center gap-1">🎵 {t('events.concerts')}</span>
+        <span className="flex items-center gap-1">⚽ {t('events.sport')}</span>
+        <span className="flex items-center gap-1">🎭 {t('events.culture')}</span>
+        <span className="flex items-center gap-1">🎪 {t('events.festivals')}</span>
       </div>
     </WidgetCard>
   )

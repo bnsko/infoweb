@@ -6,17 +6,19 @@ import type { FlightsResponse } from '@/lib/types'
 import WidgetCard from '@/components/ui/WidgetCard'
 import WidgetError from '@/components/ui/WidgetError'
 import SkeletonRows from '@/components/ui/SkeletonRows'
+import { useLang } from '@/hooks/useLang'
 
 export default function FlightsWidget() {
+  const { t } = useLang()
   const { data, loading, error, refetch } = useWidget<FlightsResponse>('/api/flights', 60 * 1000)
 
   if (loading) return (
-    <WidgetCard accent="cyan" title="Lety nad Slovenskom" icon="✈️" className="h-full" onRefresh={refetch}>
+    <WidgetCard accent="cyan" title={t('flights.title')} icon="✈️" className="h-full" onRefresh={refetch}>
       <SkeletonRows rows={7} cols={2} />
     </WidgetCard>
   )
   if (error || !data) return (
-    <WidgetCard accent="cyan" title="Lety nad Slovenskom" icon="✈️" className="h-full" onRefresh={refetch}>
+    <WidgetCard accent="cyan" title={t('flights.title')} icon="✈️" className="h-full" onRefresh={refetch}>
       <WidgetError />
     </WidgetCard>
   )
@@ -24,16 +26,16 @@ export default function FlightsWidget() {
   const airborne = data.flights.filter((f) => !f.on_ground)
 
   return (
-    <WidgetCard accent="cyan" title="Lety nad Slovenskom" icon="✈️" badge={airborne.length} className="h-full" onRefresh={refetch}>
+    <WidgetCard accent="cyan" title={t('flights.title')} icon="✈️" badge={airborne.length} className="h-full" onRefresh={refetch}>
       {airborne.length === 0 ? (
-        <p className="text-slate-500 text-sm">Žiadne aktívne lety.</p>
+        <p className="text-slate-500 text-sm">{t('flights.noFlights')}</p>
       ) : (
         <div className="space-y-1 max-h-[280px] overflow-y-auto scrollbar-hide">
           <div className="grid grid-cols-4 text-[10px] uppercase tracking-wide text-slate-600 pb-1 border-b border-white/5 sticky top-0 bg-[var(--bg-card)] z-[1]">
-            <span>Volacia zn.</span>
-            <span>Krajina</span>
-            <span className="text-right">Výška</span>
-            <span className="text-right">Rýchlosť</span>
+            <span>{t('flights.callsign')}</span>
+            <span>{t('flights.country')}</span>
+            <span className="text-right">{t('flights.alt')}</span>
+            <span className="text-right">{t('flights.speed')}</span>
           </div>
           {airborne.slice(0, 15).map((f) => (
             <div key={f.icao24} className="grid grid-cols-4 items-center py-1 border-b border-white/4 last:border-0">
@@ -53,7 +55,7 @@ export default function FlightsWidget() {
           ))}
         </div>
       )}
-      <p className="text-[10px] text-slate-600 mt-2">OpenSky Network · aktualizácia 1 min</p>
+      <p className="text-[10px] text-slate-600 mt-2">{t('flights.source')}</p>
     </WidgetCard>
   )
 }

@@ -5,8 +5,9 @@ export const revalidate = 300
 
 const FEEDS = [
   { name: 'Eater', url: 'https://www.eater.com/rss/index.xml' },
-  { name: 'Food Network', url: 'https://www.foodnetwork.com/fn-dish/rss.xml' },
   { name: 'Serious Eats', url: 'https://www.seriouseats.com/feed' },
+  { name: 'Food52', url: 'https://food52.com/blog.rss' },
+  { name: 'Bon Appétit', url: 'https://www.bonappetit.com/feed/rss' },
 ]
 
 const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_' })

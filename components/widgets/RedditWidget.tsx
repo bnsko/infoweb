@@ -7,15 +7,16 @@ import type { RedditResponse } from '@/lib/types'
 import WidgetCard from '@/components/ui/WidgetCard'
 import WidgetError from '@/components/ui/WidgetError'
 import SkeletonRows from '@/components/ui/SkeletonRows'
+import { useLang } from '@/hooks/useLang'
 
-const SORTS = [
-  { key: 'hot',  label: '🔥 Hot' },
-  { key: 'new',  label: '🆕 Nové' },
-  { key: 'best', label: '⭐ Best' },
-  { key: 'top',  label: '📈 Top' },
+const SORT_KEYS = [
+  { key: 'hot',  emoji: '🔥', tKey: 'Hot' },
+  { key: 'new',  emoji: '🆕', tKey: 'reddit.new' },
+  { key: 'best', emoji: '⭐', tKey: 'Best' },
+  { key: 'top',  emoji: '📈', tKey: 'Top' },
 ] as const
 
-type Sort = (typeof SORTS)[number]['key']
+type Sort = (typeof SORT_KEYS)[number]['key']
 
 function RefreshBtn({ onClick }: { onClick: () => void }) {
   const [spinning, setSpinning] = useState(false)
@@ -37,6 +38,7 @@ function formatScore(n: number): string {
 }
 
 export default function RedditWidget() {
+  const { t } = useLang()
   const [sort, setSort] = useState<Sort>('hot')
   const { data, loading, error, refetch } = useWidget<RedditResponse>(
     `/api/reddit?sort=${sort}`,
@@ -52,7 +54,7 @@ export default function RedditWidget() {
           <span>r/Slovakia</span>
         </div>
         <div className="flex items-center gap-1">
-          {SORTS.map((s) => (
+          {SORT_KEYS.map((s) => (
             <button
               key={s.key}
               onClick={() => setSort(s.key)}
@@ -62,7 +64,7 @@ export default function RedditWidget() {
                   : 'text-slate-500 hover:text-slate-300 hover:bg-white/4'
               }`}
             >
-              {s.label}
+              {s.emoji} {s.tKey.startsWith('reddit.') ? t(s.tKey) : s.tKey}
             </button>
           ))}
           <RefreshBtn onClick={refetch} />
@@ -72,7 +74,7 @@ export default function RedditWidget() {
       {loading && <SkeletonRows rows={7} />}
       {!loading && (error || !data) && <WidgetError />}
       {!loading && data && data.posts.length === 0 && (
-        <p className="text-sm text-slate-500 py-4 text-center">Žiadne príspevky k dispozícii</p>
+        <p className="text-sm text-slate-500 py-4 text-center">{t('reddit.noPosts')}</p>
       )}
       {!loading && data && data.posts.length > 0 && (
         <div className="space-y-0.5 max-h-[440px] overflow-y-auto">
@@ -112,7 +114,7 @@ export default function RedditWidget() {
           ))}
         </div>
       )}
-      <p className="text-[10px] text-slate-600 mt-2">reddit.com/r/Slovakia · obnova 5 min</p>
+      <p className="text-[10px] text-slate-600 mt-2">reddit.com/r/Slovakia · {t('reddit.source')}</p>
     </WidgetCard>
   )
 }

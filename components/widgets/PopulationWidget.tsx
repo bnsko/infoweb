@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useLang } from '@/hooks/useLang'
 
 // Annual rates (2024-2026 estimates)
 const WORLD = {
@@ -23,6 +24,7 @@ function formatNum(n: number): string {
 type Scope = 'sk' | 'world'
 
 export default function PopulationWidget() {
+  const { t } = useLang()
   const [scope, setScope] = useState<Scope>('sk')
   const [tick, setTick] = useState(0)
   const [yearStart] = useState(() => {
@@ -52,7 +54,7 @@ export default function PopulationWidget() {
         <div className="flex items-center justify-between mb-3">
           <div className="widget-title mb-0">
             <span>{'🌎'}</span>
-            <span>Populácia {scope === 'sk' ? 'Slovenska' : 'Sveta'}</span>
+            <span>{scope === 'sk' ? t('pop.sk') : t('pop.world')}</span>
           </div>
           <div className="flex items-center bg-white/5 rounded-lg p-0.5">
             <button
@@ -69,14 +71,14 @@ export default function PopulationWidget() {
                 scope === 'world' ? 'bg-rose-500/20 text-rose-300 shadow-sm' : 'text-slate-500 hover:text-slate-300'
               }`}
             >
-              {'🌍'} Svet
+              {'🌍'} {t('pop.worldBtn')}
             </button>
           </div>
         </div>
 
         {/* Population counter */}
         <div className="text-center mb-4">
-          <div className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">Aktuálna populácia</div>
+          <div className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">{t('pop.current')}</div>
           <div className="text-3xl font-bold text-white font-mono tabular-nums tracking-tight pop-counter">
             {formatNum(currentPop)}
           </div>
@@ -85,14 +87,14 @@ export default function PopulationWidget() {
         {/* Today stats */}
         <div className="grid grid-cols-2 gap-3 mb-3">
           <CounterBox
-            label="Narodení dnes"
+            label={t('pop.bornToday')}
             value={Math.floor(birthsToday)}
             icon={'👶'}
             color="text-green-400"
             perSec={ratesPerMs(src.birthsPerYear) * 1000}
           />
           <CounterBox
-            label="ÚMrtí dnes"
+            label={t('pop.deathsToday')}
             value={Math.floor(deathsToday)}
             icon={'⚔️'}
             color="text-red-400"
@@ -103,13 +105,13 @@ export default function PopulationWidget() {
         {/* Year stats */}
         <div className="grid grid-cols-2 gap-3">
           <CounterBox
-            label="Narodení tento rok"
+            label={t('pop.bornYear')}
             value={Math.floor(birthsYear)}
             icon={'🎉'}
             color="text-green-400"
           />
           <CounterBox
-            label="ÚMrtí tento rok"
+            label={t('pop.deathsYear')}
             value={Math.floor(deathsYear)}
             icon={'🕊️'}
             color="text-red-400"
@@ -118,14 +120,14 @@ export default function PopulationWidget() {
 
         {/* Net growth */}
         <div className="mt-3 bg-white/3 rounded-xl p-2 text-center">
-          <div className="text-[10px] text-slate-500">Prirodzený prírastok dnes</div>
+          <div className="text-[10px] text-slate-500">{t('pop.increase')}</div>
           <div className="text-sm font-bold text-emerald-400 font-mono tabular-nums">
             +{formatNum(birthsToday - deathsToday)}
           </div>
         </div>
 
         <p className="text-[10px] text-slate-600 mt-2 text-center">
-          Odhad na základe ročných štatistík {'·'} {scope === 'sk' ? 'ŠÚ SR' : 'UN/WHO'}
+          {t('pop.source')} {'·'} {scope === 'sk' ? 'ŠÚ SR' : 'UN/WHO'}
         </p>
       </div>
     </div>

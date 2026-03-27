@@ -3,6 +3,7 @@
 import { useWidget } from '@/hooks/useWidget'
 import WidgetCard from '@/components/ui/WidgetCard'
 import SkeletonRows from '@/components/ui/SkeletonRows'
+import { useLang } from '@/hooks/useLang'
 
 interface Match {
   id: string | number
@@ -21,12 +22,12 @@ interface SportsData {
   source: string
 }
 
-function getStatusLabel(status: string): { label: string; color: string } {
+function getStatusLabel(status: string, t: (k: string) => string): { label: string; color: string } {
   const s = status.toUpperCase()
   if (s.includes('LIVE') || s.includes('IN_PLAY') || s === 'STATUS_IN_PROGRESS') return { label: '🔴 LIVE', color: 'text-red-400' }
-  if (s.includes('PAUSE') || s === 'STATUS_HALFTIME') return { label: '⏸️ Polčas', color: 'text-yellow-400' }
-  if (s.includes('FINISH') || s === 'STATUS_FINAL') return { label: '✅ Koniec', color: 'text-green-400' }
-  if (s.includes('SCHEDULED') || s === 'STATUS_SCHEDULED') return { label: '⏰ Plán.', color: 'text-slate-500' }
+  if (s.includes('PAUSE') || s === 'STATUS_HALFTIME') return { label: `⏸️ ${t('sports.halftime')}`, color: 'text-yellow-400' }
+  if (s.includes('FINISH') || s === 'STATUS_FINAL') return { label: `✅ ${t('sports.end')}`, color: 'text-green-400' }
+  if (s.includes('SCHEDULED') || s === 'STATUS_SCHEDULED') return { label: `⏰ ${t('sports.scheduled')}`, color: 'text-slate-500' }
   return { label: status, color: 'text-slate-500' }
 }
 
@@ -37,19 +38,20 @@ function formatMatchTime(iso: string): string {
 }
 
 export default function SportsWidget() {
+  const { t } = useLang()
   const { data, loading, error, refetch } = useWidget<SportsData>('/api/sportscore', 60 * 1000)
 
   return (
-    <WidgetCard accent="green" title="⚽ Šport Live" icon="" onRefresh={refetch}>
+    <WidgetCard accent="green" title={`⚽ ${t('sports.title')}`} icon="" onRefresh={refetch}>
       {loading && <SkeletonRows rows={4} />}
-      {!loading && error && <p className="text-xs text-slate-500">Chyba načítania</p>}
+      {!loading && error && <p className="text-xs text-slate-500">{t('error')}</p>}
       {!loading && data && (
         <div className="space-y-1 max-h-[380px] overflow-y-auto">
           {data.matches.length === 0 && (
-            <p className="text-xs text-slate-500 py-4 text-center">Momentálne žiadne zápasy</p>
+            <p className="text-xs text-slate-500 py-4 text-center">{t('sports.noMatches')}</p>
           )}
           {data.matches.map((m) => {
-            const statusInfo = getStatusLabel(m.status)
+            const statusInfo = getStatusLabel(m.status, t)
             const isLive = statusInfo.label.includes('LIVE')
             return (
               <div
@@ -89,7 +91,7 @@ export default function SportsWidget() {
           })}
         </div>
       )}
-      <p className="text-[10px] text-slate-600 mt-2">{data?.source ?? 'ESPN'} · obnova 1 min</p>
+      <p className="text-[10px] text-slate-600 mt-2">{data?.source ?? 'ESPN'} · {t('sports.source')}</p>
     </WidgetCard>
   )
 }

@@ -5,6 +5,7 @@ import { useWidget } from '@/hooks/useWidget'
 import { getWeatherInfo, formatShortDate } from '@/lib/utils'
 import type { WeatherData } from '@/lib/types'
 import WidgetCard from '@/components/ui/WidgetCard'
+import { useLang } from '@/hooks/useLang'
 
 function getWeatherAnimation(code: number): string {
   if (code >= 95) return 'anim-shake'
@@ -28,15 +29,16 @@ function uvColor(uv: number): string {
 }
 
 function uvLabel(uv: number): string {
-  if (uv <= 2) return 'Nízke'
-  if (uv <= 5) return 'Stredné'
-  if (uv <= 7) return 'Vysoké'
-  if (uv <= 10) return 'Veľmi vysoké'
-  return 'Extrémne'
+  // Note: actual translation happens in JSX via t() calls
+  if (uv <= 2) return 'weather.uvLow'
+  if (uv <= 5) return 'weather.uvMed'
+  if (uv <= 7) return 'weather.uvHigh'
+  if (uv <= 10) return 'weather.uvVeryHigh'
+  return 'weather.uvExtreme'
 }
 
 /* ── Elegant Sun Arc ─────────────────────────────────────────────────── */
-function SunArc({ sunrise, sunset }: { sunrise: string; sunset: string }) {
+function SunArc({ sunrise, sunset, nightLabel }: { sunrise: string; sunset: string; nightLabel: string }) {
   const [nowMs, setNowMs] = useState<number | null>(null)
 
   useEffect(() => {
@@ -83,7 +85,7 @@ function SunArc({ sunrise, sunset }: { sunrise: string; sunset: string }) {
           </>
         )}
         {nowMs !== null && !isDaylight && (
-          <text x={w / 2} y={h / 2 + 2} textAnchor="middle" className="fill-slate-500 text-[9px]">🌙 noc</text>
+          <text x={w / 2} y={h / 2 + 2} textAnchor="middle" className="fill-slate-500 text-[9px]">🌙 {nightLabel}</text>
         )}
         <text x={pad} y={h + 10} textAnchor="start" className="fill-slate-500 text-[7px]">{formatTime(sunrise)}</text>
         <text x={w - pad} y={h + 10} textAnchor="end" className="fill-slate-500 text-[7px]">{formatTime(sunset)}</text>
@@ -116,6 +118,7 @@ function TempBar({ min, max, absMin, absMax }: { min: number; max: number; absMi
 
 /* ── Main WeatherPanel ──────────────────────────────────────────────── */
 export default function WeatherPanel() {
+  const { t } = useLang()
   const { data, loading, refetch } = useWidget<WeatherData>('/api/weather', 10 * 60 * 1000)
   const [showExtended, setShowExtended] = useState(false)
 
@@ -164,27 +167,27 @@ export default function WeatherPanel() {
                   </div>
                   <div className="text-sm text-slate-400 mt-0.5">{currentInfo?.label}</div>
                   <div className="text-[11px] text-slate-500 mt-1">
-                    Pocit {Math.round(data.current.apparent_temperature)}° · Vlhkosť {data.current.relative_humidity_2m}%
+                    {t('weather.feels')} {Math.round(data.current.apparent_temperature)}° · {t('weather.humidity')} {data.current.relative_humidity_2m}%
                   </div>
                 </div>
               </div>
 
               {/* Middle: Quick stats pills */}
               <div className="flex flex-wrap gap-2 lg:mt-1">
-                <Pill icon="💨" label="Vietor" value={`${Math.round(data.current.wind_speed_10m)} km/h`} />
-                <Pill icon="💧" label="Zrážky" value={`${data.current.precipitation} mm`} />
+                <Pill icon="💨" label={t('weather.wind')} value={`${Math.round(data.current.wind_speed_10m)} km/h`} />
+                <Pill icon="💧" label={t('weather.precip')} value={`${data.current.precipitation} mm`} />
                 {todayUVMax !== null && (
                   <Pill icon="☀️" label="UV" value={`${todayUVMax.toFixed(1)}`} valueColor={uvColor(todayUVMax)} />
                 )}
                 {data.daily?.temperature_2m_max?.[0] != null && (
-                  <Pill icon="🌡️" label="Max/Min" value={`${Math.round(data.daily.temperature_2m_max[0])}°/${Math.round(data.daily.temperature_2m_min[0])}°`} />
+                  <Pill icon="🌡️" label={t('weather.maxMin')} value={`${Math.round(data.daily.temperature_2m_max[0])}°/${Math.round(data.daily.temperature_2m_min[0])}°`} />
                 )}
               </div>
 
               {/* Right: Sun arc */}
               <div className="lg:ml-auto flex-shrink-0 lg:w-48">
                 {data.daily?.sunrise?.[0] && data.daily?.sunset?.[0] && (
-                  <SunArc sunrise={data.daily.sunrise[0]} sunset={data.daily.sunset[0]} />
+                  <SunArc sunrise={data.daily.sunrise[0]} sunset={data.daily.sunset[0]} nightLabel={t('weather.night')} />
                 )}
               </div>
             </div>
@@ -192,7 +195,7 @@ export default function WeatherPanel() {
             {/* Header info */}
             <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
               <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                <span>🌤️ Počasie · Bratislava</span>
+                <span>🌤️ {t('weather.title')}</span>
                 <span className="text-slate-700">·</span>
                 <span>OpenMeteo</span>
               </div>
@@ -200,7 +203,7 @@ export default function WeatherPanel() {
                 onClick={() => setShowExtended(!showExtended)}
                 className="text-[10px] font-semibold px-3 py-1 rounded-lg border border-white/8 text-slate-400 hover:text-slate-200 hover:border-white/15 transition-all"
               >
-                {showExtended ? '7 dní' : '14 dní'}
+                {showExtended ? t('weather.7days') : t('weather.14days')}
               </button>
             </div>
           </div>
@@ -224,7 +227,7 @@ export default function WeatherPanel() {
                     }`}
                   >
                     <div className={`text-[10px] font-semibold uppercase tracking-wide leading-none ${isToday ? 'text-blue-400' : 'text-slate-500'}`}>
-                      {isToday ? 'Dnes' : formatShortDate(day).split(' ')[0]}
+                      {isToday ? t('weather.today') : formatShortDate(day).split(' ')[0]}
                     </div>
                     <div className="text-xl my-0.5 leading-none">{emoji}</div>
                     <div className="text-[11px] font-bold text-white leading-none">{max}°</div>
