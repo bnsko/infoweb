@@ -1,8 +1,8 @@
 'use client'
 
 import Header from '@/components/Header'
+import QuickSummaryWidget from '@/components/widgets/QuickSummaryWidget'
 import StatsWidget from '@/components/widgets/StatsWidget'
-import WeatherPanel from '@/components/widgets/WeatherPanel'
 import NewsFeedWidget from '@/components/widgets/NewsFeedWidget'
 import RedditWidget from '@/components/widgets/RedditWidget'
 import OnThisDayWidget from '@/components/widgets/OnThisDayWidget'
@@ -25,19 +25,22 @@ import HackerNewsWidget from '@/components/widgets/HackerNewsWidget'
 import TwitterWidget from '@/components/widgets/TwitterWidget'
 import FuelPricesWidget from '@/components/widgets/FuelPricesWidget'
 import GroceriesWidget from '@/components/widgets/GroceriesWidget'
-import ToolOfTheDayWidget from '@/components/widgets/ToolOfTheDayWidget'
+import AINewsWidget from '@/components/widgets/AINewsWidget'
 import FinanceNewsWidget from '@/components/widgets/FinanceNewsWidget'
 import DaySummaryWidget from '@/components/widgets/DaySummaryWidget'
 import GitHubTrendingWidget from '@/components/widgets/GitHubTrendingWidget'
 import MoonPhaseWidget from '@/components/widgets/MoonPhaseWidget'
-import WorldClockWidget from '@/components/widgets/WorldClockWidget'
 import FearGreedWidget from '@/components/widgets/FearGreedWidget'
 import EnergyWidget from '@/components/widgets/EnergyWidget'
 import ISSWidget from '@/components/widgets/ISSWidget'
+import InvestmentWidget from '@/components/widgets/InvestmentWidget'
+import SettingsPanel from '@/components/SettingsPanel'
 import { useLang } from '@/hooks/useLang'
+import { usePrefs } from '@/hooks/usePrefs'
 
 export default function Home() {
   const { t, lang } = useLang()
+  const { isWidgetVisible } = usePrefs()
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-root)', backgroundImage: 'var(--theme-bg-image, none)' }}>
@@ -45,127 +48,158 @@ export default function Home() {
 
       <main className="max-w-[1680px] mx-auto px-4 pt-4 pb-10 space-y-6">
 
+        {/* Quick summary - fastest news overview */}
+        {isWidgetVisible('quicksummary') && <QuickSummaryWidget />}
+
         {/* Day summary + quick nav */}
-        <DaySummaryWidget />
+        {isWidgetVisible('daysummary') && <DaySummaryWidget />}
 
-        {/* Stats bar */}
-        <StatsWidget />
-
-        {/* Weather (full width) */}
-        <div id="sec-weather">
-          <WeatherPanel />
-        </div>
+        {/* Stats bar + City Weather */}
+        {isWidgetVisible('stats') && (
+          <div id="sec-weather">
+            <StatsWidget />
+          </div>
+        )}
 
         {/* Správy (full width) */}
-        <div id="sec-news">
-          <SectionLabel label={t('sec.news')} />
-          <NewsFeedWidget />
-        </div>
+        {isWidgetVisible('news') && (
+          <div id="sec-news">
+            <SectionLabel label={t('sec.news')} />
+            <NewsFeedWidget />
+          </div>
+        )}
 
         {/* Slovensko & Financie */}
-        <div id="sec-finance">
-          <SectionLabel label={t('sec.finance')} />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <NamedayWidget />
-            <PopulationWidget />
-            <CurrencyWidget />
-            <CryptoWidget />
-          </div>
-          <div className="mt-4">
-            <FinanceNewsWidget />
-          </div>
-        </div>
-
-        {/* Doprava, Šport & Podujatia */}
-        <div id="sec-transport">
-          <SectionLabel label={t('sec.transport')} />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <TrafficWidget />
-            <FlightsWidget />
-            <div className="md:col-span-2">
-              <SportsWidget />
+        {isWidgetVisible('finance') && (
+          <div id="sec-finance">
+            <SectionLabel label={t('sec.finance')} />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <NamedayWidget />
+              <PopulationWidget />
+              <CurrencyWidget />
+              <CryptoWidget />
+            </div>
+            <div className="mt-4">
+              <FinanceNewsWidget />
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <EventsWidget />
+        )}
+
+        {/* Doprava, Šport & Podujatia */}
+        {isWidgetVisible('transport') && (
+          <div id="sec-transport">
+            <SectionLabel label={t('sec.transport')} />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <TrafficWidget />
+              <FlightsWidget />
+              <div className="md:col-span-2">
+                <SportsWidget />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <EventsWidget />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Ceny & Nákupy */}
-        <div id="sec-prices">
-          <SectionLabel label={t('sec.prices')} />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FuelPricesWidget />
-            <GroceriesWidget />
+        {isWidgetVisible('prices') && (
+          <div id="sec-prices">
+            <SectionLabel label={t('sec.prices')} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FuelPricesWidget />
+              <GroceriesWidget />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Živé štatistiky (full width) */}
-        <div>
-          <SectionLabel label={t('sec.counters')} />
-          <CountersWidget />
-        </div>
+        {isWidgetVisible('counters') && (
+          <div>
+            <SectionLabel label={t('sec.counters')} />
+            <CountersWidget />
+          </div>
+        )}
 
         {/* Vesmír & Rakety */}
-        <div id="sec-space">
-          <SectionLabel label={t('sec.space')} />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <SpaceEnvWidget />
-            <LaunchesWidget />
-            <ISSWidget />
+        {isWidgetVisible('space') && (
+          <div id="sec-space">
+            <SectionLabel label={t('sec.space')} />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <SpaceEnvWidget />
+              <LaunchesWidget />
+              <ISSWidget />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Zábava & Komunita */}
-        <div id="sec-fun">
-          <SectionLabel label={t('sec.fun')} />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <SteamWidget />
-            <RedditWidget />
-            <RedditGlobalWidget />
+        {isWidgetVisible('fun') && (
+          <div id="sec-fun">
+            <SectionLabel label={t('sec.fun')} />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <SteamWidget />
+              <RedditWidget />
+              <RedditGlobalWidget />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <TwitterWidget />
+              <HackerNewsWidget />
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <TwitterWidget />
-            <HackerNewsWidget />
-          </div>
-        </div>
+        )}
 
         {/* Reštaurácie */}
-        <div id="sec-restaurants">
-          <SectionLabel label={lang === 'sk' ? 'Reštaurácie v okolí' : 'Nearby Restaurants'} />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <RestaurantsWidget />
+        {isWidgetVisible('restaurants') && (
+          <div id="sec-restaurants">
+            <SectionLabel label={lang === 'sk' ? 'Reštaurácie v okolí' : 'Nearby Restaurants'} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <RestaurantsWidget />
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Tech & Nástroje */}
-        <div id="sec-tech">
-          <SectionLabel label={t('sec.tech')} />
-          <ToolOfTheDayWidget />
-        </div>
+        {/* Investície & Trhy */}
+        {isWidgetVisible('invest') && (
+          <div id="sec-invest">
+            <SectionLabel label={lang === 'sk' ? '📈 Investície & Trhy' : '📈 Investments & Markets'} />
+            <InvestmentWidget />
+          </div>
+        )}
+
+        {/* AI & Tech */}
+        {isWidgetVisible('ai') && (
+          <div id="sec-ai">
+            <SectionLabel label={lang === 'sk' ? '🤖 AI & Tech' : '🤖 AI & Tech'} />
+            <AINewsWidget />
+          </div>
+        )}
 
         {/* GitHub, Moon, Clock, FearGreed, Energy */}
-        <div id="sec-extras">
-          <SectionLabel label={lang === 'sk' ? '🔭 Štatistiky & Objavy' : '🔭 Stats & Extras'} />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <GitHubTrendingWidget />
-            <MoonPhaseWidget />
-            <WorldClockWidget />
+        {isWidgetVisible('extras') && (
+          <div id="sec-extras">
+            <SectionLabel label={lang === 'sk' ? '🔭 Štatistiky & Objavy' : '🔭 Stats & Extras'} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <GitHubTrendingWidget />
+              <MoonPhaseWidget />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <FearGreedWidget />
+              <EnergyWidget />
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <FearGreedWidget />
-            <EnergyWidget />
-          </div>
-        </div>
+        )}
 
         {/* História & Objavuj */}
-        <div id="sec-history">
-          <SectionLabel label={t('sec.history')} />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <OnThisDayWidget />
-            <WikiWidget />
+        {isWidgetVisible('history') && (
+          <div id="sec-history">
+            <SectionLabel label={t('sec.history')} />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <OnThisDayWidget />
+              <WikiWidget />
+            </div>
           </div>
-        </div>
+        )}
 
       </main>
 
@@ -175,6 +209,8 @@ export default function Home() {
         </p>
         <p className="mt-1">{t('footer.auto')}</p>
       </footer>
+
+      <SettingsPanel />
     </div>
   )
 }
