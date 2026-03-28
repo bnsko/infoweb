@@ -27,18 +27,25 @@ function extractItems(parsed: any, sourceName: string) {
   }))
 }
 
-async function fetchTomTomTraffic(): Promise<{ title: string; link: string; description: string; pubDate: string; source: string }[]> {
+async function fetchTomTomTraffic(): Promise<{ items: { title: string; link: string; description: string; pubDate: string; source: string }[]; accidents: number; jams: number; closures: number }> {
   try {
-    // Use open Waze-like incident feed for Slovakia area
     const res = await fetch(
       'https://www.waze.com/row-partnerhub-api/partners/11027261871/waze-feeds/4f4f7e02-b1d1-4627-876c-1a348db427d0?format=1',
       { signal: AbortSignal.timeout(5000), headers: { 'User-Agent': 'Mozilla/5.0 InfoSK/1.0' } }
     )
-    if (!res.ok) return []
+    if (!res.ok) return { items: [], accidents: 0, jams: 0, closures: 0 }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data: any = await res.json()
+    const alerts = data.alerts ?? []
+    let accidents = 0, jams = 0, closures = 0
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (data.alerts ?? []).slice(0, 8).map((a: any) => ({
+    alerts.forEach((a: any) => {
+      if (a.type === 'ACCIDENT') accidents++
+      else if (a.type === 'JAM') jams++
+      else if (a.type === 'ROAD_CLOSED') closures++
+    })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const items = alerts.slice(0, 8).map((a: any) => ({
       title: a.type === 'ACCIDENT' ? `🚗 Nehoda: ${a.street ?? 'Neznáma cesta'}` :
              a.type === 'JAM' ? `🚦 Zápcha: ${a.street ?? 'Neznáma cesta'}` :
              a.type === 'ROAD_CLOSED' ? `🚧 Uzávierka: ${a.street ?? 'Neznáma cesta'}` :
@@ -48,13 +55,14 @@ async function fetchTomTomTraffic(): Promise<{ title: string; link: string; desc
       pubDate: a.pubMillis ? new Date(a.pubMillis).toISOString() : '',
       source: 'Waze',
     }))
+    return { items, accidents, jams, closures }
   } catch {
-    return []
+    return { items: [], accidents: 0, jams: 0, closures: 0 }
   }
 }
 
 export async function GET() {
-  const [rssResults, wazeItems] = await Promise.all([
+  const [rssResults, wazeData] = await Promise.all([
     Promise.allSettled(
       FEEDS.map(async (feed) => {
         const res = await fetch(feed.url, {
@@ -82,7 +90,18 @@ export async function GET() {
     return trafficKeywords.some(kw => text.includes(kw))
   })
 
-  const allItems = [...wazeItems, ...filtered].slice(0, 15)
+  const allItems = [...wazeData.items, ...filtered].slice(0, 15)
+  const total = allItems.length
+  const congestion = total === 0 ? 'low' : total <= 4 ? 'moderate' : total <= 8 ? 'high' : 'severe'
 
-  return NextResponse.json({ items: allItems })
+  return NextResponse.json({
+    items: allItems,
+    stats: {
+      accidents: wazeData.accidents,
+      jams: wazeData.jams,
+      closures: wazeData.closures,
+      total,
+      congestion,
+    },
+  })
 }

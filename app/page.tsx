@@ -34,6 +34,14 @@ import FearGreedWidget from '@/components/widgets/FearGreedWidget'
 import EnergyWidget from '@/components/widgets/EnergyWidget'
 import ISSWidget from '@/components/widgets/ISSWidget'
 import InvestmentWidget from '@/components/widgets/InvestmentWidget'
+import FlashNewsWidget from '@/components/widgets/FlashNewsWidget'
+import LotteryWidget from '@/components/widgets/LotteryWidget'
+import HealthAlertsWidget from '@/components/widgets/HealthAlertsWidget'
+import JobsWidget from '@/components/widgets/JobsWidget'
+import DealsWidget from '@/components/widgets/DealsWidget'
+import PodcastWidget from '@/components/widgets/PodcastWidget'
+import ViralVideosWidget from '@/components/widgets/ViralVideosWidget'
+import PoliticsWidget from '@/components/widgets/PoliticsWidget'
 import SettingsPanel from '@/components/SettingsPanel'
 import { useLang } from '@/hooks/useLang'
 import { usePrefs } from '@/hooks/usePrefs'
@@ -54,6 +62,9 @@ export default function Home() {
         {/* Day summary + quick nav */}
         {isWidgetVisible('daysummary') && <DaySummaryWidget />}
 
+        {/* Flash News - breaking news ticker */}
+        {isWidgetVisible('flashnews') && <FlashNewsWidget />}
+
         {/* Stats bar + City Weather */}
         {isWidgetVisible('stats') && (
           <div id="sec-weather">
@@ -66,6 +77,14 @@ export default function Home() {
           <div id="sec-news">
             <SectionLabel label={t('sec.news')} />
             <NewsFeedWidget />
+          </div>
+        )}
+
+        {/* Politické preferencie */}
+        {isWidgetVisible('politics') && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <PoliticsWidget />
+            <HealthAlertsWidget />
           </div>
         )}
 
@@ -98,6 +117,7 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <EventsWidget />
+              <JobsWidget />
             </div>
           </div>
         )}
@@ -109,6 +129,10 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FuelPricesWidget />
               <GroceriesWidget />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <LotteryWidget />
+              <DealsWidget />
             </div>
           </div>
         )}
@@ -145,6 +169,10 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <TwitterWidget />
               <HackerNewsWidget />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <PodcastWidget />
+              <ViralVideosWidget />
             </div>
           </div>
         )}
