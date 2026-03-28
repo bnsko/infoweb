@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { format } from 'date-fns'
-import { sk, enUS } from 'date-fns/locale'
 import { getHoliday } from '@/lib/namedays'
 import { useTheme, THEMES } from '@/hooks/useTheme'
 import { useLang } from '@/hooks/useLang'
@@ -14,13 +12,10 @@ export default function Header() {
 
   useEffect(() => {
     setNow(new Date())
-    const timer = setInterval(() => setNow(new Date()), 1000)
+    const timer = setInterval(() => setNow(new Date()), 60000)
     return () => clearInterval(timer)
   }, [])
 
-  const loc = lang === 'sk' ? sk : enUS
-  const timeStr = now ? format(now, 'HH:mm:ss') : '--:--:--'
-  const dateStr = now ? format(now, 'EEEE, d. MMMM yyyy', { locale: loc }) : ''
   const holiday = now ? getHoliday(now) : null
 
   return (
@@ -39,14 +34,6 @@ export default function Header() {
             <h1 className="text-lg font-bold text-white leading-none tracking-tight">Slovakia Info</h1>
             <p className="text-[10px] text-slate-500 leading-none mt-0.5">{t('subtitle')}</p>
           </div>
-        </div>
-
-        {/* Center: Clock + Date */}
-        <div className="hidden md:flex flex-col items-center">
-          <div className="text-2xl font-mono font-bold text-white tabular-nums tracking-tight" suppressHydrationWarning>
-            {timeStr}
-          </div>
-          <div className="text-xs text-slate-400 capitalize" suppressHydrationWarning>{dateStr}</div>
         </div>
 
         {/* Right: Lang + Theme circles + Holiday + Live */}

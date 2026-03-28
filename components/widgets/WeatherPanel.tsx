@@ -154,40 +154,67 @@ function SunriseSunset({ sunrise, sunset, nightLabel }: { sunrise: string; sunse
 
 /* ── Slovakia Temperature Map ─────────────────────────────────────────── */
 function SlovakiaTempMap({ cityTemps }: { cityTemps: { key: string; name: string; temp: number }[] }) {
-  // Equirectangular projection for Slovakia
-  // Lon range: 16.84 – 22.56  Lat range: 47.73 – 49.61
-  const W = 380, H = 128
+  const W = 560, H = 200
+
+  // Equirectangular projection
   const LON_MIN = 16.84, LON_SPAN = 5.72
   const LAT_MAX = 49.61, LAT_SPAN = 1.88
-  const UW = W - 20, UH = H - 20  // usable area
+  const PAD_X = 28, PAD_Y = 18
+  const UW = W - 2 * PAD_X, UH = H - 2 * PAD_Y
 
-  const toX = (lon: number) => Math.round((lon - LON_MIN) / LON_SPAN * UW + 10)
-  const toY = (lat: number) => Math.round((LAT_MAX - lat) / LAT_SPAN * UH + 10)
+  const toX = (lon: number) => (lon - LON_MIN) / LON_SPAN * UW + PAD_X
+  const toY = (lat: number) => (LAT_MAX - lat) / LAT_SPAN * UH + PAD_Y
 
-  const CITY_POS: Record<string, { x: number; y: number }> = {
-    BA:    { x: toX(17.1077), y: toY(48.1486) },  // ~(27, 95)
-    TT:    { x: toX(17.5872), y: toY(48.3774) },  // ~(57, 82)
-    NR:    { x: toX(18.0869), y: toY(48.3069) },  // ~(89, 86)
-    TN:    { x: toX(18.0435), y: toY(48.8947) },  // ~(86, 52)
-    BB:    { x: toX(19.1503), y: toY(48.7356) },  // ~(155, 61)
-    ZA:    { x: toX(18.7394), y: toY(49.2231) },  // ~(130, 33)
-    PO:    { x: toX(21.2391), y: toY(49.0017) },  // ~(287, 46)
-    KE:    { x: toX(21.2611), y: toY(48.7163) },  // ~(288, 62)
-    TATRY: { x: toX(20.2129), y: toY(49.1972) },  // ~(222, 34)
+  // Improved Slovakia outline — ~50 control points, clockwise from SW
+  const pts: [number, number][] = [
+    [16.84, 48.25],[16.90, 47.96],[17.07, 47.87],[17.18, 47.76],[17.44, 47.76],
+    [17.62, 47.76],[17.80, 47.75],[18.07, 47.76],[18.30, 47.75],[18.62, 47.74],
+    [18.84, 47.77],[19.06, 47.75],[19.30, 47.75],[19.54, 47.76],[19.84, 47.76],
+    [20.10, 47.76],[20.38, 47.75],[20.66, 47.75],[20.88, 47.76],[21.26, 47.76],
+    [21.56, 47.78],[21.76, 47.85],[21.82, 48.00],[22.00, 48.10],[22.54, 48.36],
+    [22.56, 48.63],[22.36, 48.95],[21.84, 49.27],[21.30, 49.36],[21.00, 49.44],
+    [20.56, 49.39],[20.22, 49.41],[20.07, 49.18],[19.98, 49.20],[19.74, 49.20],
+    [19.50, 49.20],[19.38, 49.52],[18.96, 49.52],[18.76, 49.47],[18.54, 49.52],
+    [18.24, 49.52],[17.88, 49.52],[17.52, 49.10],[17.30, 48.88],[17.08, 48.84],
+    [16.94, 48.62],[16.84, 48.40],[16.84, 48.25],
+  ]
+  const borderPath = 'M ' + pts.map(([lon, lat]) => `${toX(lon).toFixed(1)},${toY(lat).toFixed(1)}`).join(' L ') + ' Z'
+
+  // River Danube (approximate)
+  const danubePts: [number, number][] = [
+    [16.84, 47.96],[17.18, 47.76],[17.62, 47.76],[18.07, 47.76],
+    [18.62, 47.74],[19.06, 47.75],[19.54, 47.76],[20.10, 47.76],[20.66, 47.75],
+  ]
+  const danubePath = 'M ' + danubePts.map(([lon, lat]) => `${toX(lon).toFixed(1)},${toY(lat).toFixed(1)}`).join(' L ')
+
+  const CITY_COORDS: Record<string, [number, number]> = {
+    BA:    [17.1077, 48.1486],
+    TT:    [17.5872, 48.3774],
+    NR:    [18.0869, 48.3069],
+    TN:    [18.0435, 48.8947],
+    BB:    [19.1503, 48.7356],
+    ZA:    [18.7394, 49.2231],
+    PO:    [21.2391, 49.0017],
+    KE:    [21.2611, 48.7163],
+    TATRY: [20.2129, 49.1972],
+  }
+
+  const CITY_NAMES: Record<string, string> = {
+    BA: 'Bratislava', TT: 'Trnava', NR: 'Nitra', TN: 'Trenčín',
+    BB: 'B. Bystrica', ZA: 'Žilina', PO: 'Prešov', KE: 'Košice', TATRY: 'Tat. Tatry',
   }
 
   function tempColor(t: number): string {
-    if (t >= 28) return '#ef4444'
-    if (t >= 22) return '#f97316'
+    if (t >= 30) return '#ef4444'
+    if (t >= 25) return '#f97316'
+    if (t >= 20) return '#fb923c'
     if (t >= 15) return '#fbbf24'
-    if (t >= 8)  return '#4ade80'
+    if (t >= 10) return '#86efac'
+    if (t >= 5)  return '#4ade80'
     if (t >= 0)  return '#60a5fa'
-    if (t >= -8) return '#818cf8'
+    if (t >= -5) return '#818cf8'
     return '#c4b5fd'
   }
-
-  // Approximate Slovakia border polygon (clockwise from W)
-  const borderPath = 'M 10,98 L 22,66 L 47,48 L 64,34 L 93,22 L 124,14 L 193,10 L 225,21 L 291,14 L 335,16 L 360,52 L 344,84 L 272,101 L 209,119 L 114,119 L 67,119 L 30,104 Z'
 
   if (cityTemps.length === 0) return null
 
@@ -196,32 +223,184 @@ function SlovakiaTempMap({ cityTemps }: { cityTemps: { key: string; name: string
       <div className="text-[10px] text-slate-500 uppercase tracking-wide font-semibold mb-2">
         🗺️ Teploty na Slovensku
       </div>
-      <div className="bg-white/[0.02] rounded-xl border border-white/5 p-1 overflow-hidden">
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 128 }}>
-          {/* Slovakia fill */}
-          <path d={borderPath} fill="rgba(30,58,138,0.18)" stroke="rgba(147,197,253,0.28)" strokeWidth={1.5} />
+      <div className="rounded-2xl border border-white/8 overflow-hidden" style={{ background: 'linear-gradient(145deg, rgba(15,23,42,0.95) 0%, rgba(17,24,50,0.95) 100%)' }}>
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 200 }}>
+          <defs>
+            <radialGradient id="sk-glow" cx="50%" cy="50%" r="60%">
+              <stop offset="0%" stopColor="#1e3a5f" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="#0f172a" stopOpacity="0" />
+            </radialGradient>
+            <filter id="sk-blur">
+              <feGaussianBlur stdDeviation="1.5" />
+            </filter>
+          </defs>
 
-          {/* City temperature dots */}
+          {/* Background glow */}
+          <ellipse cx={W/2} cy={H/2} rx={W*0.48} ry={H*0.45} fill="url(#sk-glow)" />
+
+          {/* Slovakia fill with gradient */}
+          <path d={borderPath} fill="rgba(30,60,114,0.25)" />
+
+          {/* Slovakia border */}
+          <path d={borderPath} fill="none" stroke="rgba(147,197,253,0.5)" strokeWidth={1.5} strokeLinejoin="round" />
+
+          {/* Danube river hint */}
+          <path d={danubePath} fill="none" stroke="rgba(96,165,250,0.2)" strokeWidth={1} strokeDasharray="3 3" />
+
+          {/* City temperature bubbles */}
           {cityTemps.map(city => {
-            const pos = CITY_POS[city.key]
-            if (!pos) return null
+            const coords = CITY_COORDS[city.key]
+            if (!coords) return null
+            const cx = toX(coords[0])
+            const cy = toY(coords[1])
             const color = tempColor(city.temp)
-            const label = city.key === 'TATRY' ? 'TT' : city.key
+            const name = CITY_NAMES[city.key] ?? city.key
+            const isShort = name.length <= 7
+
             return (
               <g key={city.key}>
-                <circle cx={pos.x} cy={pos.y} r={14} fill={color} opacity={0.10} />
-                <circle cx={pos.x} cy={pos.y} r={9}  fill={color} opacity={0.22} stroke={color} strokeWidth={1} />
-                <circle cx={pos.x} cy={pos.y} r={4}  fill={color} />
-                <text x={pos.x} y={pos.y - 13} textAnchor="middle" fontSize={7.5}
-                      fill="rgba(255,255,255,0.55)" fontWeight="600">{label}</text>
-                <text x={pos.x} y={pos.y + 21} textAnchor="middle" fontSize={9}
-                      fill={color} fontWeight="700">
-                  {city.temp}°
-                </text>
+                {/* Glow ring */}
+                <circle cx={cx} cy={cy} r={20} fill={color} opacity={0.06} filter="url(#sk-blur)" />
+                <circle cx={cx} cy={cy} r={13} fill={color} opacity={0.12} />
+                <circle cx={cx} cy={cy} r={7}  fill={color} opacity={0.35} stroke={color} strokeWidth={1} />
+                <circle cx={cx} cy={cy} r={3.5} fill={color} />
+
+                {/* City name */}
+                <text x={cx} y={cy - 18} textAnchor="middle" fontSize={isShort ? 8 : 7}
+                      fill="rgba(255,255,255,0.70)" fontWeight="700" letterSpacing="0.3">{name}</text>
+
+                {/* Temperature */}
+                <text x={cx} y={cy + 24} textAnchor="middle" fontSize={10.5}
+                      fill={color} fontWeight="800">{city.temp > 0 ? city.temp : city.temp}°</text>
               </g>
             )
           })}
         </svg>
+      </div>
+    </div>
+  )
+}
+
+/* ── Temperature & Precipitation Charts ─────────────────────────────── */
+function ForecastCharts({ daily }: { daily: import('@/lib/types').WeatherDaily }) {
+  const days = daily.time.length > 14 ? 14 : daily.time.length
+  if (days < 3) return null
+
+  const maxTemps  = daily.temperature_2m_max.slice(0, days)
+  const minTemps  = daily.temperature_2m_min.slice(0, days)
+  const precips   = daily.precipitation_sum.slice(0, days)
+  const codes     = daily.weather_code.slice(0, days)
+  const times     = daily.time.slice(0, days)
+
+  const W = 600, TH = 90, PH = 50
+  const PX = 12, PY_T = 10, PY_B = 14
+  const chartW = W - 2 * PX
+  const stepX = chartW / (days - 1)
+
+  const allT = [...maxTemps, ...minTemps]
+  const tMin = Math.min(...allT) - 2
+  const tMax = Math.max(...allT) + 2
+  const tRange = tMax - tMin || 1
+
+  const pMax = Math.max(...precips, 0.5)
+
+  const toTX = (i: number) => PX + i * stepX
+  const toTY = (t: number) => PY_T + (1 - (t - tMin) / tRange) * (TH - PY_T - PY_B)
+  const toBarH = (p: number) => (p / pMax) * (PH - 14)
+
+  const maxLine   = 'M ' + maxTemps.map((t, i) => `${toTX(i).toFixed(1)},${toTY(t).toFixed(1)}`).join(' L ')
+  const minLine   = 'M ' + minTemps.map((t, i) => `${toTX(i).toFixed(1)},${toTY(t).toFixed(1)}`).join(' L ')
+
+  // Area between max and min
+  const areaPath  = 'M ' + maxTemps.map((t, i) => `${toTX(i).toFixed(1)},${toTY(t).toFixed(1)}`).join(' L ')
+    + ' L ' + [...minTemps].reverse().map((t, i) => `${toTX(days-1-i).toFixed(1)},${toTY(t).toFixed(1)}`).join(' L ') + ' Z'
+
+  const today = times[0]
+  const labels = times.map(d => {
+    const date = new Date(d)
+    if (d === today) return 'dnes'
+    return date.toLocaleDateString('sk-SK', { weekday: 'short' }).slice(0, 2)
+  })
+
+  return (
+    <div className="px-5 pb-5 space-y-3">
+      {/* Temperature chart */}
+      <div>
+        <div className="text-[10px] text-slate-500 uppercase tracking-wide font-semibold mb-1.5">🌡️ Teplota — 14 dní (°C)</div>
+        <div className="bg-white/[0.02] rounded-xl border border-white/5 overflow-hidden">
+          <svg viewBox={`0 0 ${W} ${TH + 18}`} className="w-full" style={{ maxHeight: 110 }}>
+            <defs>
+              <linearGradient id="fg-area" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#f97316" stopOpacity="0.18" />
+                <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.06" />
+              </linearGradient>
+            </defs>
+
+            {/* Zero line if temps span 0 */}
+            {tMin < 0 && tMax > 0 && (
+              <line x1={PX} x2={W - PX} y1={toTY(0)} y2={toTY(0)}
+                    stroke="rgba(255,255,255,0.06)" strokeWidth={1} strokeDasharray="3 4" />
+            )}
+
+            {/* Area fill */}
+            <path d={areaPath} fill="url(#fg-area)" />
+
+            {/* Min line */}
+            <path d={minLine} fill="none" stroke="#60a5fa" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+            {/* Max line */}
+            <path d={maxLine} fill="none" stroke="#f97316" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+
+            {/* Temp labels + day labels */}
+            {maxTemps.map((t, i) => (
+              <g key={i}>
+                <text x={toTX(i)} y={toTY(t) - 4} textAnchor="middle" fontSize={8.5}
+                      fill="#f97316" fontWeight="700">{t > 0 ? `+${t}` : t}°</text>
+                <text x={toTX(i)} y={TH + 12} textAnchor="middle" fontSize={8.5}
+                      fill={i === 0 ? '#a78bfa' : 'rgba(100,116,139,0.9)'} fontWeight={i === 0 ? '800' : '500'}>
+                  {labels[i]}
+                </text>
+              </g>
+            ))}
+            {minTemps.map((t, i) => (
+              <text key={i} x={toTX(i)} y={toTY(t) + 12} textAnchor="middle" fontSize={8}
+                    fill="#60a5fa" fontWeight="600">{t}°</text>
+            ))}
+          </svg>
+        </div>
+      </div>
+
+      {/* Precipitation chart */}
+      <div>
+        <div className="text-[10px] text-slate-500 uppercase tracking-wide font-semibold mb-1.5">🌧️ Zrážky — 14 dní (mm)</div>
+        <div className="bg-white/[0.02] rounded-xl border border-white/5 overflow-hidden">
+          <svg viewBox={`0 0 ${W} ${PH}`} className="w-full" style={{ maxHeight: 60 }}>
+            <defs>
+              <linearGradient id="fg-rain" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.8" />
+                <stop offset="100%" stopColor="#1d4ed8" stopOpacity="0.3" />
+              </linearGradient>
+            </defs>
+            {precips.map((p, i) => {
+              const bw = (chartW / days) * 0.55
+              const x = PX + i * (chartW / days) + (chartW / days) * 0.225
+              const bh = toBarH(p)
+              const y  = PH - 12 - bh
+              return (
+                <g key={i}>
+                  <rect x={x} y={y} width={bw} height={bh} rx={2} fill="url(#fg-rain)" opacity={p > 0 ? 1 : 0.15} />
+                  {p > 0 && (
+                    <text x={x + bw/2} y={y - 3} textAnchor="middle" fontSize={7.5} fill="#7dd3fc" fontWeight="700">
+                      {p >= 1 ? p.toFixed(1) : p.toFixed(1)}
+                    </text>
+                  )}
+                  {/* weather emoji */}
+                  <text x={PX + i * (chartW / days) + (chartW / days) * 0.5} y={PH - 2}
+                        textAnchor="middle" fontSize={8.5} fill="rgba(100,116,139,0.7)">{codes[i] >= 61 ? '🌧' : codes[i] >= 51 ? '🌦' : codes[i] >= 3 ? '⛅' : '☀'}</text>
+                </g>
+              )
+            })}
+          </svg>
+        </div>
       </div>
     </div>
   )
@@ -403,6 +582,9 @@ export default function WeatherPanel() {
               })}
             </div>
           </div>
+
+          {/* ── Forecast Charts (temp line + precip bars) ──────────────── */}
+          {data.daily && <ForecastCharts daily={data.daily} />}
         </div>
       ) : null}
     </WidgetCard>

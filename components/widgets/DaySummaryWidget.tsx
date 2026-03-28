@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useWidget } from '@/hooks/useWidget'
 import type { StatsData, WeatherData } from '@/lib/types'
 import { getWeatherInfo, getAQIInfo } from '@/lib/utils'
@@ -30,12 +31,21 @@ export default function DaySummaryWidget() {
   const weather = useWidget<WeatherData>('/api/weather', 10 * 60 * 1000)
   const news    = useWidget<NewsData>('/api/news', 5 * 60 * 1000)
 
-  const now   = new Date()
-  const today = now.toLocaleDateString(lang === 'sk' ? 'sk-SK' : 'en-US', {
+  const [now, setNow] = useState<Date | null>(null)
+  useEffect(() => {
+    setNow(new Date())
+    const iv = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(iv)
+  }, [])
+
+  const timeStr = now ? now.toLocaleTimeString(lang === 'sk' ? 'sk-SK' : 'en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--:--:--'
+  const today   = now ? now.toLocaleDateString(lang === 'sk' ? 'sk-SK' : 'en-US', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-  })
+  }) : ''
 
   const temp    = weather.data?.current ? Math.round(weather.data.current.temperature_2m) : null
+  const maxT    = weather.data?.daily?.temperature_2m_max?.[0] != null ? Math.round(weather.data.daily.temperature_2m_max[0]) : null
+  const minT    = weather.data?.daily?.temperature_2m_min?.[0] != null ? Math.round(weather.data.daily.temperature_2m_min[0]) : null
   const wCode   = weather.data?.current?.weather_code ?? null
   const wInfo   = wCode !== null ? getWeatherInfo(wCode) : null
   const aqi     = stats.data?.aqiSK ?? stats.data?.aqi ?? null
@@ -45,49 +55,70 @@ export default function DaySummaryWidget() {
   const topHeadline = news.data?.items?.find(i => i.title)
 
   return (
-    <div className="widget-card !py-2.5 !px-4 border-violet-500/10 relative overflow-hidden card-entrance">
-      <div className="absolute inset-0 bg-gradient-to-r from-violet-600/4 via-transparent to-transparent pointer-events-none" />
-      <div className="relative flex flex-wrap items-center gap-x-4 gap-y-2">
+    <div className="widget-card !py-3 !px-4 border-violet-500/15 relative overflow-hidden card-entrance">
+      <div className="absolute inset-0 bg-gradient-to-br from-violet-600/5 via-indigo-600/3 to-transparent pointer-events-none" />
+      <div className="relative flex flex-wrap items-center gap-x-5 gap-y-2">
 
-        {/* Date */}
-        <div className="text-[11px] font-semibold text-slate-300 shrink-0 capitalize">
-          📅 {today}
+        {/* Clock + date block */}
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="flex flex-col">
+            <span className="text-2xl font-mono font-bold text-white tabular-nums tracking-tight leading-none" suppressHydrationWarning>
+              {timeStr}
+            </span>
+            <span className="text-[11px] text-slate-400 capitalize mt-0.5 leading-none" suppressHydrationWarning>{today}</span>
+          </div>
         </div>
+
+        {/* Divider */}
+        <div className="hidden md:block w-px h-8 bg-white/8 shrink-0" />
 
         {/* Weather pill */}
         {temp !== null && wInfo && (
-          <div className="flex items-center gap-1.5 bg-blue-500/8 border border-blue-500/15 rounded-lg px-2 py-1">
-            <span className="text-sm">{wInfo.emoji}</span>
-            <span className="text-[11px] font-semibold text-blue-300">{temp}°C</span>
-            <span className="text-[10px] text-slate-500">{wInfo.label}</span>
+          <div className="flex items-center gap-1.5 bg-blue-500/8 border border-blue-500/18 rounded-xl px-3 py-1.5 shrink-0">
+            <span className="text-lg leading-none">{wInfo.emoji}</span>
+            <div>
+              <div className="flex items-center gap-1">
+                <span className="text-[13px] font-bold text-blue-300 leading-none">{temp}°C</span>
+                {maxT !== null && minT !== null && (
+                  <span className="text-[10px] text-slate-500 leading-none">
+                    <span className="text-orange-400">↑{maxT}°</span> <span className="text-blue-400">↓{minT}°</span>
+                  </span>
+                )}
+              </div>
+              <div className="text-[9px] text-slate-500 leading-none mt-0.5">{wInfo.label}</div>
+            </div>
           </div>
         )}
 
         {/* AQI pill */}
         {aqi !== null && aqiInfo && (
-          <div className="flex items-center gap-1.5 bg-white/[0.03] border border-white/8 rounded-lg px-2 py-1">
-            <span className="text-sm">💨</span>
-            <span className="text-[11px] font-semibold" style={{ color: aqiInfo.color }}>AQI {aqi}</span>
-            <span className="text-[10px]" style={{ color: aqiInfo.color }}>{aqiInfo.label}</span>
+          <div className="flex items-center gap-1.5 bg-white/[0.03] border border-white/10 rounded-xl px-3 py-1.5 shrink-0">
+            <span className="text-lg leading-none">💨</span>
+            <div>
+              <div className="text-[13px] font-bold leading-none" style={{ color: aqiInfo.color }}>AQI {aqi}</div>
+              <div className="text-[9px] leading-none mt-0.5" style={{ color: aqiInfo.color }}>{aqiInfo.label}</div>
+            </div>
           </div>
         )}
 
         {/* EUR/USD pill */}
         {eur != null && (
-          <div className="flex items-center gap-1.5 bg-emerald-500/8 border border-emerald-500/15 rounded-lg px-2 py-1">
-            <span className="text-sm">💶</span>
-            <span className="text-[11px] font-semibold text-emerald-300">EUR/USD</span>
-            <span className="text-[10px] text-slate-400 font-mono">{eur.toFixed(4)}</span>
+          <div className="flex items-center gap-1.5 bg-emerald-500/8 border border-emerald-500/18 rounded-xl px-3 py-1.5 shrink-0">
+            <span className="text-lg leading-none">💶</span>
+            <div>
+              <div className="text-[13px] font-bold text-emerald-300 leading-none font-mono">{eur.toFixed(4)}</div>
+              <div className="text-[9px] text-slate-500 leading-none mt-0.5">EUR/USD</div>
+            </div>
           </div>
         )}
 
         {/* Top headline */}
         {topHeadline && (
           <a href={topHeadline.link} target="_blank" rel="noopener noreferrer"
-             className="flex items-center gap-1.5 min-w-0 max-w-xs xl:max-w-md hover:opacity-80 transition-opacity">
+             className="hidden xl:flex items-center gap-1.5 min-w-0 max-w-sm hover:opacity-80 transition-opacity">
             <span className="text-[10px] text-slate-600 shrink-0">📰</span>
             <span className="text-[10px] text-slate-400 truncate">{topHeadline.title}</span>
-            <span className="text-[10px] text-slate-700 shrink-0">↗</span>
+            <span className="text-[10px] text-slate-600 shrink-0">↗</span>
           </a>
         )}
 
@@ -97,11 +128,11 @@ export default function DaySummaryWidget() {
             <button
               key={s.id}
               onClick={() => scrollTo(s.id)}
-              className="flex items-center gap-1 text-[9px] font-semibold px-2 py-1 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-white/5 border border-transparent hover:border-white/8 transition-all"
+              className="flex items-center gap-1 text-[9px] font-semibold px-2 py-1.5 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-white/5 border border-transparent hover:border-white/10 transition-all"
               title={lang === 'sk' ? s.labelSk : s.labelEn}
             >
               <span>{s.icon}</span>
-              <span className="hidden xl:inline">{lang === 'sk' ? s.labelSk : s.labelEn}</span>
+              <span className="hidden lg:inline">{lang === 'sk' ? s.labelSk : s.labelEn}</span>
             </button>
           ))}
         </div>
