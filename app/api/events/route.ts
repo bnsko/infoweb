@@ -9,6 +9,7 @@ interface SKEvent {
   city: string
   category: 'concert' | 'sport' | 'culture' | 'festival' | 'other'
   emoji: string
+  url?: string
 }
 
 // Generate upcoming events based on date patterns, real Slovak venues and recurring events
@@ -90,10 +91,16 @@ function generateEvents(): SKEvent[] {
       const itemIdx = (seed * 3 + e * 11 + d * 5) % src.list.length
       const item = src.list[itemIdx]
 
+      const urlQuery = encodeURIComponent(`${item.title} ${item.city}`)
+      const url = item.category === 'concert' || item.category === 'festival'
+        ? `https://www.ticketportal.sk/event.aspx?id=search&q=${urlQuery}`
+        : `https://www.google.com/search?q=${urlQuery}+${dateStr}`
+
       events.push({
         ...item,
         date: dateStr,
         emoji: categoryEmojis[item.category],
+        url,
       })
     }
   }

@@ -20,16 +20,17 @@ export async function GET() {
   const lats = SK_CITIES.map(c => c.lat).join(',')
   const lons = SK_CITIES.map(c => c.lon).join(',')
 
-  const [flightsRes, aqRes, eurUsdRes, cityWeatherRes] = await Promise.allSettled([
+  const [flightsRes, cityAQIRes, eurUsdRes, cityWeatherRes] = await Promise.allSettled([
     fetch(
       `https://opensky-network.org/api/states/all` +
         `?lamin=${SK_BBOX.lamin}&lomin=${SK_BBOX.lomin}&lamax=${SK_BBOX.lamax}&lomax=${SK_BBOX.lomax}`,
       { next: { revalidate: 60 }, signal: AbortSignal.timeout(5000) }
     ),
+    // Multi-location AQI for all SK cities at once
     fetch(
-      `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=48.1486&longitude=17.1077` +
-        `&current=european_aqi&timezone=Europe/Bratislava`,
-      { next: { revalidate: 600 }, signal: AbortSignal.timeout(5000) }
+      `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lats}&longitude=${lons}` +
+        `&current=european_aqi&timezone=Europe%2FBratislava`,
+      { next: { revalidate: 600 }, signal: AbortSignal.timeout(8000) }
     ),
     fetch('https://open.er-api.com/v6/latest/EUR', {
       next: { revalidate: 3600 },
@@ -45,9 +46,11 @@ export async function GET() {
 
   let flightsCount = null
   let tempBA = null
-  let aqi = null
+  let aqi: number | null = null
+  let aqiSK: number | null = null
   let eurToUsd = null
   let cityTemps: { key: string; name: string; temp: number }[] = []
+  let cityAQI: { key: string; name: string; aqi: number }[] = []
 
   if (flightsRes.status === 'fulfilled' && flightsRes.value.ok) {
     try {
@@ -57,10 +60,18 @@ export async function GET() {
     } catch { /* ignore */ }
   }
 
-  if (aqRes.status === 'fulfilled' && aqRes.value.ok) {
+  if (cityAQIRes.status === 'fulfilled' && cityAQIRes.value.ok) {
     try {
-      const j = await aqRes.value.json()
-      aqi = j.current?.european_aqi ?? null
+      const j = await cityAQIRes.value.json()
+      const arr = Array.isArray(j) ? j : [j]
+      cityAQI = SK_CITIES.map((city, i) => ({
+        key: city.key,
+        name: city.name,
+        aqi: Math.round(arr[i]?.current?.european_aqi ?? 0),
+      }))
+      aqi = cityAQI.find(c => c.key === 'BA')?.aqi ?? null
+      const valid = cityAQI.filter(c => c.aqi > 0)
+      aqiSK = valid.length > 0 ? Math.round(valid.reduce((s, c) => s + c.aqi, 0) / valid.length) : aqi
     } catch { /* ignore */ }
   }
 
@@ -74,14 +85,12 @@ export async function GET() {
   if (cityWeatherRes.status === 'fulfilled' && cityWeatherRes.value.ok) {
     try {
       const j = await cityWeatherRes.value.json()
-      // Open-Meteo returns array when multiple coords given
       const arr = Array.isArray(j) ? j : [j]
       cityTemps = SK_CITIES.map((city, i) => ({
         key: city.key,
         name: city.name,
         temp: Math.round(arr[i]?.current?.temperature_2m ?? 0),
       }))
-      // BA temp from city data
       tempBA = cityTemps.find(c => c.key === 'BA')?.temp ?? null
     } catch { /* fallback */ }
   }
@@ -95,10 +104,12 @@ export async function GET() {
     flightsCount,
     tempBA,
     aqi,
+    aqiSK,
     eurToUsd,
     dayOfYear,
     daysInYear,
     timestamp: Date.now(),
     cityTemps,
+    cityAQI,
   })
 }

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useWidget } from '@/hooks/useWidget'
 import { getWeatherInfo, formatShortDate } from '@/lib/utils'
-import type { WeatherData } from '@/lib/types'
+import type { WeatherData, StatsData } from '@/lib/types'
 import WidgetCard from '@/components/ui/WidgetCard'
 import { useLang } from '@/hooks/useLang'
 
@@ -41,112 +41,188 @@ function WindArrow({ degrees, className = '' }: { degrees: number; className?: s
       className={`inline-block transition-transform duration-500 ${className}`}
       style={{ transform: `rotate(${degrees}deg)` }}
     >
-      {/* Arrow points FROM which direction wind comes (meteorological convention) */}
       <path d="M9 1 L12 9 L10.5 9 L10.5 17 L7.5 17 L7.5 9 L6 9 Z" fill="currentColor" />
     </svg>
   )
 }
 
-/* ── Elegant Sun Arc ─────────────────────────────────────────────────── */
-function SunArc({ sunrise, sunset, nightLabel }: { sunrise: string; sunset: string; nightLabel: string }) {
+/* ── Sunrise/Sunset Arc (proper SVG ellipse) ─────────────────────────── */
+function SunriseSunset({ sunrise, sunset, nightLabel }: { sunrise: string; sunset: string; nightLabel: string }) {
   const [nowMs, setNowMs] = useState<number | null>(null)
 
   useEffect(() => {
     setNowMs(Date.now())
-    const t = setInterval(() => setNowMs(Date.now()), 30_000)
-    return () => clearInterval(t)
+    const iv = setInterval(() => setNowMs(Date.now()), 30_000)
+    return () => clearInterval(iv)
   }, [])
 
-  const riseMs = new Date(sunrise).getTime()
-  const setMs  = new Date(sunset).getTime()
-  const total  = setMs - riseMs
-  const now    = nowMs ?? riseMs
-  const elapsed = Math.max(0, Math.min(total, now - riseMs))
+  const riseMs  = new Date(sunrise).getTime()
+  const setMs   = new Date(sunset).getTime()
+  const total   = setMs - riseMs
+  const nowTime = nowMs ?? riseMs
+  const elapsed = Math.max(0, Math.min(total, nowTime - riseMs))
   const progress = total > 0 ? elapsed / total : 0
-  const isDaylight = nowMs !== null && now >= riseMs && now <= setMs
+  const isDay   = nowMs !== null && nowTime >= riseMs && nowTime <= setMs
 
-  const W = 320, H = 120, pad = 20
-  const cx = pad + progress * (W - 2 * pad)
-  const cy = H - pad - Math.sin(progress * Math.PI) * (H - 2 * pad - 10)
-  const daylightMins = Math.round(total / 60000)
-  const dH = Math.floor(daylightMins / 60)
-  const dM = daylightMins % 60
+  const dH = Math.floor(total / 3600000)
+  const dM = Math.floor((total % 3600000) / 60000)
 
-  // Progress arc path (partial ellipse)
-  const arcProgress = Math.min(progress, 0.999)
-  const arcX = pad + arcProgress * (W - 2 * pad)
-  const arcY = H - pad - Math.sin(arcProgress * Math.PI) * (H - 2 * pad - 10)
+  // SVG layout params
+  const W = 300, H = 90, pad = 22
+  const cx = W / 2
+  const horizY = H - 14
+  const rx = (W - 2 * pad) / 2   // 128
+  const ry = 58
+  const leftX  = cx - rx          // 22
+  const rightX = cx + rx          // 278
+
+  // Sun position: angle goes from π (left/sunrise) to 0 (right/sunset)
+  const angle  = Math.PI * (1 - progress)
+  const sunX   = cx + rx * Math.cos(angle)
+  const sunY   = horizY - ry * Math.sin(angle)
+
+  // Full arc built as two halves (avoids SVG large-arc 180° ambiguity)
+  const midX   = cx
+  const midTopY = horizY - ry
+  const arcPath = `M ${leftX} ${horizY} A ${rx} ${ry} 0 0 1 ${midX} ${midTopY} A ${rx} ${ry} 0 0 1 ${rightX} ${horizY}`
+
+  // Clip progress: show arc up to sun position
+  const clipW = Math.max(1, progress >= 0.999 ? W : sunX + 2)
 
   return (
-    <div className="bg-gradient-to-b from-slate-800/40 to-slate-900/20 border border-white/8 rounded-2xl p-4">
-      <svg viewBox={`0 0 ${W} ${H + 28}`} className="w-full" style={{ maxHeight: 150 }}>
+    <div className="bg-gradient-to-b from-slate-800/40 to-slate-900/20 border border-white/8 rounded-2xl p-3">
+      <svg viewBox={`0 0 ${W} ${H + 22}`} className="w-full" style={{ maxHeight: 130 }}>
         <defs>
-          <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={isDaylight ? '#1e3a5f' : '#0f172a'} stopOpacity="0" />
-            <stop offset="100%" stopColor={isDaylight ? '#0ea5e9' : '#1e293b'} stopOpacity="0.1" />
-          </linearGradient>
-          <linearGradient id="sunPathGrad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.2" />
-            <stop offset="50%" stopColor="#fb923c" stopOpacity="0.7" />
-            <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.2" />
-          </linearGradient>
-          <filter id="sunGlow">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
-            <feComposite in="SourceGraphic" in2="blur" operator="over"/>
-          </filter>
-          <radialGradient id="sunRadial" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#fbbf24" stopOpacity="1" />
-            <stop offset="60%" stopColor="#f97316" stopOpacity="0.8" />
+          <radialGradient id="ss-sun-rg" cx="50%" cy="50%" r="50%">
+            <stop offset="0%"   stopColor="#fde68a" />
+            <stop offset="65%"  stopColor="#fbbf24" />
             <stop offset="100%" stopColor="#f97316" stopOpacity="0" />
           </radialGradient>
+          <linearGradient id="ss-arc-g" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%"   stopColor="#f59e0b" stopOpacity="0.35" />
+            <stop offset="50%"  stopColor="#fbbf24" />
+            <stop offset="100%" stopColor="#fb923c" stopOpacity="0.35" />
+          </linearGradient>
+          <clipPath id="ss-clip">
+            <rect x={0} y={0} width={clipW} height={H + 22} />
+          </clipPath>
         </defs>
 
-        {/* Sky background */}
-        <rect x={0} y={0} width={W} height={H} fill="url(#skyGrad)" />
+        {/* Horizon */}
+        <line x1={leftX - 6} y1={horizY} x2={rightX + 6} y2={horizY}
+              stroke="rgba(255,255,255,0.10)" strokeWidth={1} />
 
-        {/* Horizon base line */}
-        <line x1={pad - 8} y1={H - pad} x2={W - pad + 8} y2={H - pad}
-              stroke="rgba(255,255,255,0.12)" strokeWidth={1} />
+        {/* Full dotted arc */}
+        <path d={arcPath} fill="none"
+              stroke="rgba(255,255,255,0.07)" strokeWidth={1.5} strokeDasharray="4 5" />
 
-        {/* Dotted arc path */}
-        <path d={`M ${pad} ${H - pad} Q ${W / 2} ${-(H - 2 * pad) * 0.7} ${W - pad} ${H - pad}`}
-              fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={1.5} strokeDasharray="5 6" />
-
-        {/* Completed progress arc (glowing) */}
-        {progress > 0.01 && (
-          <path d={`M ${pad} ${H - pad} Q ${W / 2} ${-(H - 2 * pad) * 0.7} ${arcX} ${arcY}`}
-                fill="none" stroke="url(#sunPathGrad)" strokeWidth={3}
-                strokeLinecap="round" />
+        {/* Glow beneath progress arc */}
+        {progress > 0.02 && (
+          <path d={arcPath} fill="none" stroke="#fbbf24" strokeWidth={16}
+                opacity={0.035} clipPath="url(#ss-clip)" />
         )}
 
-        {isDaylight ? (
+        {/* Progress arc */}
+        {progress > 0.02 && (
+          <path d={arcPath} fill="none" stroke="url(#ss-arc-g)"
+                strokeWidth={2.5} strokeLinecap="round" clipPath="url(#ss-clip)" />
+        )}
+
+        {/* Sun or Moon */}
+        {isDay ? (
           <>
-            {/* Sun glow halo */}
-            <circle cx={cx} cy={cy} r={22} fill="#fbbf24" opacity="0.07" filter="url(#sunGlow)" />
-            <circle cx={cx} cy={cy} r={14} fill="#fbbf24" opacity="0.12" />
-            {/* Sun body */}
-            <circle cx={cx} cy={cy} r={8} fill="url(#sunRadial)" />
-            <circle cx={cx} cy={cy} r={5} fill="#fde68a" />
+            <circle cx={sunX} cy={sunY} r={18} fill="#fbbf24" opacity={0.06} />
+            <circle cx={sunX} cy={sunY} r={11} fill="#fbbf24" opacity={0.10} />
+            <circle cx={sunX} cy={sunY} r={6.5} fill="url(#ss-sun-rg)" />
+            <circle cx={sunX} cy={sunY} r={4}   fill="#fde68a" />
           </>
         ) : (
-          <>
-            {/* Moon */}
-            <text x={W / 2} y={H / 2 + 8} textAnchor="middle" fontSize="22" opacity="0.6">🌙</text>
-            <text x={W / 2} y={H / 2 + 26} textAnchor="middle" fontSize="11" fill="#64748b">{nightLabel}</text>
-          </>
+          <g>
+            <text x={W / 2} y={horizY - 22} textAnchor="middle" fontSize={22} opacity={0.55}>🌙</text>
+            <text x={W / 2} y={horizY - 4}  textAnchor="middle" fontSize={10} fill="#64748b">{nightLabel}</text>
+          </g>
         )}
 
-        {/* Sunrise */}
-        <text x={pad - 4} y={H + 10} textAnchor="start" fontSize="9" fill="#fbbf24" fontWeight="600">↗ {formatTime(sunrise)}</text>
-
-        {/* Sunset */}
-        <text x={W - pad + 4} y={H + 10} textAnchor="end" fontSize="9" fill="#f97316" fontWeight="600">{formatTime(sunset)} ↘</text>
-
-        {/* Duration */}
-        <text x={W / 2} y={H + 24} textAnchor="middle" fontSize="11" fontWeight="700" fill="#f59e0b">
-          ☀ {dH}h {dM}m
-        </text>
+        {/* Labels */}
+        <text x={leftX}  y={horizY + 11} textAnchor="start" fontSize={9} fill="#fbbf24" fontWeight="600">↗ {formatTime(sunrise)}</text>
+        <text x={rightX} y={horizY + 11} textAnchor="end"   fontSize={9} fill="#fb923c" fontWeight="600">{formatTime(sunset)} ↘</text>
+        <text x={W / 2}  y={horizY + 23} textAnchor="middle" fontSize={10} fill="#f59e0b" fontWeight="700">☀ {dH}h {dM}m</text>
       </svg>
+    </div>
+  )
+}
+
+/* ── Slovakia Temperature Map ─────────────────────────────────────────── */
+function SlovakiaTempMap({ cityTemps }: { cityTemps: { key: string; name: string; temp: number }[] }) {
+  // Equirectangular projection for Slovakia
+  // Lon range: 16.84 – 22.56  Lat range: 47.73 – 49.61
+  const W = 380, H = 128
+  const LON_MIN = 16.84, LON_SPAN = 5.72
+  const LAT_MAX = 49.61, LAT_SPAN = 1.88
+  const UW = W - 20, UH = H - 20  // usable area
+
+  const toX = (lon: number) => Math.round((lon - LON_MIN) / LON_SPAN * UW + 10)
+  const toY = (lat: number) => Math.round((LAT_MAX - lat) / LAT_SPAN * UH + 10)
+
+  const CITY_POS: Record<string, { x: number; y: number }> = {
+    BA:    { x: toX(17.1077), y: toY(48.1486) },  // ~(27, 95)
+    TT:    { x: toX(17.5872), y: toY(48.3774) },  // ~(57, 82)
+    NR:    { x: toX(18.0869), y: toY(48.3069) },  // ~(89, 86)
+    TN:    { x: toX(18.0435), y: toY(48.8947) },  // ~(86, 52)
+    BB:    { x: toX(19.1503), y: toY(48.7356) },  // ~(155, 61)
+    ZA:    { x: toX(18.7394), y: toY(49.2231) },  // ~(130, 33)
+    PO:    { x: toX(21.2391), y: toY(49.0017) },  // ~(287, 46)
+    KE:    { x: toX(21.2611), y: toY(48.7163) },  // ~(288, 62)
+    TATRY: { x: toX(20.2129), y: toY(49.1972) },  // ~(222, 34)
+  }
+
+  function tempColor(t: number): string {
+    if (t >= 28) return '#ef4444'
+    if (t >= 22) return '#f97316'
+    if (t >= 15) return '#fbbf24'
+    if (t >= 8)  return '#4ade80'
+    if (t >= 0)  return '#60a5fa'
+    if (t >= -8) return '#818cf8'
+    return '#c4b5fd'
+  }
+
+  // Approximate Slovakia border polygon (clockwise from W)
+  const borderPath = 'M 10,98 L 22,66 L 47,48 L 64,34 L 93,22 L 124,14 L 193,10 L 225,21 L 291,14 L 335,16 L 360,52 L 344,84 L 272,101 L 209,119 L 114,119 L 67,119 L 30,104 Z'
+
+  if (cityTemps.length === 0) return null
+
+  return (
+    <div className="px-5 pb-4">
+      <div className="text-[10px] text-slate-500 uppercase tracking-wide font-semibold mb-2">
+        🗺️ Teploty na Slovensku
+      </div>
+      <div className="bg-white/[0.02] rounded-xl border border-white/5 p-1 overflow-hidden">
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 128 }}>
+          {/* Slovakia fill */}
+          <path d={borderPath} fill="rgba(30,58,138,0.18)" stroke="rgba(147,197,253,0.28)" strokeWidth={1.5} />
+
+          {/* City temperature dots */}
+          {cityTemps.map(city => {
+            const pos = CITY_POS[city.key]
+            if (!pos) return null
+            const color = tempColor(city.temp)
+            const label = city.key === 'TATRY' ? 'TT' : city.key
+            return (
+              <g key={city.key}>
+                <circle cx={pos.x} cy={pos.y} r={14} fill={color} opacity={0.10} />
+                <circle cx={pos.x} cy={pos.y} r={9}  fill={color} opacity={0.22} stroke={color} strokeWidth={1} />
+                <circle cx={pos.x} cy={pos.y} r={4}  fill={color} />
+                <text x={pos.x} y={pos.y - 13} textAnchor="middle" fontSize={7.5}
+                      fill="rgba(255,255,255,0.55)" fontWeight="600">{label}</text>
+                <text x={pos.x} y={pos.y + 21} textAnchor="middle" fontSize={9}
+                      fill={color} fontWeight="700">
+                  {city.temp}°
+                </text>
+              </g>
+            )
+          })}
+        </svg>
+      </div>
     </div>
   )
 }
@@ -176,6 +252,7 @@ function TempBar({ min, max, absMin, absMax }: { min: number; max: number; absMi
 export default function WeatherPanel() {
   const { t, lang } = useLang()
   const { data, loading, refetch } = useWidget<WeatherData>('/api/weather', 10 * 60 * 1000)
+  const stats = useWidget<StatsData>('/api/stats', 60 * 1000)
   const [showExtended, setShowExtended] = useState(false)
 
   const currentInfo = data?.current ? getWeatherInfo(data.current.weather_code) : null
@@ -191,6 +268,8 @@ export default function WeatherPanel() {
 
   const windDir = data?.current?.wind_direction_10m ?? 0
   const windCompass = degreesToCompass(windDir)
+
+  const cityTemps = stats.data?.cityTemps ?? []
 
   return (
     <WidgetCard accent="blue" className="relative overflow-hidden !p-0" onRefresh={refetch}>
@@ -260,10 +339,10 @@ export default function WeatherPanel() {
                 )}
               </div>
 
-              {/* Right: Sun arc - bigger */}
+              {/* Right: Sunrise/Sunset arc */}
               <div className="lg:ml-auto flex-shrink-0 lg:w-80">
                 {data.daily?.sunrise?.[0] && data.daily?.sunset?.[0] && (
-                  <SunArc sunrise={data.daily.sunrise[0]} sunset={data.daily.sunset[0]} nightLabel={t('weather.night')} />
+                  <SunriseSunset sunrise={data.daily.sunrise[0]} sunset={data.daily.sunset[0]} nightLabel={t('weather.night')} />
                 )}
               </div>
             </div>
@@ -282,6 +361,9 @@ export default function WeatherPanel() {
               </button>
             </div>
           </div>
+
+          {/* ── Slovakia temp map ──────────────────────────────────────── */}
+          {cityTemps.length > 0 && <SlovakiaTempMap cityTemps={cityTemps} />}
 
           {/* ── Forecast grid — FIXED (no scroll) ─────────────────────── */}
           <div className="px-5 pb-5">

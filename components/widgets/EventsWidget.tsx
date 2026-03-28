@@ -12,6 +12,7 @@ interface SKEvent {
   city: string
   category: 'concert' | 'sport' | 'culture' | 'festival' | 'other'
   emoji: string
+  url?: string
 }
 
 interface EventsData {
@@ -97,25 +98,37 @@ export default function EventsWidget() {
         </p>
       ) : (
         <div className="space-y-1.5 max-h-[400px] overflow-y-auto scrollbar-hide">
-          {events.map((ev, i) => (
-            <div key={i} className="bg-white/[0.02] rounded-xl p-3 border border-white/5 hover:border-amber-500/15 transition-all">
-              <div className="flex items-start gap-2">
-                <span className="text-xl shrink-0 mt-0.5">{ev.emoji}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[12px] font-semibold text-white leading-snug line-clamp-2">{ev.title}</div>
-                  <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full border font-semibold uppercase ${CAT_COLORS[ev.category] ?? CAT_COLORS.other}`}>
-                      {ev.category}
-                    </span>
-                    <span className="text-[10px] text-slate-500 truncate">{ev.venue}</span>
-                  </div>
-                  <div className="text-[10px] text-amber-400/80 mt-0.5 font-medium">
-                    {formatDate(ev.date)}
+          {events.map((ev, i) => {
+            const card = (
+              <div className={`bg-white/[0.02] rounded-xl p-3 border border-white/5 transition-all ${ev.url ? 'hover:border-amber-500/20 hover:bg-white/[0.04] cursor-pointer' : ''}`}>
+                <div className="flex items-start gap-2">
+                  <span className="text-xl shrink-0 mt-0.5">{ev.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-1">
+                      <div className="text-[12px] font-semibold text-white leading-snug line-clamp-2">{ev.title}</div>
+                      {ev.url && <span className="text-slate-600 shrink-0 mt-0.5">↗</span>}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full border font-semibold uppercase ${CAT_COLORS[ev.category] ?? CAT_COLORS.other}`}>
+                        {ev.category}
+                      </span>
+                      <span className="text-[10px] text-slate-500 truncate">{ev.venue}</span>
+                    </div>
+                    <div className="text-[10px] text-amber-400/80 mt-0.5 font-medium">
+                      {formatDate(ev.date)}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+            return ev.url ? (
+              <a key={i} href={ev.url} target="_blank" rel="noopener noreferrer" className="block no-underline">
+                {card}
+              </a>
+            ) : (
+              <div key={i}>{card}</div>
+            )
+          })}
         </div>
       )}
     </WidgetCard>

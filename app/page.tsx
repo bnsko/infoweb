@@ -27,6 +27,8 @@ import TwitterWidget from '@/components/widgets/TwitterWidget'
 import FuelPricesWidget from '@/components/widgets/FuelPricesWidget'
 import GroceriesWidget from '@/components/widgets/GroceriesWidget'
 import ToolOfTheDayWidget from '@/components/widgets/ToolOfTheDayWidget'
+import FinanceNewsWidget from '@/components/widgets/FinanceNewsWidget'
+import DaySummaryWidget from '@/components/widgets/DaySummaryWidget'
 import { useLang } from '@/hooks/useLang'
 
 export default function Home() {
@@ -38,20 +40,25 @@ export default function Home() {
 
       <main className="max-w-[1680px] mx-auto px-4 pt-4 pb-10 space-y-6">
 
+        {/* Day summary + quick nav */}
+        <DaySummaryWidget />
+
         {/* Stats bar */}
         <StatsWidget />
 
         {/* Weather (full width) */}
-        <WeatherPanel />
+        <div id="sec-weather">
+          <WeatherPanel />
+        </div>
 
         {/* Správy (full width) */}
-        <div>
+        <div id="sec-news">
           <SectionLabel label={t('sec.news')} />
           <NewsFeedWidget />
         </div>
 
         {/* Slovensko & Financie */}
-        <div>
+        <div id="sec-finance">
           <SectionLabel label={t('sec.finance')} />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <NamedayWidget />
@@ -59,10 +66,13 @@ export default function Home() {
             <CurrencyWidget />
             <CryptoWidget />
           </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <FinanceNewsWidget />
+          </div>
         </div>
 
         {/* Doprava, Šport & Podujatia */}
-        <div>
+        <div id="sec-transport">
           <SectionLabel label={t('sec.transport')} />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <TrafficWidget />
@@ -77,7 +87,7 @@ export default function Home() {
         </div>
 
         {/* Ceny & Nákupy */}
-        <div>
+        <div id="sec-prices">
           <SectionLabel label={t('sec.prices')} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FuelPricesWidget />
@@ -92,7 +102,7 @@ export default function Home() {
         </div>
 
         {/* Vesmír & Rakety */}
-        <div>
+        <div id="sec-space">
           <SectionLabel label={t('sec.space')} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <SpaceEnvWidget />
@@ -101,7 +111,7 @@ export default function Home() {
         </div>
 
         {/* Zábava & Komunita */}
-        <div>
+        <div id="sec-fun">
           <SectionLabel label={t('sec.fun')} />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <SteamWidget />
@@ -124,13 +134,13 @@ export default function Home() {
         </div>
 
         {/* Tech & Nástroje */}
-        <div>
+        <div id="sec-tech">
           <SectionLabel label={t('sec.tech')} />
           <ToolOfTheDayWidget />
         </div>
 
         {/* História & Objavuj */}
-        <div>
+        <div id="sec-history">
           <SectionLabel label={t('sec.history')} />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <OnThisDayWidget />
@@ -142,7 +152,7 @@ export default function Home() {
 
       <footer className="border-t border-white/5 py-6 text-center text-xs text-slate-600">
         <p>
-          Slovakia Info © {new Date().getFullYear()} · Dáta: OpenMeteo · ECB · CoinGecko · Steam · ESPN · SME · Aktuality · TASR · Pravda · BBC · Reuters · Reddit · Waze · OpenSky · Launch Library 2 · Wikimedia + ďalšie
+          Slovakia Info © {new Date().getFullYear()} · Dáta: OpenMeteo · ECB · CoinGecko · Steam · ESPN · SME · Aktuality · TASR · Pravda · BBC · Reuters · Reddit · Waze · OpenSky · Launch Library 2 · Wikimedia · CNBC · AP + ďalšie
         </p>
         <p className="mt-1">{t('footer.auto')}</p>
       </footer>
