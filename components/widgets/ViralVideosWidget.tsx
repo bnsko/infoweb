@@ -20,9 +20,9 @@ interface ViralData {
 }
 
 const PLATFORM_BADGE: Record<string, { emoji: string; color: string }> = {
-  youtube: { emoji: '▶️', color: '#ef4444' },
-  tiktok: { emoji: '🎵', color: '#00f2ea' },
-  instagram: { emoji: '📸', color: '#e1306c' },
+  YouTube: { emoji: '▶️', color: '#ef4444' },
+  TikTok: { emoji: '🎵', color: '#00f2ea' },
+  Instagram: { emoji: '📸', color: '#e1306c' },
 }
 
 export default function ViralVideosWidget() {
