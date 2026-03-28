@@ -11,6 +11,7 @@ interface Props {
   icon?: string
   badge?: string | number
   onRefresh?: () => void
+  headerRight?: ReactNode
 }
 
 const accentMap: Record<string, { border: string; glow: string; title: string }> = {
@@ -24,7 +25,7 @@ const accentMap: Record<string, { border: string; glow: string; title: string }>
   none: { border: 'border-white/5', glow: '', title: 'text-slate-400' },
 }
 
-export default function WidgetCard({ children, className, accent = 'none', title, icon, badge, onRefresh }: Props) {
+export default function WidgetCard({ children, className, accent = 'none', title, icon, badge, onRefresh, headerRight }: Props) {
   const a = accentMap[accent]
   const [spinning, setSpinning] = useState(false)
 
@@ -53,6 +54,7 @@ export default function WidgetCard({ children, className, accent = 'none', title
               {badge}
             </span>
           )}
+          {headerRight}
           {onRefresh && (
             <button
               onClick={handleRefresh}
