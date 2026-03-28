@@ -1,9 +1,7 @@
 'use client'
 
+import { useState, useEffect, useRef } from 'react'
 import { useWidget } from '@/hooks/useWidget'
-import { useLang } from '@/hooks/useLang'
-import WidgetCard from '@/components/ui/WidgetCard'
-import SkeletonRows from '@/components/ui/SkeletonRows'
 
 interface FlashItem {
   title: string
@@ -28,69 +26,81 @@ const SOURCE_COLORS: Record<string, string> = {
 }
 
 export default function FlashNewsWidget() {
-  const { lang } = useLang()
-  const { data, loading, error, refetch } = useWidget<FlashData>('/api/flashnews', 2 * 60 * 1000)
+  const { data, loading } = useWidget<FlashData>('/api/flashnews', 2 * 60 * 1000)
+  const [currentIdx, setCurrentIdx] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
+  const tickerRef = useRef<HTMLDivElement>(null)
+
+  const items = data?.items ?? []
+
+  useEffect(() => {
+    if (items.length === 0 || isPaused) return
+    const iv = setInterval(() => {
+      setCurrentIdx(prev => (prev + 1) % items.length)
+    }, 5000)
+    return () => clearInterval(iv)
+  }, [items.length, isPaused])
+
+  if (loading || items.length === 0) return null
+
+  const current = items[currentIdx]
+  const sourceColor = SOURCE_COLORS[current?.source ?? ''] ?? '#94a3b8'
 
   return (
-    <div className="widget-card !py-3 !px-4 border-red-500/20 relative overflow-hidden card-entrance">
-      <div className="absolute inset-0 bg-gradient-to-r from-red-600/5 via-transparent to-transparent pointer-events-none" />
-      <div className="relative">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
-            </span>
-            <span className="text-[11px] font-bold text-red-400 uppercase tracking-wider">
-              Flash News
-            </span>
-          </div>
-          <button onClick={refetch} className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-all" title={lang === 'sk' ? 'Obnoviť' : 'Refresh'}>
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-          </button>
+    <div
+      className="relative overflow-hidden rounded-xl border border-red-500/15 card-entrance"
+      style={{ background: 'linear-gradient(90deg, rgba(239,68,68,0.06) 0%, rgba(10,12,18,0.95) 30%, rgba(10,12,18,0.95) 70%, rgba(239,68,68,0.03) 100%)' }}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      <div ref={tickerRef} className="flex items-center gap-3 px-4 py-2">
+        {/* Live dot + label */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+          </span>
+          <span className="text-[10px] font-bold text-red-400 uppercase tracking-widest">Flash</span>
         </div>
 
-        {/* AI Summary */}
-        {!loading && data?.summary && (
-          <div className="mb-2 px-2 py-1.5 rounded-lg bg-red-500/5 border border-red-500/10">
-            <p className="text-[10px] text-slate-300 leading-relaxed line-clamp-2">
-              {data.summary}
-            </p>
-          </div>
-        )}
+        <div className="w-px h-4 bg-red-500/20 shrink-0" />
 
-        {/* News items */}
-        {loading && <SkeletonRows rows={3} />}
-        {!loading && error && <p className="text-[10px] text-slate-500">Chyba načítania</p>}
-        {!loading && data && data.items.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-0.5">
-            {data.items.map((item, i) => (
-              <a
-                key={i}
-                href={item.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-white/[0.04] transition-all group"
-              >
-                <span className="text-[9px] font-mono text-slate-600 shrink-0 tabular-nums w-[65px]">{item.ago}</span>
-                <span className="text-[11px] text-slate-200 group-hover:text-white leading-snug line-clamp-1 flex-1 font-medium">{item.title}</span>
-                <span
-                  className="text-[8px] font-bold shrink-0 px-1.5 py-0.5 rounded-md border"
-                  style={{ color: SOURCE_COLORS[item.source] ?? '#94a3b8', borderColor: `${SOURCE_COLORS[item.source] ?? '#94a3b8'}30`, backgroundColor: `${SOURCE_COLORS[item.source] ?? '#94a3b8'}10` }}
-                >
-                  {item.source}
-                </span>
-              </a>
-            ))}
-          </div>
-        )}
-        {!loading && data && data.items.length === 0 && (
-          <p className="text-[10px] text-slate-500 text-center py-2">{lang === 'sk' ? 'Žiadne čerstvé správy' : 'No fresh news'}</p>
-        )}
+        {/* Rotating headline */}
+        <a
+          href={current?.link ?? '#'}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 min-w-0 flex items-center gap-2 group"
+        >
+          <span
+            key={currentIdx}
+            className="text-[11px] text-slate-200 group-hover:text-white font-medium truncate transition-all animate-[fadeSlide_0.4s_ease-out]"
+          >
+            {current?.title}
+          </span>
+        </a>
+
+        {/* Source badge */}
+        <span
+          className="text-[8px] font-bold shrink-0 px-1.5 py-0.5 rounded-md border"
+          style={{ color: sourceColor, borderColor: `${sourceColor}30`, backgroundColor: `${sourceColor}10` }}
+        >
+          {current?.source}
+        </span>
+
+        {/* Time ago */}
+        <span className="text-[9px] text-slate-600 font-mono shrink-0 tabular-nums">{current?.ago}</span>
+
+        {/* Counter */}
+        <span className="text-[9px] text-slate-600 shrink-0 tabular-nums">{currentIdx + 1}/{items.length}</span>
       </div>
+
+      <style jsx>{`
+        @keyframes fadeSlide {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   )
 }

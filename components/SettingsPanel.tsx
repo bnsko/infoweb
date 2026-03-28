@@ -5,20 +5,15 @@ import { usePrefs } from '@/hooks/usePrefs'
 import { useLang } from '@/hooks/useLang'
 
 const WIDGET_LIST = [
-  { id: 'quicksummary', label: '⚡ Rýchly prehľad', labelEn: '⚡ Quick Summary' },
   { id: 'daysummary', label: '📅 Prehľad dňa', labelEn: '📅 Day Summary' },
   { id: 'flashnews', label: '🔴 Flash správy', labelEn: '🔴 Flash News' },
   { id: 'stats', label: '☀️ Počasie', labelEn: '☀️ Weather' },
   { id: 'news', label: '📰 Správy', labelEn: '📰 News' },
-  { id: 'politics', label: '� Zdravie', labelEn: '🏥 Health' },
-  { id: 'finance', label: '💶 Financie', labelEn: '💶 Finance' },
-  { id: 'transport', label: '🚗 Doprava & Šport', labelEn: '🚗 Transport & Sports' },
-  { id: 'prices', label: '💰 Ceny', labelEn: '💰 Prices' },
-  { id: 'counters', label: '📊 Štatistiky', labelEn: '📊 Statistics' },
+  { id: 'slovensko', label: '🇸🇰 Slovensko', labelEn: '🇸🇰 Slovakia' },
+  { id: 'financie', label: '💶 Financie', labelEn: '💶 Finance' },
   { id: 'space', label: '🔭 Vesmír', labelEn: '🔭 Space' },
   { id: 'fun', label: '🎮 Zábava', labelEn: '🎮 Entertainment' },
   { id: 'restaurants', label: '🍽️ Reštaurácie', labelEn: '🍽️ Restaurants' },
-  { id: 'invest', label: '📈 Investície', labelEn: '📈 Investments' },
   { id: 'ai', label: '🤖 AI & Tech', labelEn: '🤖 AI & Tech' },
   { id: 'extras', label: '🔭 Objavy', labelEn: '🔭 Discover' },
   { id: 'history', label: '📚 História', labelEn: '📚 History' },

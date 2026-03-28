@@ -13,6 +13,7 @@ interface JobItem {
   salary?: string
   link: string
   date: string
+  source: string
 }
 
 interface JobCategory {
@@ -27,12 +28,14 @@ interface JobsData {
   timestamp: number
 }
 
-type Tab = 'jobs' | 'categories'
+type Region = 'sk' | 'eu'
 
 export default function JobsWidget() {
   const { lang } = useLang()
-  const [tab, setTab] = useState<Tab>('jobs')
-  const { data, loading, error, refetch } = useWidget<JobsData>('/api/jobs', 30 * 60 * 1000)
+  const [region, setRegion] = useState<Region>('sk')
+
+  const apiUrl = `/api/jobs?tab=${region}`
+  const { data, loading, error, refetch } = useWidget<JobsData>(apiUrl, 30 * 60 * 1000)
 
   return (
     <WidgetCard
@@ -41,34 +44,34 @@ export default function JobsWidget() {
       icon="💼"
       onRefresh={refetch}
     >
-      {/* Stats bar */}
-      {data && (
-        <div className="flex items-center gap-3 mb-3 text-[10px]">
-          <span className="text-blue-400 font-bold">{data.totalNew} {lang === 'sk' ? 'nových' : 'new'}</span>
-          <span className="text-slate-600">·</span>
-          <span className="text-slate-500">profesia.sk</span>
-        </div>
-      )}
-
-      {/* Tabs */}
+      {/* Region tabs */}
       <div className="flex items-center gap-0.5 mb-3 bg-white/[0.03] rounded-lg p-0.5 border border-white/5">
         {([
-          { key: 'jobs' as Tab, label: lang === 'sk' ? '📋 Ponuky' : '📋 Jobs' },
-          { key: 'categories' as Tab, label: lang === 'sk' ? '📊 Kategórie' : '📊 Categories' },
+          { key: 'sk' as Region, label: '🇸🇰 Slovensko' },
+          { key: 'eu' as Region, label: '🇪🇺 Zahraničie' },
         ]).map(tb => (
-          <button key={tb.key} onClick={() => setTab(tb.key)}
+          <button key={tb.key} onClick={() => setRegion(tb.key)}
             className={`flex-1 text-[10px] font-semibold py-1.5 rounded-md transition-all ${
-              tab === tb.key ? 'bg-blue-500/15 text-blue-300' : 'text-slate-500 hover:text-slate-300'
+              region === tb.key ? 'bg-blue-500/15 text-blue-300' : 'text-slate-500 hover:text-slate-300'
             }`}>
             {tb.label}
           </button>
         ))}
       </div>
 
+      {/* Stats bar */}
+      {data && (
+        <div className="flex items-center gap-3 mb-3 text-[10px]">
+          <span className="text-blue-400 font-bold">{data.totalNew} {lang === 'sk' ? 'ponúk' : 'offers'}</span>
+          <span className="text-slate-600">·</span>
+          <span className="text-slate-500">{region === 'sk' ? 'profesia.sk' : 'EU portály'}</span>
+        </div>
+      )}
+
       {loading && <SkeletonRows rows={5} />}
       {!loading && error && <p className="text-xs text-slate-500">{lang === 'sk' ? 'Chyba' : 'Error'}</p>}
 
-      {!loading && data && tab === 'jobs' && (
+      {!loading && data && (
         <div className="space-y-0.5 max-h-[320px] overflow-y-auto scrollbar-hide">
           {data.topJobs.map((job, i) => (
             <a
@@ -87,32 +90,17 @@ export default function JobsWidget() {
                   {job.salary && <span className="text-[9px] text-emerald-400 font-semibold">{job.salary}</span>}
                 </div>
               </div>
+              {job.source && (
+                <span className="text-[8px] text-slate-600 shrink-0 mt-0.5">{job.source}</span>
+              )}
             </a>
           ))}
         </div>
       )}
 
-      {!loading && data && tab === 'categories' && (
-        <div className="space-y-2">
-          {data.categories.map((cat, i) => {
-            const maxCount = data.categories[0]?.count ?? 1
-            const pct = Math.round((cat.count / maxCount) * 100)
-            return (
-              <div key={i}>
-                <div className="flex items-center justify-between mb-0.5">
-                  <span className="text-[11px] text-slate-300 font-medium">{cat.name}</span>
-                  <span className="text-[10px] text-blue-400 font-bold">{cat.count}</span>
-                </div>
-                <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
-                  <div className="h-full rounded-full bg-blue-500/40 transition-all" style={{ width: `${pct}%` }} />
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      <p className="text-[10px] text-slate-600 mt-2">profesia.sk · {lang === 'sk' ? 'obnova 30 min' : 'refresh 30 min'}</p>
+      <p className="text-[10px] text-slate-600 mt-2">
+        {region === 'sk' ? 'profesia.sk' : 'Jobs.cz · Karriere.at · Pracuj.pl · Profession.hu'} · {lang === 'sk' ? 'obnova 30 min' : 'refresh 30 min'}
+      </p>
     </WidgetCard>
   )
 }

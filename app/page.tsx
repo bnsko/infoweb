@@ -28,10 +28,8 @@ import AINewsWidget from '@/components/widgets/AINewsWidget'
 import FinanceNewsWidget from '@/components/widgets/FinanceNewsWidget'
 import DaySummaryWidget from '@/components/widgets/DaySummaryWidget'
 import GitHubTrendingWidget from '@/components/widgets/GitHubTrendingWidget'
-import MoonPhaseWidget from '@/components/widgets/MoonPhaseWidget'
 import FearGreedWidget from '@/components/widgets/FearGreedWidget'
 import EnergyWidget from '@/components/widgets/EnergyWidget'
-
 import InvestmentWidget from '@/components/widgets/InvestmentWidget'
 import FlashNewsWidget from '@/components/widgets/FlashNewsWidget'
 import LotteryWidget from '@/components/widgets/LotteryWidget'
@@ -41,6 +39,11 @@ import DealsWidget from '@/components/widgets/DealsWidget'
 import PodcastWidget from '@/components/widgets/PodcastWidget'
 import ViralVideosWidget from '@/components/widgets/ViralVideosWidget'
 import SpeedtestWidget from '@/components/widgets/SpeedtestWidget'
+import OfficeWaitWidget from '@/components/widgets/OfficeWaitWidget'
+import InflationWidget from '@/components/widgets/InflationWidget'
+import SportSuggestionsWidget from '@/components/widgets/SportSuggestionsWidget'
+import DailyQuoteWidget from '@/components/widgets/DailyQuoteWidget'
+import MHDWidget from '@/components/widgets/MHDWidget'
 import SettingsPanel from '@/components/SettingsPanel'
 import { useLang } from '@/hooks/useLang'
 import { usePrefs } from '@/hooks/usePrefs'
@@ -55,18 +58,26 @@ export default function Home() {
 
       <main className="max-w-[1680px] mx-auto px-4 pt-4 pb-10 space-y-6">
 
-        {/* Day summary + quick nav */}
-        {isWidgetVisible('daysummary') && <DaySummaryWidget />}
+        {/* Day summary + quick nav + speedtest */}
+        {isWidgetVisible('daysummary') && (
+          <div className="flex flex-col sm:flex-row gap-3 items-start">
+            <div className="flex-1 w-full"><DaySummaryWidget /></div>
+            <SpeedtestWidget />
+          </div>
+        )}
 
         {/* Flash News - breaking news ticker */}
         {isWidgetVisible('flashnews') && <FlashNewsWidget />}
 
-        {/* Stats bar + City Weather */}
+        {/* Stats bar + City Weather (Moon & Sky popup is inside) */}
         {isWidgetVisible('stats') && (
           <div id="sec-weather">
             <StatsWidget />
           </div>
         )}
+
+        {/* Denný citát & Fakt */}
+        {isWidgetVisible('extras') && <DailyQuoteWidget />}
 
         {/* Správy (full width) */}
         {isWidgetVisible('news') && (
@@ -76,67 +87,70 @@ export default function Home() {
           </div>
         )}
 
-        {/* Zdravotné varovania */}
-        {isWidgetVisible('politics') && (
-          <div>
+        {/* ── SLOVENSKO ── */}
+        {isWidgetVisible('slovensko') && (
+          <div id="sec-slovensko">
+            <SectionLabel label={lang === 'sk' ? '🇸🇰 Slovensko' : '🇸🇰 Slovakia'} />
+
+            {/* Health alerts */}
             <HealthAlertsWidget />
+
+            {/* Transport & Flights */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+              <TrafficWidget />
+              <FlightsWidget />
+              <MHDWidget />
+              <OfficeWaitWidget />
+            </div>
+
+            {/* Events, Jobs, Sport suggestions */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <EventsWidget />
+              <JobsWidget />
+              <SportSuggestionsWidget />
+            </div>
+
+            {/* Prices */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <FuelPricesWidget />
+              <GroceriesWidget />
+            </div>
+
+            {/* Lottery, Deals, Nameday, Population */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+              <LotteryWidget />
+              <DealsWidget />
+              <NamedayWidget />
+              <PopulationWidget />
+            </div>
+
+            {/* Sports */}
+            <div className="mt-4">
+              <SportsWidget />
+            </div>
           </div>
         )}
 
-        {/* Slovensko & Financie */}
-        {isWidgetVisible('finance') && (
-          <div id="sec-finance">
-            <SectionLabel label={t('sec.finance')} />
+        {/* ── FINANCIE ── */}
+        {isWidgetVisible('financie') && (
+          <div id="sec-financie">
+            <SectionLabel label={lang === 'sk' ? '💶 Financie' : '💶 Finance'} />
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <NamedayWidget />
-              <PopulationWidget />
               <CurrencyWidget />
               <CryptoWidget />
+              <FearGreedWidget />
+              <InflationWidget />
             </div>
             <div className="mt-4">
               <FinanceNewsWidget />
             </div>
-          </div>
-        )}
-
-        {/* Doprava, Šport & Podujatia */}
-        {isWidgetVisible('transport') && (
-          <div id="sec-transport">
-            <SectionLabel label={t('sec.transport')} />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <TrafficWidget />
-              <FlightsWidget />
-              <div className="md:col-span-2">
-                <SportsWidget />
-              </div>
-            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <EventsWidget />
-              <JobsWidget />
+              <InvestmentWidget />
+              <EnergyWidget />
             </div>
-          </div>
-        )}
-
-        {/* Ceny & Nákupy */}
-        {isWidgetVisible('prices') && (
-          <div id="sec-prices">
-            <SectionLabel label={t('sec.prices')} />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FuelPricesWidget />
-              <GroceriesWidget />
+            <div className="mt-4">
+              <CountersWidget />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <LotteryWidget />
-              <DealsWidget />
-            </div>
-          </div>
-        )}
-
-        {/* Živé štatistiky (full width) */}
-        {isWidgetVisible('counters') && (
-          <div>
-            <SectionLabel label={t('sec.counters')} />
-            <CountersWidget />
           </div>
         )}
 
@@ -174,18 +188,8 @@ export default function Home() {
         {/* Reštaurácie */}
         {isWidgetVisible('restaurants') && (
           <div id="sec-restaurants">
-            <SectionLabel label={lang === 'sk' ? 'Reštaurácie v okolí' : 'Nearby Restaurants'} />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <RestaurantsWidget />
-            </div>
-          </div>
-        )}
-
-        {/* Investície & Trhy */}
-        {isWidgetVisible('invest') && (
-          <div id="sec-invest">
-            <SectionLabel label={lang === 'sk' ? '📈 Investície & Trhy' : '📈 Investments & Markets'} />
-            <InvestmentWidget />
+            <SectionLabel label={lang === 'sk' ? '🍽️ Reštaurácie' : '🍽️ Restaurants'} />
+            <RestaurantsWidget />
           </div>
         )}
 
@@ -197,32 +201,22 @@ export default function Home() {
           </div>
         )}
 
-        {/* GitHub, Moon, Clock, FearGreed, Energy */}
+        {/* Objavy & GitHub */}
         {isWidgetVisible('extras') && (
           <div id="sec-extras">
-            <SectionLabel label={lang === 'sk' ? '🔭 Štatistiky & Objavy' : '🔭 Stats & Extras'} />
+            <SectionLabel label={lang === 'sk' ? '🔭 Objavy' : '🔭 Discover'} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <GitHubTrendingWidget />
-              <MoonPhaseWidget />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <FearGreedWidget />
-              <EnergyWidget />
-            </div>
-            <div className="mt-4">
-              <SpeedtestWidget />
+              <WikiWidget />
             </div>
           </div>
         )}
 
-        {/* História & Objavuj */}
+        {/* História */}
         {isWidgetVisible('history') && (
           <div id="sec-history">
             <SectionLabel label={t('sec.history')} />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <OnThisDayWidget />
-              <WikiWidget />
-            </div>
+            <OnThisDayWidget />
           </div>
         )}
 
