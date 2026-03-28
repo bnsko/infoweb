@@ -16,6 +16,7 @@ interface Restaurant {
   url: string
   city: string
   tags?: string[]
+  distance?: number
 }
 
 interface Data {
@@ -42,6 +43,10 @@ const PRICE_FILTERS = [
   { key: '€€€', label: '€€€' },
 ]
 
+const PRICE_RANK: Record<string, number> = { '€': 1, '€€': 2, '€€€': 3 }
+
+type SortKey = 'rating' | 'price' | 'distance'
+
 function ratingStars(rating: number): string {
   const full = Math.floor(rating)
   const half = rating - full >= 0.5 ? '½' : ''
@@ -52,8 +57,16 @@ export default function RestaurantsWidget() {
   const [city, setCity] = useState('bratislava')
   const [price, setPrice] = useState('all')
   const [diet, setDiet] = useState('all')
+  const [sortBy, setSortBy] = useState<SortKey>('rating')
   const { data, loading, refetch } = useWidget<Data>(`/api/restaurants?city=${city}&price=${encodeURIComponent(price)}&diet=${diet}`, 60 * 60 * 1000)
   const { t, lang } = useLang()
+
+  const sortedRestaurants = [...(data?.restaurants ?? [])].sort((a, b) => {
+    if (sortBy === 'rating') return b.rating - a.rating
+    if (sortBy === 'price') return (PRICE_RANK[a.priceRange] ?? 2) - (PRICE_RANK[b.priceRange] ?? 2)
+    if (sortBy === 'distance') return (a.distance ?? 99) - (b.distance ?? 99)
+    return 0
+  })
 
   return (
     <WidgetCard accent="orange" className="h-full">
@@ -96,7 +109,7 @@ export default function RestaurantsWidget() {
         ))}
       </div>
       {/* Diet filter */}
-      <div className="flex items-center gap-1 mb-3">
+      <div className="flex items-center gap-1 mb-2">
         <button onClick={() => setDiet('all')}
           className={`text-[10px] font-bold px-2 py-0.5 rounded-md transition-all ${diet === 'all' ? 'bg-green-500/20 text-green-300 border border-green-500/30' : 'text-slate-600 hover:text-slate-400 border border-transparent'}`}>
           🍴 {lang === 'sk' ? 'Všetky' : 'All'}
@@ -110,10 +123,20 @@ export default function RestaurantsWidget() {
           🌱 Vegan
         </button>
       </div>
+      {/* Sort controls */}
+      <div className="flex items-center gap-1 mb-3">
+        <span className="text-[9px] text-slate-600 uppercase font-semibold mr-1">{lang === 'sk' ? 'Zoradiť' : 'Sort'}:</span>
+        {([['rating', '⭐ ' + (lang === 'sk' ? 'Hodnotenie' : 'Rating')], ['price', '€ ' + (lang === 'sk' ? 'Cena' : 'Price')], ['distance', '📍 ' + (lang === 'sk' ? 'Vzdialenosť' : 'Distance')]] as [SortKey, string][]).map(([key, label]) => (
+          <button key={key} onClick={() => setSortBy(key)}
+            className={`text-[10px] font-bold px-2 py-0.5 rounded-md transition-all ${sortBy === key ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30' : 'text-slate-600 hover:text-slate-400 border border-transparent'}`}>
+            {label}
+          </button>
+        ))}
+      </div>
       {loading && <SkeletonRows rows={6} />}
-      {!loading && data && data.restaurants.length > 0 && (
+      {!loading && data && sortedRestaurants.length > 0 && (
         <div className="space-y-1 max-h-[360px] overflow-y-auto scrollbar-hide">
-          {data.restaurants.map((r, i) => (
+          {sortedRestaurants.map((r, i) => (
             <a
               key={i}
               href={r.url}
@@ -135,6 +158,12 @@ export default function RestaurantsWidget() {
                   <span className="text-[10px] text-amber-400">{ratingStars(r.rating)} {r.rating}</span>
                   <span className="text-[10px] text-slate-600">·</span>
                   <span className="text-[10px] text-slate-500">{r.cuisine}</span>
+                  {r.distance != null && (
+                    <>
+                      <span className="text-[10px] text-slate-600">·</span>
+                      <span className="text-[10px] text-slate-500">📍{r.distance} km</span>
+                    </>
+                  )}
                 </div>
                 <p className="text-[10px] text-slate-500 line-clamp-1 mt-0.5">{r.description}</p>
               </div>
@@ -142,7 +171,7 @@ export default function RestaurantsWidget() {
           ))}
         </div>
       )}
-      {!loading && data && data.restaurants.length === 0 && (
+      {!loading && data && sortedRestaurants.length === 0 && (
         <p className="text-xs text-slate-500 py-4 text-center">{t('noData')}</p>
       )}
       <p className="text-[10px] text-slate-600 mt-2">{lang === 'sk' ? 'Odporúčania' : 'Recommendations'} · {data?.cityName ?? 'Bratislava'}</p>

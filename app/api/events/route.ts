@@ -180,12 +180,18 @@ function generateNeighborEvents(country: string): SKEvent[] {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const country = searchParams.get('country') ?? 'sk'
+  const city = searchParams.get('city') ?? ''
 
   let events: SKEvent[]
   if (country === 'sk') {
-    events = generateEvents()
+    const all = generateEvents()
+    // Filter by city if specified (case-insensitive prefix match)
+    events = city
+      ? all.filter(e => e.city.toLowerCase().startsWith(city.toLowerCase()))
+      : all
   } else {
     events = generateNeighborEvents(country)
   }
-  return NextResponse.json({ events, country })
+  const today = new Date().toISOString().slice(0, 10)
+  return NextResponse.json({ events: events.slice(0, 25), country, today })
 }

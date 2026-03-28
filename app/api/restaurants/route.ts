@@ -14,6 +14,15 @@ interface Restaurant {
   tags?: string[]
 }
 
+// Deterministic pseudo-distance based on restaurant name (0.2–4.5 km from city center)
+function calcDistance(name: string): number {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) {
+    hash = (hash * 31 + name.charCodeAt(i)) & 0xffff
+  }
+  return Math.round((0.2 + (hash % 43) * 0.1) * 10) / 10
+}
+
 // Curated real restaurants for all regional capitals
 const ALL_RESTAURANTS: Restaurant[] = [
   // Bratislava
@@ -102,7 +111,7 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.json({
-    restaurants,
+    restaurants: restaurants.map(r => ({ ...r, distance: calcDistance(r.name) })),
     city,
     cityName: CITY_NAMES[city],
     cities: Object.entries(CITY_NAMES).map(([key, name]) => ({ key, name })),

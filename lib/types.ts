@@ -198,6 +198,8 @@ export interface OnThisDayResponse {
 }
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
+export interface CityTemp { key: string; name: string; temp: number }
+
 export interface StatsData {
   flightsCount: number | null
   tempBA: number | null
@@ -206,6 +208,7 @@ export interface StatsData {
   dayOfYear: number
   daysInYear: number
   timestamp: number
+  cityTemps?: CityTemp[]
 }
 
 // ─── Population ───────────────────────────────────────────────────────────────

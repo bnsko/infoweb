@@ -9,7 +9,7 @@ import SkeletonRows from '@/components/ui/SkeletonRows'
 import { useLang } from '@/hooks/useLang'
 
 const TABS = [
-  { key: 'sk',       emoji: '🇸🇰', tKey: 'SK',               url: '/api/news',         accent: 'text-orange-400',  border: 'border-orange-400' },
+  { key: 'sk',       emoji: '🇸🇰', tKey: 'news.slovakia',    url: '/api/news',         accent: 'text-orange-400',  border: 'border-orange-400' },
   { key: 'world',    emoji: '🌍', tKey: 'news.world',        url: '/api/worldnews',    accent: 'text-cyan-400',    border: 'border-cyan-400' },
   { key: 'sport',    emoji: '⚽', tKey: 'news.sport',        url: '/api/sportnews',    accent: 'text-green-400',   border: 'border-green-400' },
   { key: 'economy',  emoji: '📊', tKey: 'news.economy',      url: '/api/economynews',  accent: 'text-emerald-400', border: 'border-emerald-400' },

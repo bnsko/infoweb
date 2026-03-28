@@ -175,6 +175,7 @@ const T: Record<string, { sk: string; en: string }> = {
   'steam.title': { sk: 'Steam · Najpredávanejšie', en: 'Steam · Top sellers' },
   'steam.new': { sk: 'Nové', en: 'New' },
   // News categories
+  'news.slovakia': { sk: 'Slovensko', en: 'Slovakia' },
   'news.domestic': { sk: 'Správy z domova', en: 'Domestic news' },
   'news.world': { sk: 'Svet', en: 'World' },
   'news.sport': { sk: 'Šport', en: 'Sport' },
