@@ -60,11 +60,12 @@ export default function StatsWidget() {
     return () => clearInterval(ping)
   }, [updateUptime])
 
-  const aqi = data?.aqi ?? null
+  // Use SK-wide AQI if available, else BA AQI
+  const aqi = data?.aqiSK ?? data?.aqi ?? null
   const aqiInfo = aqi !== null ? getAQIInfo(aqi) : null
 
-  // Find hottest/coldest cities
   const cityTemps = data?.cityTemps ?? []
+  const cityAQI   = data?.cityAQI  ?? []
   const sorted = [...cityTemps].sort((a, b) => b.temp - a.temp)
   const hottest = sorted[0]
   const coldest = sorted[sorted.length - 1]
@@ -75,8 +76,9 @@ export default function StatsWidget() {
       <div className="relative space-y-2">
         {/* Row 1: Main stats */}
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-          <Stat icon="💨" label={t('stat.air')} value={loading ? '...' : aqi != null ? `AQI ${aqi}` : 'N/A'} colorHex={aqiInfo?.color} badge={aqiInfo?.label} />
-          <Stat icon="✈️" label={t('stat.flights')} value={loading ? '...' : data?.flightsCount != null ? String(data.flightsCount) : 'N/A'} color="text-cyan-400" />
+          <Stat icon="💨" label={lang === 'sk' ? 'Vzduch SK' : 'Air SK'}
+            value={loading ? '...' : aqi != null ? `AQI ${aqi}` : 'N/A'}
+            colorHex={aqiInfo?.color} badge={aqiInfo?.label} />
           <Stat icon="💶" label="EUR/USD" value={loading ? '...' : data?.eurToUsd != null ? `$${data.eurToUsd.toFixed(4)}` : 'N/A'} color="text-emerald-400" />
           <Stat icon="📅" label={t('stat.dayOfYear')} value={loading ? '...' : `${data?.dayOfYear ?? '?'}/${data?.daysInYear ?? 365}`} color="text-slate-400" />
           <Stat icon="🔄" label={t('stat.sources')} value={`${SOURCES}/${SOURCES}`} color="text-emerald-400" />
@@ -102,15 +104,15 @@ export default function StatsWidget() {
           </div>
         </div>
 
-        {/* Row 2: City temperatures */}
+        {/* Row 2: City temperatures (only show cities; remove + for positives) */}
         {cityTemps.length > 0 && (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-2 border-t border-white/5">
-            <span className="text-[10px] text-slate-500 shrink-0">🌡️ {lang === 'sk' ? 'Mestá' : 'Cities'}:</span>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1.5 border-t border-white/5">
+            <span className="text-[10px] text-slate-500 shrink-0">🌡️ {lang === 'sk' ? 'Teplota' : 'Temp'}:</span>
             {cityTemps.map(c => (
               <span key={c.key} className="text-[10px] flex items-center gap-0.5">
                 <span className="text-slate-500">{c.key}</span>
                 <span className={`font-bold ml-0.5 ${c.temp >= 20 ? 'text-orange-400' : c.temp >= 10 ? 'text-yellow-400' : c.temp >= 0 ? 'text-blue-300' : 'text-blue-500'}`}>
-                  {c.temp > 0 ? '+' : ''}{c.temp}°
+                  {c.temp}°
                 </span>
               </span>
             ))}
@@ -119,6 +121,22 @@ export default function StatsWidget() {
                 · 🔥 {hottest.name} · 🥶 {coldest.name}
               </span>
             )}
+          </div>
+        )}
+
+        {/* Row 3: City AQI */}
+        {cityAQI.length > 0 && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1 border-t border-white/5">
+            <span className="text-[10px] text-slate-500 shrink-0">💨 AQI:</span>
+            {cityAQI.map(c => {
+              const info = getAQIInfo(c.aqi)
+              return (
+                <span key={c.key} title={`${c.name}: ${info?.label ?? ''}`} className="text-[10px] flex items-center gap-0.5 cursor-default">
+                  <span className="text-slate-500">{c.key}</span>
+                  <span className="font-bold ml-0.5" style={{ color: info?.color ?? '#94a3b8' }}>{c.aqi}</span>
+                </span>
+              )
+            })}
           </div>
         )}
       </div>

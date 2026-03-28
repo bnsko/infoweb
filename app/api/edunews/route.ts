@@ -4,10 +4,10 @@ import { XMLParser } from 'fast-xml-parser'
 export const revalidate = 300
 
 const FEEDS = [
-  { name: 'EdSurge', url: 'https://www.edsurge.com/news.rss' },
-  { name: 'Times Higher Ed', url: 'https://www.timeshighereducation.com/news/feed' },
-  { name: 'Edutopia', url: 'https://www.edutopia.org/rss.xml' },
-  { name: 'Chronicle', url: 'https://www.chronicle.com/section/news/3/rss' },
+  { name: 'BBC Education', url: 'https://feeds.bbci.co.uk/news/education/rss.xml' },
+  { name: 'Guardian Education', url: 'https://www.theguardian.com/education/rss' },
+  { name: 'Nature', url: 'https://www.nature.com/nature.rss' },
+  { name: 'New Scientist', url: 'https://www.newscientist.com/feed/home/' },
 ]
 
 const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_' })

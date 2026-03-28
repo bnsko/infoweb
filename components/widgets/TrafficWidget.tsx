@@ -27,7 +27,7 @@ function getIcon(title: string): string {
 
 export default function TrafficWidget() {
   const { t, lang } = useLang()
-  const [tab, setTab] = useState<Tab>('map')
+  const [tab, setTab] = useState<Tab>('incidents')
   const { data, loading, error, refetch } = useWidget<{ items: TrafficItem[] }>('/api/traffic', 2 * 60 * 1000)
 
   return (

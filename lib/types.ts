@@ -199,16 +199,19 @@ export interface OnThisDayResponse {
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
 export interface CityTemp { key: string; name: string; temp: number }
+export interface CityAQI  { key: string; name: string; aqi: number }
 
 export interface StatsData {
   flightsCount: number | null
   tempBA: number | null
   aqi: number | null
+  aqiSK?: number | null
   eurToUsd: number | null
   dayOfYear: number
   daysInYear: number
   timestamp: number
   cityTemps?: CityTemp[]
+  cityAQI?: CityAQI[]
 }
 
 // ─── Population ───────────────────────────────────────────────────────────────

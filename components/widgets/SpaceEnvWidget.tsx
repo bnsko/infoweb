@@ -99,46 +99,59 @@ export default function SpaceEnvWidget() {
 }
 
 function ISSMiniMap({ lat, lon }: { lat: number; lon: number }) {
-  // Simple equirectangular projection: map lat/lon to SVG coords
-  const w = 240, h = 120
-  const x = ((lon + 180) / 360) * w
-  const y = ((90 - lat) / 180) * h
+  // Equirectangular projection
+  const w = 280, h = 140
+  const x = Math.max(0, Math.min(w, ((lon + 180) / 360) * w))
+  const y = Math.max(0, Math.min(h, ((90 - lat) / 180) * h))
 
-  // Simplified continent outlines (very rough polygons for visual effect)
+  // Improved continent outlines (w=280, h=140)
+  // toSvg(lon, lat) = x=(lon+180)/360*280, y=(90-lat)/180*140
   const continents = [
     // North America
-    'M48,28 L52,22 L62,20 L72,22 L78,28 L80,36 L72,46 L62,50 L58,48 L52,42 L48,34Z',
+    'M 10,29 L 40,22 L 64,17 L 80,23 L 88,34 L 80,38 L 79,51 L 70,57 L 63,52 L 58,46 L 52,36 L 48,33 L 40,34 L 36,29 Z',
     // South America
-    'M68,54 L74,50 L80,54 L82,62 L78,76 L72,82 L66,74 L64,62Z',
+    'M 76,60 L 81,52 L 88,56 L 92,68 L 90,82 L 86,97 L 80,103 L 74,95 L 71,82 L 72,70 Z',
     // Europe
-    'M110,22 L118,18 L126,20 L130,26 L126,32 L118,34 L112,30Z',
+    'M 128,24 L 136,19 L 148,21 L 156,27 L 150,32 L 142,35 L 132,32 Z',
     // Africa
-    'M112,36 L120,34 L130,38 L134,50 L130,64 L122,72 L114,66 L108,52 L110,42Z',
-    // Asia
-    'M130,14 L150,10 L172,14 L186,22 L190,34 L182,42 L168,44 L156,38 L140,36 L130,28Z',
+    'M 128,39 L 140,36 L 154,41 L 160,55 L 158,74 L 148,90 L 136,96 L 124,87 L 119,68 L 122,52 Z',
+    // Asia (simplified to avoid overlap with Europe)
+    'M 156,16 L 200,12 L 232,16 L 258,28 L 260,44 L 240,52 L 220,56 L 200,54 L 186,48 L 170,44 L 158,34 L 156,24 Z',
     // Australia
-    'M174,58 L186,54 L196,58 L198,66 L190,72 L178,70 L174,64Z',
+    'M 218,70 L 240,66 L 258,70 L 260,82 L 252,90 L 232,93 L 220,86 Z',
+    // Greenland (small blob)
+    'M 84,10 L 96,8 L 102,14 L 96,22 L 84,22 Z',
   ]
 
   return (
-    <div className="rounded-lg overflow-hidden bg-[#0a0d14] border border-white/5">
-      <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ maxHeight: 80 }}>
-        {/* Grid lines */}
-        <line x1={0} y1={h/2} x2={w} y2={h/2} stroke="rgba(255,255,255,0.04)" strokeWidth={0.5} />
-        <line x1={w/2} y1={0} x2={w/2} y2={h} stroke="rgba(255,255,255,0.04)" strokeWidth={0.5} />
-        <line x1={0} y1={h/4} x2={w} y2={h/4} stroke="rgba(255,255,255,0.02)" strokeWidth={0.3} strokeDasharray="2 4" />
-        <line x1={0} y1={3*h/4} x2={w} y2={3*h/4} stroke="rgba(255,255,255,0.02)" strokeWidth={0.3} strokeDasharray="2 4" />
+    <div className="rounded-lg overflow-hidden bg-[#060912] border border-white/5">
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ maxHeight: 100 }}>
+        {/* Latitude guides */}
+        <line x1={0} y1={h/2}  x2={w} y2={h/2}  stroke="rgba(255,255,255,0.04)" strokeWidth={0.5} />
+        <line x1={0} y1={h/4}  x2={w} y2={h/4}  stroke="rgba(255,255,255,0.025)" strokeWidth={0.4} strokeDasharray="3 5" />
+        <line x1={0} y1={3*h/4} x2={w} y2={3*h/4} stroke="rgba(255,255,255,0.025)" strokeWidth={0.4} strokeDasharray="3 5" />
+        {/* Prime meridian */}
+        <line x1={w/2} y1={0} x2={w/2} y2={h} stroke="rgba(255,255,255,0.03)" strokeWidth={0.4} />
         {/* Continents */}
         {continents.map((d, i) => (
-          <path key={i} d={d} fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" strokeWidth={0.5} />
+          <path key={i} d={d} fill="rgba(148,163,184,0.12)" stroke="rgba(148,163,184,0.22)" strokeWidth={0.6} />
         ))}
-        {/* ISS position */}
-        <circle cx={x} cy={y} r={6} fill="rgba(168,85,247,0.2)" />
-        <circle cx={x} cy={y} r={3} fill="#a855f7" />
-        <circle cx={x} cy={y} r={3} fill="#a855f7" opacity={0.6}>
-          <animate attributeName="r" from="3" to="8" dur="2s" repeatCount="indefinite" />
-          <animate attributeName="opacity" from="0.6" to="0" dur="2s" repeatCount="indefinite" />
+        {/* ISS orbit track hint */}
+        <circle cx={x} cy={y} r={10} fill="rgba(168,85,247,0.18)" />
+        {/* ISS position dot */}
+        <circle cx={x} cy={y} r={4} fill="#a855f7" />
+        <circle cx={x} cy={y} r={3} fill="#d8b4fe" />
+        {/* Pulsing ring */}
+        <circle cx={x} cy={y} r={4} fill="none" stroke="#a855f7" strokeWidth={1.5} opacity={0.7}>
+          <animate attributeName="r"       from="4"   to="12"  dur="2s" repeatCount="indefinite" />
+          <animate attributeName="opacity" from="0.7" to="0"   dur="2s" repeatCount="indefinite" />
         </circle>
+        {/* Coordinates label */}
+        <text x={4} y={h - 4} fontSize={7.5} fill="rgba(148,163,184,0.45)" fontFamily="monospace">
+          {lat >= 0 ? lat.toFixed(1) + '°N' : (-lat).toFixed(1) + '°S'}
+          {' '}
+          {lon >= 0 ? lon.toFixed(1) + '°E' : (-lon).toFixed(1) + '°W'}
+        </text>
       </svg>
     </div>
   )
