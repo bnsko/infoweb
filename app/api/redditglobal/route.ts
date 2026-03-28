@@ -46,30 +46,7 @@ function parseRSSEntries(xml: string) {
 }
 
 export async function GET() {
-  // Try RSS first
-  const rssUrls = [
-    'https://www.reddit.com/r/all/top.rss?t=day&limit=10',
-    'https://old.reddit.com/r/all/top.rss?t=day&limit=10',
-  ]
-
-  for (const url of rssUrls) {
-    try {
-      const res = await fetch(url, {
-        cache: 'no-store',
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; InfoSK/1.0)',
-          Accept: 'application/rss+xml, application/xml, text/xml, */*',
-        },
-        signal: AbortSignal.timeout(10000),
-      })
-      if (!res.ok) continue
-      const xml = await res.text()
-      const posts = parseRSSEntries(xml)
-      if (posts.length > 0) return NextResponse.json({ posts })
-    } catch { /* try next */ }
-  }
-
-  // Fallback: JSON
+  // Try JSON API first (has proper scores and comment counts)
   const jsonUrls = [
     'https://www.reddit.com/r/all/top.json?limit=10&t=day&raw_json=1',
   ]
@@ -95,6 +72,29 @@ export async function GET() {
           numComments: d.num_comments, author: d.author, createdUtc: d.created_utc, thumbnail: null,
         }
       })
+      if (posts.length > 0) return NextResponse.json({ posts })
+    } catch { /* try next */ }
+  }
+
+  // Fallback: RSS feed
+  const rssUrls = [
+    'https://www.reddit.com/r/all/top.rss?t=day&limit=10',
+    'https://old.reddit.com/r/all/top.rss?t=day&limit=10',
+  ]
+
+  for (const url of rssUrls) {
+    try {
+      const res = await fetch(url, {
+        cache: 'no-store',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; InfoSK/1.0)',
+          Accept: 'application/rss+xml, application/xml, text/xml, */*',
+        },
+        signal: AbortSignal.timeout(10000),
+      })
+      if (!res.ok) continue
+      const xml = await res.text()
+      const posts = parseRSSEntries(xml)
       if (posts.length > 0) return NextResponse.json({ posts })
     } catch { /* try next */ }
   }

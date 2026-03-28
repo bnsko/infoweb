@@ -19,15 +19,24 @@ interface SteamNews {
 }
 interface DeckPrice { usd: string; eur: string }
 
+interface MostPlayedGame {
+  appid: number; name: string; currentPlayers: number; peakToday: number
+}
+interface DeckPriceHistory {
+  date: string; model: string; priceEur: number
+}
+
 interface SteamData {
   newReleases: SteamGame[]
   topSellers: SteamGame[]
   upcomingGames: UpcomingGame[]
   newsItems: SteamNews[]
   deckPrice: DeckPrice | null
+  mostPlayed: MostPlayedGame[]
+  deckPriceHistory: DeckPriceHistory[]
 }
 
-type Tab = 'new' | 'top' | 'news' | 'upcoming' | 'deck'
+type Tab = 'new' | 'top' | 'played' | 'news' | 'upcoming' | 'deck'
 
 function timeAgo(ts: number): string {
   const diff = Math.floor(Date.now() / 1000 - ts)
@@ -58,6 +67,7 @@ export default function SteamWidget() {
   const TABS: { key: Tab; icon: string; label: string }[] = [
     { key: 'new',      icon: '🆕', label: lang === 'sk' ? 'Nové' : 'New' },
     { key: 'top',      icon: '🏆', label: 'Top' },
+    { key: 'played',   icon: '👾', label: lang === 'sk' ? 'Hrané' : 'Played' },
     { key: 'news',     icon: '📰', label: 'News' },
     { key: 'upcoming', icon: '📅', label: lang === 'sk' ? 'Chystané' : 'Upcoming' },
     { key: 'deck',     icon: '🎮', label: 'Deck' },
@@ -126,7 +136,7 @@ export default function SteamWidget() {
       {/* Upcoming Games */}
       {!loading && tab === 'upcoming' && (
         <div className="space-y-1 max-h-[320px] overflow-y-auto scrollbar-hide">
-          {(data?.upcomingGames ?? []).length === 0 && <p className="text-xs text-slate-500 text-center py-4">Žiadne chystané hry</p>}
+          {(data?.upcomingGames ?? []).length === 0 && <p className="text-xs text-slate-500 text-center py-4">{lang === 'sk' ? 'Žiadne údaje — Steam API' : 'No data from Steam API'}</p>}
           {(data?.upcomingGames ?? []).map((g, i) => (
             <a key={i} href={`https://store.steampowered.com/app/${g.id}`}
                target="_blank" rel="noopener noreferrer"
@@ -144,7 +154,31 @@ export default function SteamWidget() {
         </div>
       )}
 
-      {/* Steam Deck Prices */}
+      {/* Most Played */}
+      {!loading && tab === 'played' && (
+        <div className="space-y-1 max-h-[320px] overflow-y-auto scrollbar-hide">
+          {(data?.mostPlayed ?? []).length === 0 && <p className="text-xs text-slate-500 text-center py-4">Žiadne údaje</p>}
+          {(data?.mostPlayed ?? []).map((g, i) => {
+            const fmtNum = (n: number) => n >= 1000000 ? `${(n / 1000000).toFixed(1)}M` : n >= 1000 ? `${(n / 1000).toFixed(0)}k` : String(n)
+            return (
+              <a key={g.appid} href={`https://store.steampowered.com/app/${g.appid}`}
+                 target="_blank" rel="noopener noreferrer"
+                 className="flex items-center gap-2 py-1.5 px-1 rounded-lg hover:bg-white/4 transition-all group">
+                <span className={`text-[10px] font-mono w-4 shrink-0 ${i < 3 ? 'text-yellow-400 font-bold' : 'text-slate-600'}`}>{i + 1}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-slate-200 group-hover:text-white line-clamp-1">{g.name}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="text-[11px] font-bold text-green-400">{fmtNum(g.currentPlayers)}</div>
+                  <div className="text-[8px] text-slate-600">peak: {fmtNum(g.peakToday)}</div>
+                </div>
+              </a>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Steam Deck Prices + History */}
       {!loading && tab === 'deck' && (
         <div className="space-y-2">
           <div className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-xl border border-indigo-500/15 p-3 text-center mb-2">
@@ -159,6 +193,21 @@ export default function SteamWidget() {
               <span className="text-[13px] font-bold text-indigo-300">{cfg.currency}{cfg.price}</span>
             </a>
           ))}
+          {/* Price History */}
+          {(data?.deckPriceHistory ?? []).length > 0 && (
+            <div className="mt-3">
+              <div className="text-[10px] text-slate-500 uppercase tracking-wide font-semibold mb-1.5">📊 Cenová história</div>
+              <div className="space-y-1">
+                {(data?.deckPriceHistory ?? []).map((h, i) => (
+                  <div key={i} className="flex items-center justify-between text-[10px] px-2 py-1.5 rounded-lg bg-white/[0.02] border border-white/5">
+                    <span className="text-slate-400">{h.date}</span>
+                    <span className="text-slate-300">{h.model}</span>
+                    <span className="font-bold text-indigo-300">€{h.priceEur}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           <a href="https://store.steampowered.com/steamdeck" target="_blank" rel="noopener noreferrer"
              className="block text-center text-[10px] text-purple-400 hover:text-purple-300 mt-2 transition-colors">
             Kúpiť na store.steampowered.com ↗

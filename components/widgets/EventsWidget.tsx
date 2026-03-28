@@ -37,6 +37,8 @@ const COUNTRIES = [
   { key: 'pl', flag: '🇵🇱', label: 'Poľsko' },
   { key: 'hu', flag: '🇭🇺', label: 'Maďarsko' },
   { key: 'at', flag: '🇦🇹', label: 'Rakúsko' },
+  { key: 'de', flag: '🇩🇪', label: 'Nemecko' },
+  { key: 'ua', flag: '🇺🇦', label: 'Ukrajina' },
 ]
 
 const CAT_COLORS: Record<string, string> = {

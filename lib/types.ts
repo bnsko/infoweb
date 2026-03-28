@@ -198,7 +198,7 @@ export interface OnThisDayResponse {
 }
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
-export interface CityTemp { key: string; name: string; temp: number }
+export interface CityTemp { key: string; name: string; temp: number; humidity: number; windSpeed: number; windDir: number; pressure: number; weatherCode: number }
 export interface CityAQI  { key: string; name: string; aqi: number }
 
 export interface StatsData {

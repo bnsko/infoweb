@@ -58,33 +58,7 @@ export async function GET(request: Request) {
   const sort = VALID_SORTS.includes(rawSort) ? rawSort : 'hot'
   const rssSort = sort === 'best' ? 'top' : sort
 
-  // Try RSS feed first (more reliable from servers)
-  const rssUrls = [
-    `https://www.reddit.com/r/Slovakia/${rssSort}.rss?limit=25`,
-    `https://old.reddit.com/r/Slovakia/${rssSort}.rss?limit=25`,
-  ]
-
-  for (const url of rssUrls) {
-    try {
-      const res = await fetch(url, {
-        cache: 'no-store',
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; InfoSK/1.0)',
-          Accept: 'application/rss+xml, application/xml, text/xml, */*',
-        },
-        signal: AbortSignal.timeout(10000),
-      })
-      if (!res.ok) continue
-
-      const xml = await res.text()
-      const posts = parseRSSPosts(xml)
-      if (posts.length > 0) {
-        return NextResponse.json({ posts, sort })
-      }
-    } catch { /* try next */ }
-  }
-
-  // Fallback: try JSON API
+  // Try JSON API first (has proper scores and comment counts)
   const jsonUrls = sort === 'best'
     ? [`https://www.reddit.com/r/Slovakia/top.json?limit=25&t=week&raw_json=1`]
     : [`https://www.reddit.com/r/Slovakia/${sort}.json?limit=25&raw_json=1`]
@@ -113,6 +87,32 @@ export async function GET(request: Request) {
         }
       })
       if (posts.length > 0) return NextResponse.json({ posts, sort })
+    } catch { /* try next */ }
+  }
+
+  // Fallback: try RSS feed
+  const rssUrls = [
+    `https://www.reddit.com/r/Slovakia/${rssSort}.rss?limit=25`,
+    `https://old.reddit.com/r/Slovakia/${rssSort}.rss?limit=25`,
+  ]
+
+  for (const url of rssUrls) {
+    try {
+      const res = await fetch(url, {
+        cache: 'no-store',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; InfoSK/1.0)',
+          Accept: 'application/rss+xml, application/xml, text/xml, */*',
+        },
+        signal: AbortSignal.timeout(10000),
+      })
+      if (!res.ok) continue
+
+      const xml = await res.text()
+      const posts = parseRSSPosts(xml)
+      if (posts.length > 0) {
+        return NextResponse.json({ posts, sort })
+      }
     } catch { /* try next */ }
   }
 

@@ -25,15 +25,15 @@ import HackerNewsWidget from '@/components/widgets/HackerNewsWidget'
 import TwitterWidget from '@/components/widgets/TwitterWidget'
 import FuelPricesWidget from '@/components/widgets/FuelPricesWidget'
 import GroceriesWidget from '@/components/widgets/GroceriesWidget'
-import ToolOfTheDayWidget from '@/components/widgets/ToolOfTheDayWidget'
+import AINewsWidget from '@/components/widgets/AINewsWidget'
 import FinanceNewsWidget from '@/components/widgets/FinanceNewsWidget'
 import DaySummaryWidget from '@/components/widgets/DaySummaryWidget'
 import GitHubTrendingWidget from '@/components/widgets/GitHubTrendingWidget'
 import MoonPhaseWidget from '@/components/widgets/MoonPhaseWidget'
-import WorldClockWidget from '@/components/widgets/WorldClockWidget'
 import FearGreedWidget from '@/components/widgets/FearGreedWidget'
 import EnergyWidget from '@/components/widgets/EnergyWidget'
 import ISSWidget from '@/components/widgets/ISSWidget'
+import InvestmentWidget from '@/components/widgets/InvestmentWidget'
 import { useLang } from '@/hooks/useLang'
 
 export default function Home() {
@@ -138,19 +138,24 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Tech & Nástroje */}
-        <div id="sec-tech">
-          <SectionLabel label={t('sec.tech')} />
-          <ToolOfTheDayWidget />
+        {/* Investície & Trhy */}
+        <div id="sec-invest">
+          <SectionLabel label={lang === 'sk' ? '📈 Investície & Trhy' : '📈 Investments & Markets'} />
+          <InvestmentWidget />
+        </div>
+
+        {/* AI & Tech */}
+        <div id="sec-ai">
+          <SectionLabel label={lang === 'sk' ? '🤖 AI & Tech' : '🤖 AI & Tech'} />
+          <AINewsWidget />
         </div>
 
         {/* GitHub, Moon, Clock, FearGreed, Energy */}
         <div id="sec-extras">
           <SectionLabel label={lang === 'sk' ? '🔭 Štatistiky & Objavy' : '🔭 Stats & Extras'} />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <GitHubTrendingWidget />
             <MoonPhaseWidget />
-            <WorldClockWidget />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             <FearGreedWidget />

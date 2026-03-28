@@ -10,14 +10,17 @@ interface NewsItem { title: string; link: string; source: string }
 interface NewsData  { items: NewsItem[] }
 
 const SECTIONS = [
-  { id: 'sec-weather',   icon: '🌤️', labelSk: 'Počasie',   labelEn: 'Weather'    },
-  { id: 'sec-news',      icon: '📰', labelSk: 'Správy',    labelEn: 'News'       },
-  { id: 'sec-finance',   icon: '💶', labelSk: 'Financie',  labelEn: 'Finance'    },
-  { id: 'sec-transport', icon: '🚗', labelSk: 'Doprava',   labelEn: 'Transport'  },
-  { id: 'sec-prices',    icon: '🛒', labelSk: 'Ceny',      labelEn: 'Prices'     },
-  { id: 'sec-space',     icon: '🌌', labelSk: 'Vesmír',    labelEn: 'Space'      },
-  { id: 'sec-fun',       icon: '🎮', labelSk: 'Zábava',    labelEn: 'Fun'        },
-  { id: 'sec-history',   icon: '📚', labelSk: 'História',  labelEn: 'History'    },
+  { id: 'sec-weather',   icon: '🌤️', labelSk: 'Počasie',      labelEn: 'Weather'    },
+  { id: 'sec-news',      icon: '📰', labelSk: 'Správy',       labelEn: 'News'       },
+  { id: 'sec-finance',   icon: '💶', labelSk: 'Financie',     labelEn: 'Finance'    },
+  { id: 'sec-transport', icon: '🚗', labelSk: 'Doprava',      labelEn: 'Transport'  },
+  { id: 'sec-prices',    icon: '🛒', labelSk: 'Ceny & Energia', labelEn: 'Prices'  },
+  { id: 'sec-space',     icon: '🌌', labelSk: 'Vesmír',       labelEn: 'Space'      },
+  { id: 'sec-fun',       icon: '🎮', labelSk: 'Zábava',       labelEn: 'Fun'        },
+  { id: 'sec-ai',        icon: '🤖', labelSk: 'AI & Tech',    labelEn: 'AI & Tech'  },
+  { id: 'sec-invest',    icon: '📈', labelSk: 'Investície',   labelEn: 'Investing'  },
+  { id: 'sec-extras',    icon: '🔭', labelSk: 'Objavy',       labelEn: 'Discover'   },
+  { id: 'sec-history',   icon: '📚', labelSk: 'História',     labelEn: 'History'    },
 ]
 
 function scrollTo(id: string) {
@@ -29,7 +32,6 @@ export default function DaySummaryWidget() {
   const { lang } = useLang()
   const stats   = useWidget<StatsData>('/api/stats',   60 * 1000)
   const weather = useWidget<WeatherData>('/api/weather', 10 * 60 * 1000)
-  const news    = useWidget<NewsData>('/api/news', 5 * 60 * 1000)
 
   const [now, setNow] = useState<Date | null>(null)
   useEffect(() => {
@@ -51,8 +53,6 @@ export default function DaySummaryWidget() {
   const aqi     = stats.data?.aqiSK ?? stats.data?.aqi ?? null
   const aqiInfo = aqi !== null ? getAQIInfo(aqi) : null
   const eur     = stats.data?.eurToUsd
-
-  const topHeadline = news.data?.items?.find(i => i.title)
 
   return (
     <div className="widget-card !py-3 !px-4 border-violet-500/15 relative overflow-hidden card-entrance">
@@ -110,16 +110,6 @@ export default function DaySummaryWidget() {
               <div className="text-[9px] text-slate-500 leading-none mt-0.5">EUR/USD</div>
             </div>
           </div>
-        )}
-
-        {/* Top headline */}
-        {topHeadline && (
-          <a href={topHeadline.link} target="_blank" rel="noopener noreferrer"
-             className="hidden xl:flex items-center gap-1.5 min-w-0 max-w-sm hover:opacity-80 transition-opacity">
-            <span className="text-[10px] text-slate-600 shrink-0">📰</span>
-            <span className="text-[10px] text-slate-400 truncate">{topHeadline.title}</span>
-            <span className="text-[10px] text-slate-600 shrink-0">↗</span>
-          </a>
         )}
 
         {/* Quick-scroll nav — right-aligned */}

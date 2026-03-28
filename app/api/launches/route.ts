@@ -35,8 +35,8 @@ export async function GET() {
       pad: l.pad?.location?.name ?? '—',
       missionDesc: l.mission?.description?.slice(0, 180) ?? null,
       imageUrl: l.image ?? null,
-      infoUrl: l.infoURLs?.[0]?.url ?? l.vidURLs?.[0]?.url ?? null,
-      launchLibraryUrl: `https://ll.thespacedevs.com/2.2.0/launch/${l.id}/`,
+      infoUrl: l.infoURLs?.[0]?.url ?? null,
+      launchLibraryUrl: `https://spacelaunchnow.me/launch/${l.slug ?? l.id}`,
       webcastUrl: l.vidURLs?.[0]?.url ?? null,
     }))
 
