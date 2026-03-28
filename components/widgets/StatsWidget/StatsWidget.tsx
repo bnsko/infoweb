@@ -2,11 +2,24 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useWidget } from '@/hooks/useWidget'
-import { getAQIInfo } from '@/lib/utils'
+import { getAQIInfo, getWeatherInfo } from '@/lib/utils'
 import { useLang } from '@/hooks/useLang'
 import type { StatsData } from '@/lib/types'
 
 const SOURCES = 32
+
+function formatTime(iso: string): string {
+  try { return new Date(iso).toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }) }
+  catch { return '' }
+}
+
+function uvColor(uv: number): string {
+  if (uv <= 2) return '#4ade80'
+  if (uv <= 5) return '#fbbf24'
+  if (uv <= 7) return '#f97316'
+  if (uv <= 10) return '#ef4444'
+  return '#a855f7'
+}
 
 function getSessionId(): string {
   if (typeof window === 'undefined') return ''
@@ -119,32 +132,48 @@ export default function StatsWidget() {
         {cityTemps.length > 0 && (
           <div className="pt-2 border-t border-white/5">
             <div className="text-[10px] text-slate-500 uppercase tracking-wide font-semibold mb-2">
-              🗺️ {lang === 'sk' ? 'Počasie v mestách' : 'City Weather'}
+              ☀️ {lang === 'sk' ? 'Počasie' : 'Weather'}
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
               {cityTemps.map(c => {
                 const aqiData = cityAQI.find(a => a.key === c.key)
                 const aqiI = aqiData ? getAQIInfo(aqiData.aqi) : null
                 const isHot = hottest?.key === c.key && hottest.key !== coldest?.key
                 const isCold = coldest?.key === c.key && hottest?.key !== coldest?.key
                 const color = tempColor(c.temp)
+                const wInfo = getWeatherInfo(c.weatherCode)
+                const sunriseTime = c.sunrise ? formatTime(c.sunrise) : ''
+                const sunsetTime = c.sunset ? formatTime(c.sunset) : ''
                 return (
                   <div key={c.key}
-                    className={`relative rounded-xl p-2.5 border transition-all overflow-hidden ${
+                    className={`relative rounded-xl p-3 border transition-all overflow-hidden ${
                       isHot ? 'bg-orange-500/8 border-orange-500/20' :
                       isCold ? 'bg-blue-500/8 border-blue-500/20' :
                       'bg-white/[0.02] border-white/5 hover:border-white/10'
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[10px] font-bold text-slate-300 truncate">{c.name}</span>
-                      {isHot && <span className="text-xs">🔥</span>}
-                      {isCold && <span className="text-xs">🥶</span>}
+                    {/* City name + badge */}
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[11px] font-bold text-slate-300 truncate">{c.name}</span>
+                      <div className="flex items-center gap-1">
+                        {isHot && <span className="text-xs">🔥</span>}
+                        {isCold && <span className="text-xs">🥶</span>}
+                        <span className="text-base">{wInfo.emoji}</span>
+                      </div>
                     </div>
-                    <div className="text-xl font-bold tracking-tight leading-none mb-1.5" style={{ color }}>
-                      {c.temp}°C
+
+                    {/* Temp + feels like + weather description */}
+                    <div className="flex items-baseline gap-2 mb-1">
+                      <span className="text-2xl font-bold tracking-tight leading-none" style={{ color }}>{c.temp}°</span>
+                      <div className="text-[9px] text-slate-500">
+                        <div>{lang === 'sk' ? 'Pocit' : 'Feels'} <span className="text-slate-400 font-semibold">{c.feelsLike}°</span></div>
+                        <div><span className="text-orange-400">↑{c.tempMax}°</span> <span className="text-blue-400">↓{c.tempMin}°</span></div>
+                      </div>
                     </div>
-                    <div className="space-y-0.5 text-[9px] text-slate-500">
+                    <div className="text-[9px] text-slate-400 mb-2">{wInfo.label}</div>
+
+                    {/* Detail grid */}
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[9px] text-slate-500">
                       <div className="flex items-center gap-1">
                         <span>💧</span>
                         <span>{c.humidity}%</span>
@@ -157,10 +186,26 @@ export default function StatsWidget() {
                         <span>🌀</span>
                         <span>{c.pressure} hPa</span>
                       </div>
+                      <div className="flex items-center gap-1">
+                        <span>☀️</span>
+                        <span className="font-semibold" style={{ color: uvColor(c.uvIndex) }}>UV {c.uvIndex.toFixed(1)}</span>
+                      </div>
+                      {sunriseTime && (
+                        <div className="flex items-center gap-1">
+                          <span>🌅</span>
+                          <span className="text-amber-400">{sunriseTime}</span>
+                        </div>
+                      )}
+                      {sunsetTime && (
+                        <div className="flex items-center gap-1">
+                          <span>🌇</span>
+                          <span className="text-orange-400">{sunsetTime}</span>
+                        </div>
+                      )}
                       {aqiData && aqiI && (
-                        <div className="flex items-center gap-1 font-semibold" style={{ color: aqiI.color }}>
+                        <div className="flex items-center gap-1 font-semibold col-span-2" style={{ color: aqiI.color }}>
                           <span>🫁</span>
-                          <span>AQI {aqiData.aqi}</span>
+                          <span>AQI {aqiData.aqi} · {aqiI.label}</span>
                         </div>
                       )}
                     </div>

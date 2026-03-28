@@ -25,8 +25,9 @@ function parseRSSEntries(xml: string) {
     const updated = getTag('updated')
     const id = entry.match(/\/comments\/([a-z0-9]+)\//)?.[1] ?? Math.random().toString(36).slice(2, 8)
     const content = getTag('content')
-    const scoreMatch = content.match(/(\d+)\s*point/)
-    const commentsMatch = content.match(/(\d+)\s*comment/)
+    const decoded = content.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
+    const scoreMatch = decoded.match(/(\d+)\s*point/) ?? content.match(/(\d+)\s*point/)
+    const commentsMatch = decoded.match(/\[(\d+)\s*comment/) ?? decoded.match(/(\d+)\s*comment/) ?? content.match(/(\d+)\s*comment/)
 
     if (title) {
       posts.push({
@@ -46,8 +47,9 @@ function parseRSSEntries(xml: string) {
 }
 
 export async function GET() {
-  // Try JSON API first (has proper scores and comment counts)
+  // Try JSON API first — multiple endpoints for reliability
   const jsonUrls = [
+    'https://old.reddit.com/r/all/top.json?limit=10&t=day&raw_json=1',
     'https://www.reddit.com/r/all/top.json?limit=10&t=day&raw_json=1',
   ]
 
@@ -56,23 +58,26 @@ export async function GET() {
       const res = await fetch(url, {
         cache: 'no-store',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          Accept: 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.7',
+          'Accept-Language': 'en-US,en;q=0.9',
         },
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(8000),
       })
       if (!res.ok) continue
-      const json = await res.json()
+      const text = await res.text()
+      if (!text.startsWith('{') && !text.startsWith('[')) continue
+      const json = JSON.parse(text)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const posts = (json.data?.children ?? []).slice(0, 10).map((child: any) => {
         const d = child.data
         return {
           id: d.id, title: d.title, subreddit: d.subreddit_name_prefixed,
-          permalink: `https://reddit.com${d.permalink}`, score: d.score,
-          numComments: d.num_comments, author: d.author, createdUtc: d.created_utc, thumbnail: null,
+          permalink: `https://reddit.com${d.permalink}`, score: d.score ?? 0,
+          numComments: d.num_comments ?? 0, author: d.author, createdUtc: d.created_utc, thumbnail: null,
         }
       })
-      if (posts.length > 0) return NextResponse.json({ posts })
+      if (posts.length > 0) return NextResponse.json({ posts, source: 'json' })
     } catch { /* try next */ }
   }
 
@@ -87,17 +92,17 @@ export async function GET() {
       const res = await fetch(url, {
         cache: 'no-store',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; InfoSK/1.0)',
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
           Accept: 'application/rss+xml, application/xml, text/xml, */*',
         },
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(8000),
       })
       if (!res.ok) continue
       const xml = await res.text()
       const posts = parseRSSEntries(xml)
-      if (posts.length > 0) return NextResponse.json({ posts })
+      if (posts.length > 0) return NextResponse.json({ posts, source: 'rss' })
     } catch { /* try next */ }
   }
 
-  return NextResponse.json({ error: 'Reddit fetch failed', posts: [] }, { status: 200 })
+  return NextResponse.json({ error: 'Reddit fetch failed', posts: [], source: 'none' }, { status: 200 })
 }

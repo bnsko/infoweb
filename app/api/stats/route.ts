@@ -36,11 +36,12 @@ export async function GET() {
       next: { revalidate: 3600 },
       signal: AbortSignal.timeout(5000),
     }),
-    // Multi-location weather call for all SK cities at once (expanded)
+    // Multi-location weather call for all SK cities at once (expanded with feels-like, UV, sunrise/sunset)
     fetch(
       `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}` +
-        `&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,surface_pressure,weather_code` +
-        `&timezone=Europe%2FBratislava`,
+        `&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,surface_pressure,weather_code,apparent_temperature` +
+        `&daily=sunrise,sunset,uv_index_max,temperature_2m_max,temperature_2m_min` +
+        `&timezone=Europe%2FBratislava&forecast_days=1`,
       { next: { revalidate: 600 }, signal: AbortSignal.timeout(8000) }
     ),
   ])
@@ -50,7 +51,7 @@ export async function GET() {
   let aqi: number | null = null
   let aqiSK: number | null = null
   let eurToUsd = null
-  let cityTemps: { key: string; name: string; temp: number; humidity: number; windSpeed: number; windDir: number; pressure: number; weatherCode: number }[] = []
+  let cityTemps: { key: string; name: string; temp: number; humidity: number; windSpeed: number; windDir: number; pressure: number; weatherCode: number; feelsLike: number; sunrise: string; sunset: string; uvIndex: number; tempMax: number; tempMin: number }[] = []
   let cityAQI: { key: string; name: string; aqi: number }[] = []
 
   if (flightsRes.status === 'fulfilled' && flightsRes.value.ok) {
@@ -96,6 +97,12 @@ export async function GET() {
         windDir: Math.round(arr[i]?.current?.wind_direction_10m ?? 0),
         pressure: Math.round(arr[i]?.current?.surface_pressure ?? 0),
         weatherCode: arr[i]?.current?.weather_code ?? 0,
+        feelsLike: Math.round(arr[i]?.current?.apparent_temperature ?? 0),
+        sunrise: arr[i]?.daily?.sunrise?.[0] ?? '',
+        sunset: arr[i]?.daily?.sunset?.[0] ?? '',
+        uvIndex: arr[i]?.daily?.uv_index_max?.[0] ?? 0,
+        tempMax: Math.round(arr[i]?.daily?.temperature_2m_max?.[0] ?? 0),
+        tempMin: Math.round(arr[i]?.daily?.temperature_2m_min?.[0] ?? 0),
       }))
       tempBA = cityTemps.find(c => c.key === 'BA')?.temp ?? null
     } catch { /* fallback */ }
