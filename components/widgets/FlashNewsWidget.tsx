@@ -45,8 +45,10 @@ export default function FlashNewsWidget() {
               Flash News
             </span>
           </div>
-          <button onClick={refetch} className="text-[9px] text-slate-500 hover:text-slate-300 transition-colors">
-            {lang === 'sk' ? '↻ obnoviť' : '↻ refresh'}
+          <button onClick={refetch} className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-all" title={lang === 'sk' ? 'Obnoviť' : 'Refresh'}>
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
           </button>
         </div>
 
@@ -54,19 +56,19 @@ export default function FlashNewsWidget() {
         {loading && <SkeletonRows rows={3} />}
         {!loading && error && <p className="text-[10px] text-slate-500">Chyba načítania</p>}
         {!loading && data && data.items.length > 0 && (
-          <div className="space-y-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-0.5">
             {data.items.map((item, i) => (
               <a
                 key={i}
                 href={item.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 py-1.5 px-2 rounded-lg hover:bg-white/[0.04] transition-all group"
+                className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-white/[0.04] transition-all group"
               >
-                <span className="text-[10px] font-mono text-slate-600 shrink-0 tabular-nums w-[70px]">{item.ago}</span>
+                <span className="text-[9px] font-mono text-slate-600 shrink-0 tabular-nums w-[65px]">{item.ago}</span>
                 <span className="text-[11px] text-slate-200 group-hover:text-white leading-snug line-clamp-1 flex-1 font-medium">{item.title}</span>
                 <span
-                  className="text-[9px] font-bold shrink-0 px-1.5 py-0.5 rounded-md border"
+                  className="text-[8px] font-bold shrink-0 px-1.5 py-0.5 rounded-md border"
                   style={{ color: SOURCE_COLORS[item.source] ?? '#94a3b8', borderColor: `${SOURCE_COLORS[item.source] ?? '#94a3b8'}30`, backgroundColor: `${SOURCE_COLORS[item.source] ?? '#94a3b8'}10` }}
                 >
                   {item.source}

@@ -38,22 +38,6 @@ export default function Header() {
 
         {/* Right: Lang + Theme circles + Holiday + Live */}
         <div className="flex items-center gap-3 shrink-0">
-          {/* Language switcher */}
-          <div className="hidden sm:flex items-center gap-0.5 bg-white/5 rounded-lg p-0.5 border border-white/5">
-            <button
-              onClick={() => setLang('sk')}
-              className={`text-[10px] font-bold px-2 py-1 rounded-md transition-all ${lang === 'sk' ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-white'}`}
-            >
-              SK
-            </button>
-            <button
-              onClick={() => setLang('en')}
-              className={`text-[10px] font-bold px-2 py-1 rounded-md transition-all ${lang === 'en' ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-white'}`}
-            >
-              EN
-            </button>
-          </div>
-
           {/* Theme circles */}
           <div className="hidden sm:flex items-center gap-1.5">
             {THEMES.map((tm) => (

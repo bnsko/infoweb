@@ -66,8 +66,8 @@ export default function PoliticsWidget() {
             ))}
           </div>
           <div className="flex items-center justify-between mt-3 pt-2 border-t border-white/[0.06]">
-            <span className="text-[9px] text-slate-600">{poll?.source}</span>
-            <span className="text-[9px] text-slate-600">{poll?.date}</span>
+            <span className="text-[9px] text-slate-600">{poll?.source} · {poll?.date}</span>
+            <a href="https://sk.wikipedia.org/wiki/Prieskumy_volebn%C3%BDch_preferenci%C3%AD_na_Slovensku" target="_blank" rel="noopener noreferrer" className="text-[9px] text-purple-400 hover:text-purple-300 transition-colors">Wikipedia SK ↗</a>
           </div>
         </>
       )}

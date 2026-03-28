@@ -15,6 +15,7 @@ const PODCAST_FEEDS = [
   { name: 'Denník N', url: 'https://dennikn.sk/podcast/feed/' },
   { name: 'Dobré ráno', url: 'https://anchor.fm/s/2c01c648/podcast/rss' },
   { name: 'RTVS', url: 'https://www.rtvs.sk/export/podcast.xml' },
+  { name: 'Podcasty.sk', url: 'https://www.podcasty.sk/feed/' },
 ]
 
 async function fetchPodcastFeed(feed: { name: string; url: string }): Promise<Podcast[]> {
@@ -27,7 +28,7 @@ async function fetchPodcastFeed(feed: { name: string; url: string }): Promise<Po
     if (!res.ok) return []
     const xml = await res.text()
 
-    const items = xml.split(/<item[ >]/).slice(1, 6)
+    const items = xml.split(/<item[ >]/).slice(1, 15)
     const podcasts: Podcast[] = []
 
     for (const item of items) {
@@ -68,5 +69,31 @@ export async function GET() {
     return db - da
   })
 
-  return NextResponse.json({ podcasts: allPodcasts.slice(0, 15), timestamp: Date.now() })
+  const now = new Date()
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const yesterdayStart = todayStart - 86400000
+  const weekStart = todayStart - 7 * 86400000
+
+  const today = allPodcasts.filter(p => {
+    const t = p.date ? new Date(p.date).getTime() : 0
+    return t >= todayStart
+  })
+
+  const yesterday = allPodcasts.filter(p => {
+    const t = p.date ? new Date(p.date).getTime() : 0
+    return t >= yesterdayStart && t < todayStart
+  })
+
+  const week = allPodcasts.filter(p => {
+    const t = p.date ? new Date(p.date).getTime() : 0
+    return t >= weekStart
+  })
+
+  return NextResponse.json({
+    today: today.slice(0, 10),
+    yesterday: yesterday.slice(0, 10),
+    week: week.slice(0, 15),
+    all: allPodcasts.slice(0, 15),
+    timestamp: Date.now(),
+  })
 }

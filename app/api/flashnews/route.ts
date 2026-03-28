@@ -47,7 +47,7 @@ async function fetchRSS(source: RSSSource): Promise<FlashItem[]> {
     const xml = await res.text()
 
     const items: FlashItem[] = []
-    const entries = xml.split(/<item[ >]/).slice(1, 6)
+    const entries = xml.split(/<item[ >]/).slice(1, 10)
     for (const entry of entries) {
       const titleMatch = entry.match(/<title[^>]*>([\s\S]*?)<\/title>/)
       const linkMatch = entry.match(/<link[^>]*>([\s\S]*?)<\/link>/) ?? entry.match(/<link[^>]*href="([^"]*)"/)
@@ -78,7 +78,7 @@ export async function GET() {
 
   // Sort by timestamp descending, take top 5
   allItems.sort((a, b) => b.timestamp - a.timestamp)
-  const top = allItems.slice(0, 5).map(item => ({
+  const top = allItems.slice(0, 12).map(item => ({
     ...item,
     ago: relativeAgo(item.timestamp),
   }))

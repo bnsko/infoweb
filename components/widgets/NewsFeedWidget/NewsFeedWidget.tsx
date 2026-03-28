@@ -40,22 +40,12 @@ function formatDate(raw: string | undefined): string {
 
 function NewsItems({ items, accentClass }: { items: NewsItem[]; accentClass: string }) {
   return (
-    <div className="space-y-0.5">
+    <div className="divide-y divide-white/[0.04]">
       {items.map((item, i) => (
-        <a key={i} href={item.link} target="_blank" rel="noopener noreferrer" className="news-item block group">
-          <div className="flex items-start gap-2 py-1">
-            <span className={`text-[10px] font-bold mt-0.5 shrink-0 w-16 truncate ${accentClass} opacity-70`}>
-              {item.source}
-            </span>
-            <div className="min-w-0">
-              <p className="text-sm text-slate-200 group-hover:text-white leading-snug line-clamp-2 transition-colors">
-                {item.title}
-              </p>
-              {item.pubDate && (
-                <p className="text-[10px] text-slate-600 mt-0.5">{formatDate(item.pubDate)}</p>
-              )}
-            </div>
-          </div>
+        <a key={i} href={item.link} target="_blank" rel="noopener noreferrer" className="flex items-baseline gap-2 py-1 group hover:bg-white/[0.02] px-1 -mx-1 rounded transition-colors">
+          <span className={`text-[9px] font-bold shrink-0 w-14 truncate ${accentClass} opacity-60`}>{item.source}</span>
+          <span className="text-[11px] text-slate-200 group-hover:text-white leading-snug line-clamp-1 flex-1">{item.title}</span>
+          {item.pubDate && <span className="text-[9px] text-slate-600 shrink-0 tabular-nums">{formatDate(item.pubDate)}</span>}
         </a>
       ))}
     </div>
@@ -142,7 +132,7 @@ export default function NewsFeedWidget() {
       </div>
 
       {/* Content – render all tabs but only show active (avoids refetch on switch) */}
-      <div className="max-h-[500px] overflow-y-auto">
+      <div className="max-h-[450px] overflow-y-auto scrollbar-hide">
         {TABS.map((tab) => (
           <div key={tab.key} className={active === tab.key ? 'block' : 'hidden'}>
             <TabContent tabKey={tab.key} isHN={'isHN' in tab ? tab.isHN : false} />
