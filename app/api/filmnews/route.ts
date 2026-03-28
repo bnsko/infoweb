@@ -11,14 +11,28 @@ const FEEDS = [
 
 const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_' })
 
+function decodeHTMLEntities(str: string): string {
+  return str
+    .replace(/&#(\d+);/g, (_, code: string) => String.fromCharCode(parseInt(code, 10)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex: string) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&apos;/g, "'")
+    .replace(/&nbsp;/g, ' ').replace(/&lsquo;/g, '\u2018').replace(/&rsquo;/g, '\u2019')
+    .replace(/&ldquo;/g, '\u201c').replace(/&rdquo;/g, '\u201d').replace(/&ndash;/g, '–')
+    .trim()
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractItems(parsed: any, sourceName: string) {
   const raw = parsed?.rss?.channel?.item ?? parsed?.feed?.entry ?? []
   const arr: unknown[] = Array.isArray(raw) ? raw : [raw]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return arr.slice(0, 6).map((item: any) => ({
-    title: (item.title?.['#text'] ?? item.title ?? '').trim(),
+    title: decodeHTMLEntities((item.title?.['#text'] ?? item.title ?? '').toString()),
     link: item.link?.['@_href'] ?? item.link ?? item.guid ?? '',
-    description: (item.description ?? item.summary ?? '').replace(/<[^>]*>/g, '').trim().slice(0, 200),
+    description: decodeHTMLEntities(
+      (item.description ?? item.summary ?? '').toString().replace(/<[^>]*>/g, '').trim().slice(0, 200)
+    ),
     pubDate: item.pubDate ?? item.updated ?? '',
     source: sourceName,
   }))

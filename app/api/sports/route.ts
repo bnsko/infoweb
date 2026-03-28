@@ -39,33 +39,76 @@ const SPORT_ENDPOINTS: Record<string, { url: string; name: string }[]> = {
   ],
   tennis: [
     { url: 'https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard', name: 'ATP' },
+    { url: 'https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard', name: 'WTA' },
   ],
   f1: [
     { url: 'https://site.api.espn.com/apis/site/v2/sports/racing/f1/scoreboard', name: 'Formula 1' },
   ],
   mma: [
     { url: 'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard', name: 'UFC' },
+    { url: 'https://site.api.espn.com/apis/site/v2/sports/mma/bellator/scoreboard', name: 'Bellator' },
   ],
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getCompetitorName(c: any): string {
+  return (
+    c?.team?.shortDisplayName ??
+    c?.team?.name ??
+    c?.athlete?.shortName ??
+    c?.athlete?.displayName ??
+    c?.displayName ??
+    ''
+  )
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getCompetitorLogo(c: any): string | null {
+  return c?.team?.logo ?? c?.athlete?.flag?.href ?? c?.athlete?.headshot?.href ?? null
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseESPNData(data: any, leagueName: string): Match[] {
-  return (data.events ?? []).slice(0, 10).map((ev: { id: string; date: string; competitions?: { competitors?: { homeAway: string; team?: { shortDisplayName?: string; name?: string; logo?: string }; score?: string }[]; status?: { type?: { name?: string }; displayClock?: string } }[] }) => {
+  return (data.events ?? []).slice(0, 15).map((ev: {
+    id: string; date: string; name?: string; shortName?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    competitions?: any[]
+  }) => {
     const comp = ev.competitions?.[0]
-    const home = comp?.competitors?.find(c => c.homeAway === 'home')
-    const away = comp?.competitors?.find(c => c.homeAway === 'away')
+    const competitors: unknown[] = comp?.competitors ?? []
+
+    // Prefer homeAway, fall back to order for individual sports (tennis, MMA)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sorted = [...competitors].sort((a: any, b: any) => (a.order ?? 99) - (b.order ?? 99))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const home = (competitors as any[]).find(c => c.homeAway === 'home') ?? sorted[0]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const away = (competitors as any[]).find(c => c.homeAway === 'away') ?? sorted[1]
+
+    // For events with no named competitors (F1 race listing), use event name
+    const evName = ev.name ?? ev.shortName ?? ''
+    const nameParts = evName.includes(' vs ') ? evName.split(' vs ') :
+                      evName.includes(' at ')  ? evName.split(' at ')  : null
+
+    const homeTeam = getCompetitorName(home) || (nameParts?.[0]?.trim() ?? evName)
+    const awayTeam = getCompetitorName(away) || (nameParts?.[1]?.trim() ?? '')
+
     return {
       id: ev.id,
       competition: leagueName,
-      homeTeam: home?.team?.shortDisplayName ?? home?.team?.name ?? '',
-      awayTeam: away?.team?.shortDisplayName ?? away?.team?.name ?? '',
-      homeScore: home?.score ? Number(home.score) : null,
-      awayScore: away?.score ? Number(away.score) : null,
-      status: comp?.status?.type?.name ?? 'STATUS_SCHEDULED',
-      minute: comp?.status?.displayClock ?? null,
+      homeTeam,
+      awayTeam,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      homeScore: (home as any)?.score != null ? Number((home as any).score) : null,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      awayScore: (away as any)?.score != null ? Number((away as any).score) : null,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      status: (comp as any)?.status?.type?.name ?? 'STATUS_SCHEDULED',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      minute: (comp as any)?.status?.displayClock ?? (comp as any)?.status?.type?.description ?? null,
       startTime: ev.date,
-      homeCrest: home?.team?.logo ?? null,
-      awayCrest: away?.team?.logo ?? null,
+      homeCrest: getCompetitorLogo(home),
+      awayCrest: getCompetitorLogo(away),
     }
   })
 }

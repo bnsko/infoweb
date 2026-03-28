@@ -73,7 +73,6 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             <EventsWidget />
-            <TwitterWidget />
           </div>
         </div>
 
@@ -104,10 +103,13 @@ export default function Home() {
         {/* Zábava & Komunita */}
         <div>
           <SectionLabel label={t('sec.fun')} />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <SteamWidget />
             <RedditWidget />
             <RedditGlobalWidget />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <TwitterWidget />
             <HackerNewsWidget />
           </div>
         </div>
