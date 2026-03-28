@@ -1,7 +1,6 @@
 'use client'
 
 import Header from '@/components/Header'
-import QuickSummaryWidget from '@/components/widgets/QuickSummaryWidget'
 import StatsWidget from '@/components/widgets/StatsWidget'
 import NewsFeedWidget from '@/components/widgets/NewsFeedWidget'
 import RedditWidget from '@/components/widgets/RedditWidget'
@@ -32,7 +31,7 @@ import GitHubTrendingWidget from '@/components/widgets/GitHubTrendingWidget'
 import MoonPhaseWidget from '@/components/widgets/MoonPhaseWidget'
 import FearGreedWidget from '@/components/widgets/FearGreedWidget'
 import EnergyWidget from '@/components/widgets/EnergyWidget'
-import ISSWidget from '@/components/widgets/ISSWidget'
+
 import InvestmentWidget from '@/components/widgets/InvestmentWidget'
 import FlashNewsWidget from '@/components/widgets/FlashNewsWidget'
 import LotteryWidget from '@/components/widgets/LotteryWidget'
@@ -55,9 +54,6 @@ export default function Home() {
       <Header />
 
       <main className="max-w-[1680px] mx-auto px-4 pt-4 pb-10 space-y-6">
-
-        {/* Quick summary - fastest news overview */}
-        {isWidgetVisible('quicksummary') && <QuickSummaryWidget />}
 
         {/* Day summary + quick nav */}
         {isWidgetVisible('daysummary') && <DaySummaryWidget />}
@@ -149,10 +145,9 @@ export default function Home() {
         {isWidgetVisible('space') && (
           <div id="sec-space">
             <SectionLabel label={t('sec.space')} />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <SpaceEnvWidget />
               <LaunchesWidget />
-              <ISSWidget />
             </div>
           </div>
         )}

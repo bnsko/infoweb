@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useWidget } from '@/hooks/useWidget'
 import { useLang } from '@/hooks/useLang'
 import WidgetCard from '@/components/ui/WidgetCard'
@@ -14,7 +15,10 @@ interface Podcast {
 }
 
 interface PodcastData {
-  podcasts: Podcast[]
+  today: Podcast[]
+  yesterday: Podcast[]
+  week: Podcast[]
+  all: Podcast[]
   timestamp: number
 }
 
@@ -23,7 +27,16 @@ const SHOW_COLORS: Record<string, string> = {
   'Denník N': '#6366f1',
   'Dobré ráno': '#f59e0b',
   'RTVS': '#3b82f6',
+  'Podcasty.sk': '#10b981',
 }
+
+const TABS = [
+  { key: 'today', label: 'Dnes', emoji: '📅' },
+  { key: 'yesterday', label: 'Včera', emoji: '⏪' },
+  { key: 'week', label: '7 dní', emoji: '📊' },
+] as const
+
+type Tab = (typeof TABS)[number]['key']
 
 function relativeDate(dateStr: string): string {
   if (!dateStr) return ''
@@ -36,7 +49,10 @@ function relativeDate(dateStr: string): string {
 
 export default function PodcastWidget() {
   const { lang } = useLang()
+  const [tab, setTab] = useState<Tab>('today')
   const { data, loading, error, refetch } = useWidget<PodcastData>('/api/podcasts', 15 * 60 * 1000)
+
+  const podcasts = data ? (data[tab]?.length > 0 ? data[tab] : data.all) : []
 
   return (
     <WidgetCard
@@ -45,11 +61,31 @@ export default function PodcastWidget() {
       icon="🎙️"
       onRefresh={refetch}
     >
+      {/* Tabs */}
+      <div className="flex items-center gap-1 mb-3">
+        {TABS.map(t => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-all ${
+              tab === t.key
+                ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                : 'text-slate-500 hover:text-slate-300 hover:bg-white/4'
+            }`}
+          >
+            {t.emoji} {t.label}
+          </button>
+        ))}
+      </div>
+
       {loading && <SkeletonRows rows={6} />}
       {!loading && error && <p className="text-xs text-slate-500">{lang === 'sk' ? 'Chyba' : 'Error'}</p>}
-      {!loading && data && data.podcasts.length > 0 && (
+      {!loading && data && podcasts.length === 0 && (
+        <p className="text-xs text-slate-500 text-center py-4">{lang === 'sk' ? 'Žiadne podcasty' : 'No podcasts'}</p>
+      )}
+      {!loading && data && podcasts.length > 0 && (
         <div className="space-y-0.5 max-h-[380px] overflow-y-auto scrollbar-hide">
-          {data.podcasts.map((pod, i) => {
+          {podcasts.map((pod, i) => {
             const showColor = SHOW_COLORS[pod.show] ?? '#64748b'
             return (
               <a

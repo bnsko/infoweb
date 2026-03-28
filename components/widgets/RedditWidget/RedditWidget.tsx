@@ -18,21 +18,6 @@ const SORT_KEYS = [
 
 type Sort = (typeof SORT_KEYS)[number]['key']
 
-function RefreshBtn({ onClick }: { onClick: () => void }) {
-  const [spinning, setSpinning] = useState(false)
-  return (
-    <button
-      onClick={() => { setSpinning(true); onClick(); setTimeout(() => setSpinning(false), 800) }}
-      className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-all"
-      title="Obnoviť"
-    >
-      <svg className={`w-3.5 h-3.5 ${spinning ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-      </svg>
-    </button>
-  )
-}
-
 function formatScore(n: number): string {
   return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n)
 }
@@ -46,7 +31,7 @@ export default function RedditWidget() {
   )
 
   return (
-    <WidgetCard accent="orange" className="h-full">
+    <WidgetCard accent="orange" className="h-full" onRefresh={refetch}>
       {/* Header row */}
       <div className="flex items-center justify-between mb-3">
         <div className="widget-title mb-0">
@@ -67,7 +52,6 @@ export default function RedditWidget() {
               {s.emoji} {s.tKey.startsWith('reddit.') ? t(s.tKey) : s.tKey}
             </button>
           ))}
-          <RefreshBtn onClick={refetch} />
         </div>
       </div>
 

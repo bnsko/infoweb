@@ -38,9 +38,12 @@ export default function ViralVideosWidget() {
     >
       {loading && <SkeletonRows rows={5} />}
       {!loading && error && <p className="text-xs text-slate-500">{lang === 'sk' ? 'Chyba' : 'Error'}</p>}
+      {!loading && data && data.videos.length === 0 && (
+        <p className="text-xs text-slate-500 text-center py-4">{lang === 'sk' ? 'Žiadne videá' : 'No videos'}</p>
+      )}
       {!loading && data && data.videos.length > 0 && (
-        <div className="space-y-1.5">
-          {data.videos.slice(0, 5).map((v, i) => {
+        <div className="space-y-1.5 max-h-[400px] overflow-y-auto scrollbar-hide">
+          {data.videos.slice(0, 8).map((v, i) => {
             const plat = PLATFORM_BADGE[v.platform] ?? { emoji: '🎬', color: '#64748b' }
             return (
               <a

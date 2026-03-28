@@ -64,10 +64,12 @@ export async function GET(request: Request) {
     ? [
         `https://old.reddit.com/r/Slovakia/top.json?limit=25&t=week&raw_json=1`,
         `https://www.reddit.com/r/Slovakia/top.json?limit=25&t=week&raw_json=1`,
+        `https://api.reddit.com/r/Slovakia/top?limit=25&t=week&raw_json=1`,
       ]
     : [
         `https://old.reddit.com/r/Slovakia/${sort}.json?limit=25&raw_json=1`,
         `https://www.reddit.com/r/Slovakia/${sort}.json?limit=25&raw_json=1`,
+        `https://api.reddit.com/r/Slovakia/${sort}?limit=25&raw_json=1`,
       ]
 
   for (const url of jsonUrls) {
@@ -138,31 +140,43 @@ async function enrichWithScores(posts: { id: string; title: string; url: string;
   const zeroScores = posts.filter(p => p.score === 0).length
   if (zeroScores < posts.length / 2) return posts
 
-  try {
-    const res = await fetch('https://old.reddit.com/r/Slovakia/hot.json?limit=50&raw_json=1', {
-      cache: 'no-store',
-      headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' },
-      signal: AbortSignal.timeout(5000),
-    })
-    if (!res.ok) return posts
-    const text = await res.text()
-    if (!text.startsWith('{')) return posts
-    const json = JSON.parse(text)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const scoreMap = new Map<string, { score: number; numComments: number; flair: string | null }>()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    for (const child of (json.data?.children ?? []) as any[]) {
-      const d = child.data
-      scoreMap.set(d.id, { score: d.score ?? 0, numComments: d.num_comments ?? 0, flair: d.link_flair_text ?? null })
-    }
-    return posts.map(p => {
-      const enrichment = scoreMap.get(p.id)
-      if (enrichment) {
-        return { ...p, score: enrichment.score, numComments: enrichment.numComments, flair: enrichment.flair ?? p.flair }
+  const enrichUrls = [
+    'https://old.reddit.com/r/Slovakia/hot.json?limit=50&raw_json=1',
+    'https://api.reddit.com/r/Slovakia/hot?limit=50&raw_json=1',
+    'https://www.reddit.com/r/Slovakia/hot.json?limit=50&raw_json=1',
+  ]
+
+  for (const enrichUrl of enrichUrls) {
+    try {
+      const res = await fetch(enrichUrl, {
+        cache: 'no-store',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.7',
+        },
+        signal: AbortSignal.timeout(5000),
+      })
+      if (!res.ok) continue
+      const text = await res.text()
+      if (!text.startsWith('{')) continue
+      const json = JSON.parse(text)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const scoreMap = new Map<string, { score: number; numComments: number; flair: string | null }>()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (const child of (json.data?.children ?? []) as any[]) {
+        const d = child.data
+        scoreMap.set(d.id, { score: d.score ?? 0, numComments: d.num_comments ?? 0, flair: d.link_flair_text ?? null })
       }
-      return p
-    })
-  } catch {
-    return posts
+      if (scoreMap.size > 0) {
+        return posts.map(p => {
+          const enrichment = scoreMap.get(p.id)
+          if (enrichment) {
+            return { ...p, score: enrichment.score, numComments: enrichment.numComments, flair: enrichment.flair ?? p.flair }
+          }
+          return p
+        })
+      }
+    } catch { /* try next */ }
   }
+  return posts
 }

@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useWidget } from '@/hooks/useWidget'
 import { getAQIInfo } from '@/lib/utils'
 import type { ISSData, AirQualityData } from '@/lib/types'
@@ -10,15 +11,43 @@ function formatCoord(val: number, posLabel: string, negLabel: string) {
   return `${Math.abs(val).toFixed(2)}° ${val >= 0 ? posLabel : negLabel}`
 }
 
+function computeNextPasses(currentLat: number, currentLon: number): { time: string; type: string; direction: string; duration: string }[] {
+  const now = Date.now()
+  const orbitPeriodMs = 92.68 * 60 * 1000
+  const SK_LAT = 48.7
+  const SK_LON = 19.5
+  const passes: { time: string; type: string; direction: string; duration: string }[] = []
+  for (let i = 1; i <= 20 && passes.length < 3; i++) {
+    const futureMs = now + i * orbitPeriodMs
+    const lonShift = (i * 22.9) % 360
+    const approxLon = ((currentLon - lonShift + 540) % 360) - 180
+    const phase = (i * 2 * Math.PI) / (360 / 22.9)
+    const approxLat = 51.6 * Math.sin(phase + Math.asin(Math.max(-1, Math.min(1, currentLat / 51.6))))
+    const dLat = Math.abs(approxLat - SK_LAT)
+    const dLon = Math.abs(approxLon - SK_LON)
+    const dist = Math.sqrt(dLat * dLat + dLon * dLon * Math.cos(SK_LAT * Math.PI / 180) ** 2)
+    if (dist < 18) {
+      const d = new Date(futureMs)
+      const h = d.getHours()
+      const isVisible = (h >= 19 || h <= 5)
+      passes.push({
+        time: d.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }) + ' ' + d.toLocaleDateString('sk-SK', { weekday: 'short', day: 'numeric', month: 'short' }),
+        type: isVisible ? '👁️ Viditeľný' : '🔭 Nad horizontom',
+        direction: approxLon < SK_LON ? 'Z → V' : 'V → Z',
+        duration: `~${Math.max(2, Math.round(6 - dist / 4))} min`,
+      })
+    }
+  }
+  return passes
+}
+
 export default function SpaceEnvWidget() {
   const { t } = useLang()
   const iss = useWidget<ISSData>('/api/iss', 30 * 1000)
   const aq = useWidget<AirQualityData>('/api/airquality', 10 * 60 * 1000)
+  const [passes, setPasses] = useState<{ time: string; type: string; direction: string; duration: string }[]>([])
 
-  const handleRefresh = () => {
-    iss.refetch()
-    aq.refetch()
-  }
+  const handleRefresh = () => { iss.refetch(); aq.refetch() }
 
   const issData = iss.data
   const aqData = aq.data?.current
@@ -26,7 +55,19 @@ export default function SpaceEnvWidget() {
 
   const lat = issData ? Number(issData.latitude) : null
   const lon = issData ? Number(issData.longitude) : null
+
+  // Distance from Slovakia
+  const dLatSK = lat !== null ? Math.abs(lat - 48.15) : 999
+  const dLonSK = lon !== null ? Math.abs(lon - 17.11) : 999
+  const distFromSK = Math.sqrt(dLatSK * dLatSK + dLonSK * dLonSK)
+  const nearSlovakia = distFromSK < 15
   const nearEurope = lat !== null && lon !== null && lat > 30 && lat < 75 && lon > -20 && lon < 50
+
+  useEffect(() => {
+    if (lat !== null && lon !== null) {
+      setPasses(computeNextPasses(lat, lon))
+    }
+  }, [lat, lon])
 
   return (
     <WidgetCard accent="purple" title={t('space.title')} icon={'🌌'} onRefresh={handleRefresh}>
@@ -34,9 +75,14 @@ export default function SpaceEnvWidget() {
         {/* ISS Section */}
         <div className="bg-purple-500/8 border border-purple-500/15 rounded-xl p-3">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-lg animate-spin-slow">{'🛰️'}</span>
+            <span className="text-lg">{'🛰️'}</span>
             <span className="text-[10px] font-semibold text-purple-400 uppercase tracking-wide">{t('space.iss')}</span>
-            {nearEurope && (
+            {nearSlovakia && (
+              <span className="text-[9px] bg-green-500/20 text-green-300 px-1.5 py-0.5 rounded-full border border-green-500/20 ml-auto">
+                {'🇸🇰'} Nad Slovenskom!
+              </span>
+            )}
+            {!nearSlovakia && nearEurope && (
               <span className="text-[9px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded-full border border-purple-500/20 ml-auto">
                 {'🇪🇺'} {t('space.overEurope')}
               </span>
@@ -48,14 +94,41 @@ export default function SpaceEnvWidget() {
             </div>
           ) : issData ? (
             <>
-              {/* Mini world map */}
-              <ISSMiniMap lat={lat!} lon={lon!} />
-              <div className="grid grid-cols-2 gap-2 mt-2">
+              <div className="grid grid-cols-2 gap-2">
                 <MiniStat label={t('space.lat')} value={formatCoord(lat!, 'S', 'J')} />
                 <MiniStat label={t('space.lon')} value={formatCoord(lon!, 'V', 'Z')} />
                 <MiniStat label={t('space.alt')} value={`${Math.round(issData.altitude)} km`} accent />
                 <MiniStat label={t('space.speed')} value={`${Math.round(issData.velocity)} km/h`} />
               </div>
+              {/* Distance to SK */}
+              <div className="mt-2 text-center">
+                <span className="text-[10px] text-purple-400">
+                  🇸🇰 Vzdialenosť od SK: <span className="font-bold">~{Math.round(distFromSK * 111)} km</span>
+                </span>
+              </div>
+              {/* Upcoming SK passes */}
+              {passes.length > 0 && (
+                <div className="mt-2">
+                  <div className="text-[9px] text-slate-500 uppercase tracking-wide font-semibold mb-1.5">
+                    🇸🇰 Prielety nad Slovenskom
+                  </div>
+                  <div className="space-y-1">
+                    {passes.map((p, i) => (
+                      <div key={i} className={`flex items-center justify-between rounded-lg px-2 py-1.5 border text-[10px] ${
+                        i === 0 ? 'bg-purple-500/10 border-purple-500/20' : 'bg-white/[0.02] border-white/5'
+                      }`}>
+                        <div>
+                          <div className="font-semibold text-slate-200">{p.time}</div>
+                          <div className="text-[9px] text-slate-500">{p.direction} · {p.duration}</div>
+                        </div>
+                        <span className={`font-semibold ${p.type.includes('Viditeľný') ? 'text-green-400' : 'text-slate-400'}`}>
+                          {p.type}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </>
           ) : (
             <p className="text-xs text-slate-500">{t('space.dataUnavailable')}</p>
@@ -95,65 +168,6 @@ export default function SpaceEnvWidget() {
       </div>
       <p className="text-[10px] text-slate-600 mt-2">WhereIsISS + OpenMeteo AQ</p>
     </WidgetCard>
-  )
-}
-
-function ISSMiniMap({ lat, lon }: { lat: number; lon: number }) {
-  // Equirectangular projection
-  const w = 280, h = 140
-  const x = Math.max(0, Math.min(w, ((lon + 180) / 360) * w))
-  const y = Math.max(0, Math.min(h, ((90 - lat) / 180) * h))
-
-  // Improved continent outlines (w=280, h=140)
-  // toSvg(lon, lat) = x=(lon+180)/360*280, y=(90-lat)/180*140
-  const continents = [
-    // North America
-    'M 10,29 L 40,22 L 64,17 L 80,23 L 88,34 L 80,38 L 79,51 L 70,57 L 63,52 L 58,46 L 52,36 L 48,33 L 40,34 L 36,29 Z',
-    // South America
-    'M 76,60 L 81,52 L 88,56 L 92,68 L 90,82 L 86,97 L 80,103 L 74,95 L 71,82 L 72,70 Z',
-    // Europe
-    'M 128,24 L 136,19 L 148,21 L 156,27 L 150,32 L 142,35 L 132,32 Z',
-    // Africa
-    'M 128,39 L 140,36 L 154,41 L 160,55 L 158,74 L 148,90 L 136,96 L 124,87 L 119,68 L 122,52 Z',
-    // Asia (simplified to avoid overlap with Europe)
-    'M 156,16 L 200,12 L 232,16 L 258,28 L 260,44 L 240,52 L 220,56 L 200,54 L 186,48 L 170,44 L 158,34 L 156,24 Z',
-    // Australia
-    'M 218,70 L 240,66 L 258,70 L 260,82 L 252,90 L 232,93 L 220,86 Z',
-    // Greenland (small blob)
-    'M 84,10 L 96,8 L 102,14 L 96,22 L 84,22 Z',
-  ]
-
-  return (
-    <div className="rounded-lg overflow-hidden bg-[#060912] border border-white/5">
-      <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ maxHeight: 100 }}>
-        {/* Latitude guides */}
-        <line x1={0} y1={h/2}  x2={w} y2={h/2}  stroke="rgba(255,255,255,0.04)" strokeWidth={0.5} />
-        <line x1={0} y1={h/4}  x2={w} y2={h/4}  stroke="rgba(255,255,255,0.025)" strokeWidth={0.4} strokeDasharray="3 5" />
-        <line x1={0} y1={3*h/4} x2={w} y2={3*h/4} stroke="rgba(255,255,255,0.025)" strokeWidth={0.4} strokeDasharray="3 5" />
-        {/* Prime meridian */}
-        <line x1={w/2} y1={0} x2={w/2} y2={h} stroke="rgba(255,255,255,0.03)" strokeWidth={0.4} />
-        {/* Continents */}
-        {continents.map((d, i) => (
-          <path key={i} d={d} fill="rgba(148,163,184,0.12)" stroke="rgba(148,163,184,0.22)" strokeWidth={0.6} />
-        ))}
-        {/* ISS orbit track hint */}
-        <circle cx={x} cy={y} r={10} fill="rgba(168,85,247,0.18)" />
-        {/* ISS position dot */}
-        <circle cx={x} cy={y} r={4} fill="#a855f7" />
-        <circle cx={x} cy={y} r={3} fill="#d8b4fe" />
-        {/* Pulsing ring */}
-        <circle cx={x} cy={y} r={4} fill="none" stroke="#a855f7" strokeWidth={1.5} opacity={0.7}>
-          <animate attributeName="r"       from="4"   to="12"  dur="2s" repeatCount="indefinite" />
-          <animate attributeName="opacity" from="0.7" to="0"   dur="2s" repeatCount="indefinite" />
-        </circle>
-        {/* Coordinates label */}
-        <text x={4} y={h - 4} fontSize={7.5} fill="rgba(148,163,184,0.45)" fontFamily="monospace">
-          {lat >= 0 ? lat.toFixed(1) + '°N' : (-lat).toFixed(1) + '°S'}
-          {' '}
-          {lon >= 0 ? lon.toFixed(1) + '°E' : (-lon).toFixed(1) + '°W'}
-        </text>
-      </svg>
-    </div>
   )
 }
 
