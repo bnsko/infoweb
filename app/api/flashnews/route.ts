@@ -83,5 +83,11 @@ export async function GET() {
     ago: relativeAgo(item.timestamp),
   }))
 
-  return NextResponse.json({ items: top, timestamp: Date.now() })
+  // Generate a simple extractive summary of the day's top stories
+  const summaryItems = allItems.slice(0, 5).map(item => item.title)
+  const summary = summaryItems.length > 0
+    ? `🔑 ${summaryItems.join(' · ')}`
+    : ''
+
+  return NextResponse.json({ items: top, summary, timestamp: Date.now() })
 }

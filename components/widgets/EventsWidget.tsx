@@ -20,6 +20,8 @@ interface EventsData {
   today: string
 }
 
+type ViewMode = 'events' | 'cinema' | 'theater'
+
 const SK_CITIES = [
   { key: 'Bratislava', label: 'Bratislava', name: 'Bratislava', flag: '🏙️' },
   { key: 'Košice',     label: 'Košice',     name: 'Košice',     flag: '🏰' },
@@ -56,16 +58,25 @@ function isTomorrow(dateStr: string, today: string): boolean {
   return dateStr.startsWith(t.toISOString().slice(0, 10))
 }
 
+const VIEW_MODES: { key: ViewMode; icon: string; label: string }[] = [
+  { key: 'events', icon: '🎭', label: 'Podujatia' },
+  { key: 'cinema', icon: '🎬', label: 'Kino' },
+  { key: 'theater', icon: '🎭', label: 'Divadlo' },
+]
+
 export default function EventsWidget() {
   const { t, lang } = useLang()
+  const [viewMode, setViewMode] = useState<ViewMode>('events')
   const [country, setCountry] = useState('sk')
   const [city, setCity] = useState('Bratislava')
-  const { data, loading, refetch } = useWidget<EventsData>(
-    country === 'sk'
-      ? `/api/events?country=sk&city=${encodeURIComponent(city)}`
-      : `/api/events?country=${country}`,
-    60 * 60 * 1000
-  )
+
+  const apiUrl = viewMode === 'events'
+    ? (country === 'sk'
+        ? `/api/events?country=sk&city=${encodeURIComponent(city)}`
+        : `/api/events?country=${country}`)
+    : `/api/events?type=${viewMode}&city=${encodeURIComponent(city)}`
+
+  const { data, loading, refetch } = useWidget<EventsData>(apiUrl, 60 * 60 * 1000)
 
   const today = data?.today ?? new Date().toISOString().slice(0, 10)
   const events = data?.events ?? []
@@ -78,37 +89,46 @@ export default function EventsWidget() {
 
   return (
     <WidgetCard accent="yellow" title={lang === 'sk' ? 'Podujatia' : 'Events'} icon="🎭" badge={events.length || undefined} onRefresh={refetch}>
-      {/* Country selector */}
+      {/* View mode selector */}
       <div className="flex items-center gap-0.5 mb-3 bg-white/[0.03] rounded-lg p-0.5 border border-white/5">
-        {COUNTRIES.map(c => (
-          <button
-            key={c.key}
-            onClick={() => setCountry(c.key)}
+        {VIEW_MODES.map(vm => (
+          <button key={vm.key} onClick={() => setViewMode(vm.key)}
             className={`flex-1 flex items-center justify-center gap-1 text-[10px] font-semibold py-1.5 rounded-md transition-all ${
-              country === c.key ? 'bg-amber-500/20 text-amber-300' : 'text-slate-500 hover:text-slate-300'
-            }`}
-            title={c.label}
-          >
-            <span>{c.flag}</span>
-            <span className="hidden sm:inline">{c.label}</span>
+              viewMode === vm.key ? 'bg-amber-500/20 text-amber-300' : 'text-slate-500 hover:text-slate-300'
+            }`}>
+            <span>{vm.icon}</span>
+            <span>{vm.label}</span>
           </button>
         ))}
       </div>
 
-      {/* City selector (only for SK) */}
-      {country === 'sk' && (
+      {/* Country selector (only for events) */}
+      {viewMode === 'events' && (
+        <div className="flex items-center gap-0.5 mb-3 bg-white/[0.03] rounded-lg p-0.5 border border-white/5">
+          {COUNTRIES.map(c => (
+            <button key={c.key} onClick={() => setCountry(c.key)}
+              className={`flex-1 flex items-center justify-center gap-1 text-[10px] font-semibold py-1.5 rounded-md transition-all ${
+                country === c.key ? 'bg-amber-500/20 text-amber-300' : 'text-slate-500 hover:text-slate-300'
+              }`}
+              title={c.label}>
+              <span>{c.flag}</span>
+              <span className="hidden sm:inline">{c.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* City selector (for SK events, cinema, theater) */}
+      {(viewMode !== 'events' || country === 'sk') && (
         <div className="flex flex-wrap gap-1 mb-3">
           {SK_CITIES.map(c => (
-            <button
-              key={c.key}
-              onClick={() => setCity(c.key)}
+            <button key={c.key} onClick={() => setCity(c.key)}
               className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg transition-all ${
                 city === c.key
                   ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                   : 'text-slate-500 hover:text-slate-300 border border-transparent hover:bg-white/5'
               }`}
-              title={c.name}
-            >
+              title={c.name}>
               {c.flag} {c.label}
             </button>
           ))}

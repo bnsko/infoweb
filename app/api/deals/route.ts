@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { XMLParser } from 'fast-xml-parser'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,61 +13,58 @@ interface Deal {
 }
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_' })
 
 async function fetchAlzaDeals(): Promise<Deal[]> {
   const deals: Deal[] = []
-  // Try Alza RSS feed first (product feed / deals)
-  const urls = [
-    'https://www.alza.sk/Services/RSSService.ashx?type=visual',
-    'https://www.alza.sk/Services/RSSService.ashx',
-  ]
-  for (const url of urls) {
-    if (deals.length > 0) break
-    try {
-      const res = await fetch(url, {
-        cache: 'no-store',
-        headers: { 'User-Agent': UA, Accept: 'application/rss+xml, application/xml, text/xml, */*' },
-        signal: AbortSignal.timeout(6000),
-      })
-      if (!res.ok) continue
-      const xml = await res.text()
-      const items = xml.split(/<item[ >]/).slice(1, 10)
-      for (const item of items) {
-        const title = (item.match(/<title[^>]*>([\s\S]*?)<\/title>/)?.[1] ?? '').replace(/<!\[CDATA\[|\]\]>/g, '').trim()
-        const link = (item.match(/<link[^>]*>([\s\S]*?)<\/link>/)?.[1] ?? '').trim()
-        const desc = (item.match(/<description[^>]*>([\s\S]*?)<\/description>/)?.[1] ?? '').replace(/<!\[CDATA\[|\]\]>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
-        const priceMatch = desc.match(/(\d[\d\s,.]*)\s*€/) ?? desc.match(/cena[:\s]*(\d[\d\s,.]*)/i)
-        const discMatch = desc.match(/-(\d+)\s*%/) ?? desc.match(/zľava[:\s]*(\d+)/i)
-        if (title) {
-          deals.push({
-            title: title.slice(0, 100),
-            price: priceMatch ? `${priceMatch[1].trim()} €` : '',
-            discount: discMatch ? `-${discMatch[1]}%` : undefined,
-            store: 'Alza.sk',
-            link: link || 'https://www.alza.sk',
-          })
-        }
+  try {
+    // Alza.sk XML product feed
+    const res = await fetch('https://www.alza.sk/Services/RSSService.ashx', {
+      cache: 'no-store',
+      headers: { 'User-Agent': UA, Accept: 'text/xml, application/xml, */*' },
+      signal: AbortSignal.timeout(8000),
+    })
+    if (!res.ok) throw new Error('Alza RSS failed')
+    const xml = await res.text()
+    const parsed = parser.parse(xml)
+    const items = parsed?.rss?.channel?.item ?? []
+    const arr = Array.isArray(items) ? items : [items]
+    for (const item of arr.slice(0, 8)) {
+      const title = (item.title?.['#text'] ?? item.title ?? '').toString().trim()
+      const link = (item.link?.['#text'] ?? item.link ?? '').toString().trim()
+      const desc = (item.description?.['#text'] ?? item.description ?? '').toString()
+      const priceMatch = desc.match(/(\d[\d\s,.]*)\s*€/) ?? desc.match(/(\d[\d\s,.]*)\s*Kč/)
+      const discMatch = desc.match(/-(\d+)\s*%/) ?? title.match(/-(\d+)\s*%/)
+      if (title) {
+        deals.push({
+          title: title.slice(0, 100),
+          price: priceMatch ? `${priceMatch[1].trim()} €` : '',
+          discount: discMatch ? `-${discMatch[1]}%` : undefined,
+          store: 'Alza.sk',
+          link: link || 'https://www.alza.sk',
+        })
       }
-    } catch { /* try next */ }
-  }
+    }
+  } catch { /* ignore */ }
 
-  // Fallback: scrape main page for product tiles
+  // Fallback: Alza akcie page scraping
   if (deals.length === 0) {
     try {
-      const res = await fetch('https://www.alza.sk/', {
+      const res = await fetch('https://www.alza.sk/akce', {
         cache: 'no-store',
-        headers: { 'User-Agent': UA, Accept: 'text/html' },
+        headers: { 'User-Agent': UA },
         signal: AbortSignal.timeout(8000),
       })
       if (res.ok) {
         const html = await res.text()
-        // Extract product titles + prices from JSON-LD or meta tags
-        const ldMatch = html.match(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi) ?? []
-        for (const ld of ldMatch) {
+        // Extract from JSON-LD
+        const ldBlocks = html.match(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi) ?? []
+        for (const ld of ldBlocks) {
           try {
             const json = JSON.parse(ld.replace(/<\/?script[^>]*>/gi, ''))
             const items = json.itemListElement ?? (Array.isArray(json) ? json : [json])
-            for (const it of items.slice(0, 8)) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            for (const it of items.slice(0, 10)) {
               const item = it.item ?? it
               if (item.name && item.offers?.price) {
                 deals.push({
@@ -79,6 +77,19 @@ async function fetchAlzaDeals(): Promise<Deal[]> {
             }
           } catch { /* ignore bad JSON-LD */ }
         }
+        // Fallback: product links from HTML
+        if (deals.length === 0) {
+          const productRe = /<a[^>]*href="(\/[^"]*\.htm[l]?)"[^>]*>\s*<img[^>]*alt="([^"]+)"/gi
+          let m: RegExpExecArray | null
+          while ((m = productRe.exec(html)) !== null && deals.length < 8) {
+            deals.push({
+              title: m[2].slice(0, 100),
+              price: '',
+              store: 'Alza.sk',
+              link: `https://www.alza.sk${m[1]}`,
+            })
+          }
+        }
       }
     } catch { /* ignore */ }
   }
@@ -87,7 +98,7 @@ async function fetchAlzaDeals(): Promise<Deal[]> {
 
 async function fetchHeurekaDeals(): Promise<Deal[]> {
   const deals: Deal[] = []
-  // Try Heureka popular/best products
+  // Try Heureka RSS
   const urls = [
     'https://www.heureka.sk/rss/top-produkty/',
     'https://www.heureka.sk/rss/',
@@ -97,17 +108,20 @@ async function fetchHeurekaDeals(): Promise<Deal[]> {
     try {
       const res = await fetch(url, {
         cache: 'no-store',
-        headers: { 'User-Agent': UA, Accept: 'application/rss+xml, application/xml, text/xml, */*' },
+        headers: { 'User-Agent': UA, Accept: 'text/xml, application/xml, */*' },
         signal: AbortSignal.timeout(6000),
       })
       if (!res.ok) continue
       const xml = await res.text()
-      const items = xml.split(/<item[ >]/).slice(1, 10)
-      for (const item of items) {
-        const title = (item.match(/<title[^>]*>([\s\S]*?)<\/title>/)?.[1] ?? '').replace(/<!\[CDATA\[|\]\]>/g, '').trim()
-        const link = (item.match(/<link[^>]*>([\s\S]*?)<\/link>/)?.[1] ?? '').trim()
-        const desc = (item.match(/<description[^>]*>([\s\S]*?)<\/description>/)?.[1] ?? '').replace(/<!\[CDATA\[|\]\]>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
-        const priceMatch = desc.match(/(\d[\d\s,.]*)\s*€/) ?? desc.match(/od\s*(\d[\d\s,.]*)/i)
+      if (!xml.includes('<item')) continue
+      const parsed = parser.parse(xml)
+      const items = parsed?.rss?.channel?.item ?? []
+      const arr = Array.isArray(items) ? items : [items]
+      for (const item of arr.slice(0, 8)) {
+        const title = (item.title?.['#text'] ?? item.title ?? '').toString().trim()
+        const link = (item.link?.['#text'] ?? item.link ?? '').toString().trim()
+        const desc = (item.description?.['#text'] ?? item.description ?? '').toString()
+        const priceMatch = desc.match(/(\d[\d\s,.]*)\s*€/)
         if (title) {
           deals.push({
             title: title.slice(0, 100),
@@ -120,29 +134,24 @@ async function fetchHeurekaDeals(): Promise<Deal[]> {
     } catch { /* try next */ }
   }
 
-  // Fallback: scrape Heureka main page
+  // Fallback: scrape Heureka main products
   if (deals.length === 0) {
     try {
       const res = await fetch('https://www.heureka.sk/', {
         cache: 'no-store',
-        headers: { 'User-Agent': UA, Accept: 'text/html' },
+        headers: { 'User-Agent': UA },
         signal: AbortSignal.timeout(8000),
       })
       if (res.ok) {
         const html = await res.text()
-        // Look for product links with titles
-        const productLinks: RegExpExecArray[] = []
         const linkRe = /<a[^>]*href="(https:\/\/[^"]*heureka\.sk\/[^"]*)"[^>]*title="([^"]+)"/gi
         let m: RegExpExecArray | null
-        while ((m = linkRe.exec(html)) !== null) productLinks.push(m)
-        for (const pm of productLinks.slice(0, 6)) {
-          const priceContext = html.slice(html.indexOf(pm[0]), html.indexOf(pm[0]) + 300)
-          const priceMatch = priceContext.match(/(\d[\d\s,.]*)\s*€/)
+        while ((m = linkRe.exec(html)) !== null && deals.length < 6) {
           deals.push({
-            title: pm[2].slice(0, 100),
-            price: priceMatch ? `${priceMatch[1].trim()} €` : '',
+            title: m[2].slice(0, 100),
+            price: '',
             store: 'Heureka.sk',
-            link: pm[1],
+            link: m[1],
           })
         }
       }

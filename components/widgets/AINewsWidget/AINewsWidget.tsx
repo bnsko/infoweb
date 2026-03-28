@@ -127,7 +127,7 @@ export default function AINewsWidget() {
         </div>
       )}
 
-      <p className="text-[10px] text-slate-600 mt-2">The Verge · MIT Tech Review · TechCrunch</p>
+      <p className="text-[10px] text-slate-600 mt-2">The Verge · MIT Tech Review · TechCrunch · DSL.sk</p>
     </WidgetCard>
   )
 }

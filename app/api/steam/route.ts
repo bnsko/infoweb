@@ -93,10 +93,34 @@ export async function GET() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         mostPlayed = ranks.slice(0, 12).map((r: any) => ({
           appid: r.appid,
-          name: r.name ?? `App ${r.appid}`,
+          name: r.name ?? '',
           currentPlayers: r.concurrent_in_game ?? 0,
           peakToday: r.peak_in_game ?? 0,
         }))
+
+        // Resolve missing game names via Steam store API
+        const needNames = mostPlayed.filter(g => !g.name)
+        if (needNames.length > 0) {
+          const nameResults = await Promise.allSettled(
+            needNames.map(async (g) => {
+              const nRes = await fetch(
+                `https://store.steampowered.com/api/appdetails?appids=${g.appid}&filters=basic`,
+                { signal: AbortSignal.timeout(3000), headers: { 'User-Agent': 'InfoSK-Dashboard/1.0' } }
+              )
+              if (!nRes.ok) return { appid: g.appid, name: '' }
+              const nData = await nRes.json()
+              return { appid: g.appid, name: nData?.[String(g.appid)]?.data?.name ?? '' }
+            })
+          )
+          const nameMap = new Map<number, string>()
+          for (const nr of nameResults) {
+            if (nr.status === 'fulfilled' && nr.value.name) nameMap.set(nr.value.appid, nr.value.name)
+          }
+          mostPlayed = mostPlayed.map(g => ({
+            ...g,
+            name: g.name || nameMap.get(g.appid) || `App ${g.appid}`,
+          }))
+        }
       } catch { /* ignore */ }
     }
 

@@ -40,7 +40,7 @@ import JobsWidget from '@/components/widgets/JobsWidget'
 import DealsWidget from '@/components/widgets/DealsWidget'
 import PodcastWidget from '@/components/widgets/PodcastWidget'
 import ViralVideosWidget from '@/components/widgets/ViralVideosWidget'
-import PoliticsWidget from '@/components/widgets/PoliticsWidget'
+import SpeedtestWidget from '@/components/widgets/SpeedtestWidget'
 import SettingsPanel from '@/components/SettingsPanel'
 import { useLang } from '@/hooks/useLang'
 import { usePrefs } from '@/hooks/usePrefs'
@@ -76,10 +76,9 @@ export default function Home() {
           </div>
         )}
 
-        {/* Politické preferencie */}
+        {/* Zdravotné varovania */}
         {isWidgetVisible('politics') && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <PoliticsWidget />
+          <div>
             <HealthAlertsWidget />
           </div>
         )}
@@ -209,6 +208,9 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <FearGreedWidget />
               <EnergyWidget />
+            </div>
+            <div className="mt-4">
+              <SpeedtestWidget />
             </div>
           </div>
         )}

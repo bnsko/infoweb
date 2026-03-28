@@ -67,7 +67,32 @@ export async function GET() {
       return NextResponse.json({ flights: est.flights, count: est.count, estimated: true })
     }
 
-    return NextResponse.json({ flights, count: flights.length, estimated: false })
+    // Try to fetch route info (origin → destination) for top flights
+    const routeResults = await Promise.allSettled(
+      flights.slice(0, 15).map(async (f) => {
+        if (!f.callsign) return null
+        const rRes = await fetch(
+          `https://opensky-network.org/api/routes?callsign=${encodeURIComponent(f.callsign)}`,
+          { signal: AbortSignal.timeout(3000), headers: { 'User-Agent': 'SlovakiaInfo-Dashboard/1.0' } }
+        )
+        if (!rRes.ok) return null
+        const rJson = await rRes.json()
+        const route: string[] = rJson?.route ?? []
+        if (route.length >= 2) return { callsign: f.callsign, origin: route[0], destination: route[route.length - 1] }
+        return null
+      })
+    )
+    const routeMap = new Map<string, { origin: string; destination: string }>()
+    for (const r of routeResults) {
+      if (r.status === 'fulfilled' && r.value) routeMap.set(r.value.callsign, { origin: r.value.origin, destination: r.value.destination })
+    }
+
+    const enrichedFlights = flights.map(f => {
+      const route = routeMap.get(f.callsign)
+      return { ...f, origin: route?.origin ?? null, destination: route?.destination ?? null }
+    })
+
+    return NextResponse.json({ flights: enrichedFlights, count: flights.length, estimated: false })
   } catch {
     const est = estimateFlights()
     return NextResponse.json({ flights: est.flights, count: est.count, estimated: true })

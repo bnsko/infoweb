@@ -6,6 +6,7 @@ interface Podcast {
   title: string
   show: string
   link: string
+  audioUrl?: string
   date: string
   duration?: string
 }
@@ -34,6 +35,7 @@ async function fetchPodcastFeed(feed: { name: string; url: string }): Promise<Po
     for (const item of items) {
       const titleMatch = item.match(/<title[^>]*>([\s\S]*?)<\/title>/)
       const linkMatch = item.match(/<link[^>]*>([\s\S]*?)<\/link>/) ?? item.match(/<enclosure[^>]*url="([^"]*)"/)
+      const enclosureMatch = item.match(/<enclosure[^>]*url="([^"]*)"/)
       const dateMatch = item.match(/<pubDate[^>]*>([\s\S]*?)<\/pubDate>/)
       const durMatch = item.match(/<itunes:duration[^>]*>([\s\S]*?)<\/itunes:duration>/)
 
@@ -43,6 +45,7 @@ async function fetchPodcastFeed(feed: { name: string; url: string }): Promise<Po
           title,
           show: feed.name,
           link: linkMatch?.[1]?.trim() ?? '',
+          audioUrl: enclosureMatch?.[1]?.trim(),
           date: dateMatch?.[1]?.trim() ?? '',
           duration: durMatch?.[1]?.trim(),
         })
@@ -86,7 +89,7 @@ export async function GET() {
 
   const week = allPodcasts.filter(p => {
     const t = p.date ? new Date(p.date).getTime() : 0
-    return t >= weekStart
+    return t >= weekStart && t < yesterdayStart
   })
 
   return NextResponse.json({

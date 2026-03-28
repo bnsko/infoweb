@@ -13,6 +13,7 @@ interface LotteryResult {
   bonus?: number[]
   jackpot: string
   drawn: boolean
+  link?: string
 }
 
 interface LotteryData {
@@ -53,9 +54,8 @@ export default function LotteryWidget() {
           {data.results.map((result, i) => {
             const style = getStyle(result.game)
             const isExpanded = expandedGame === result.game
-            return (
+            const card = (
               <div
-                key={i}
                 className={`rounded-xl border ${style.border} bg-gradient-to-r ${style.bg} to-transparent p-3 cursor-pointer transition-all hover:scale-[1.01]`}
                 onClick={() => setExpandedGame(isExpanded ? null : result.game)}
               >
@@ -66,11 +66,18 @@ export default function LotteryWidget() {
                       <span className="text-[9px] text-slate-500">{result.date}</span>
                     )}
                   </div>
-                  {result.jackpot && (
-                    <span className={`text-xs font-bold ${style.text} bg-black/20 px-2 py-0.5 rounded-lg`}>
-                      💰 {result.jackpot}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {result.jackpot && (
+                      <span className={`text-xs font-bold ${style.text} bg-black/20 px-2 py-0.5 rounded-lg`}>
+                        💰 {result.jackpot}
+                      </span>
+                    )}
+                    {result.link && (
+                      <a href={result.link} target="_blank" rel="noopener noreferrer"
+                         onClick={e => e.stopPropagation()}
+                         className="text-[9px] text-slate-500 hover:text-slate-300 transition-colors">↗</a>
+                    )}
+                  </div>
                 </div>
 
                 {result.drawn && result.numbers.length > 0 ? (
@@ -106,6 +113,7 @@ export default function LotteryWidget() {
                 )}
               </div>
             )
+            return <div key={i}>{card}</div>
           })}
         </div>
       )}

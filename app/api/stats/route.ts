@@ -20,7 +20,7 @@ export async function GET() {
   const lats = SK_CITIES.map(c => c.lat).join(',')
   const lons = SK_CITIES.map(c => c.lon).join(',')
 
-  const [flightsRes, cityAQIRes, eurUsdRes, cityWeatherRes] = await Promise.allSettled([
+  const results = await Promise.allSettled([
     fetch(
       `https://opensky-network.org/api/states/all` +
         `?lamin=${SK_BBOX.lamin}&lomin=${SK_BBOX.lomin}&lamax=${SK_BBOX.lamax}&lomax=${SK_BBOX.lomax}`,
@@ -36,22 +36,29 @@ export async function GET() {
       next: { revalidate: 3600 },
       signal: AbortSignal.timeout(5000),
     }),
-    // Multi-location weather call for all SK cities at once (expanded with feels-like, UV, sunrise/sunset)
+    // Multi-location weather call for all SK cities at once
     fetch(
       `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}` +
-        `&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,surface_pressure,weather_code,apparent_temperature` +
-        `&daily=sunrise,sunset,uv_index_max,temperature_2m_max,temperature_2m_min` +
-        `&timezone=Europe%2FBratislava&forecast_days=1`,
+        `&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,surface_pressure,weather_code,apparent_temperature,precipitation` +
+        `&daily=sunrise,sunset,uv_index_max,temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max,wind_speed_10m_max` +
+        `&timezone=Europe%2FBratislava&forecast_days=2`,
       { next: { revalidate: 600 }, signal: AbortSignal.timeout(8000) }
     ),
+    // Weather warnings for Slovakia
+    fetch(
+      'https://api.open-meteo.com/v1/forecast?latitude=48.67&longitude=19.70&current=weather_code&daily=weather_code,precipitation_sum,wind_speed_10m_max,uv_index_max&timezone=Europe%2FBratislava&forecast_days=3',
+      { next: { revalidate: 600 }, signal: AbortSignal.timeout(5000) }
+    ),
   ])
+
+  const [flightsRes, cityAQIRes, eurUsdRes, cityWeatherRes] = results
 
   let flightsCount = null
   let tempBA = null
   let aqi: number | null = null
   let aqiSK: number | null = null
   let eurToUsd = null
-  let cityTemps: { key: string; name: string; temp: number; humidity: number; windSpeed: number; windDir: number; pressure: number; weatherCode: number; feelsLike: number; sunrise: string; sunset: string; uvIndex: number; tempMax: number; tempMin: number }[] = []
+  let cityTemps: { key: string; name: string; temp: number; humidity: number; windSpeed: number; windDir: number; pressure: number; weatherCode: number; feelsLike: number; sunrise: string; sunset: string; uvIndex: number; tempMax: number; tempMin: number; precipitation: number; tomorrowCode: number; tomorrowMax: number; tomorrowMin: number; tomorrowPrecipProb: number; tomorrowWindMax: number }[] = []
   let cityAQI: { key: string; name: string; aqi: number }[] = []
 
   if (flightsRes.status === 'fulfilled' && flightsRes.value.ok) {
@@ -103,9 +110,38 @@ export async function GET() {
         uvIndex: arr[i]?.daily?.uv_index_max?.[0] ?? 0,
         tempMax: Math.round(arr[i]?.daily?.temperature_2m_max?.[0] ?? 0),
         tempMin: Math.round(arr[i]?.daily?.temperature_2m_min?.[0] ?? 0),
+        precipitation: arr[i]?.current?.precipitation ?? 0,
+        tomorrowCode: arr[i]?.daily?.weather_code?.[1] ?? 0,
+        tomorrowMax: Math.round(arr[i]?.daily?.temperature_2m_max?.[1] ?? 0),
+        tomorrowMin: Math.round(arr[i]?.daily?.temperature_2m_min?.[1] ?? 0),
+        tomorrowPrecipProb: arr[i]?.daily?.precipitation_probability_max?.[1] ?? 0,
+        tomorrowWindMax: Math.round(arr[i]?.daily?.wind_speed_10m_max?.[1] ?? 0),
       }))
       tempBA = cityTemps.find(c => c.key === 'BA')?.temp ?? null
     } catch { /* fallback */ }
+  }
+
+  // Weather warnings
+  const warnings: { type: string; message: string; severity: string }[] = []
+  const warningsRes = results[4] // 5th promise
+  if (warningsRes?.status === 'fulfilled' && (warningsRes as PromiseFulfilledResult<Response>).value.ok) {
+    try {
+      const wData = await (warningsRes as PromiseFulfilledResult<Response>).value.json()
+      const daily = wData.daily ?? {}
+      for (let d = 0; d < (daily.wind_speed_10m_max?.length ?? 0); d++) {
+        const wind = daily.wind_speed_10m_max?.[d] ?? 0
+        const precip = daily.precipitation_sum?.[d] ?? 0
+        const uv = daily.uv_index_max?.[d] ?? 0
+        if (wind > 60) warnings.push({ type: 'wind', message: `Silný vietor ${Math.round(wind)} km/h`, severity: wind > 90 ? 'high' : 'medium' })
+        if (precip > 20) warnings.push({ type: 'rain', message: `Intenzívne zrážky ${precip.toFixed(0)} mm`, severity: precip > 40 ? 'high' : 'medium' })
+        if (uv > 8) warnings.push({ type: 'uv', message: `Vysoký UV index ${uv.toFixed(0)}`, severity: uv > 10 ? 'high' : 'medium' })
+      }
+      // Check for extreme temperatures from city data
+      const extremeHot = cityTemps.find(c => c.tempMax >= 35)
+      const extremeCold = cityTemps.find(c => c.tempMin <= -15)
+      if (extremeHot) warnings.push({ type: 'heat', message: `Extrémne teplo ${extremeHot.tempMax}°C (${extremeHot.name})`, severity: 'high' })
+      if (extremeCold) warnings.push({ type: 'cold', message: `Extrémny mráz ${extremeCold.tempMin}°C (${extremeCold.name})`, severity: 'high' })
+    } catch { /* ignore */ }
   }
 
   const now = new Date()
@@ -124,5 +160,6 @@ export async function GET() {
     timestamp: Date.now(),
     cityTemps,
     cityAQI,
+    warnings,
   })
 }
