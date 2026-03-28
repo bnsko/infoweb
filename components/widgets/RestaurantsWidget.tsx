@@ -1,39 +1,50 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useWidget } from '@/hooks/useWidget'
 import { useLang } from '@/hooks/useLang'
 import WidgetCard from '@/components/ui/WidgetCard'
 import SkeletonRows from '@/components/ui/SkeletonRows'
 
 interface Restaurant {
-  name: string
-  cuisine: string
-  rating: number
-  priceRange: string
-  location: string
-  description: string
-  url: string
-  city: string
-  tags?: string[]
-  distance?: number
+  name: string; cuisine: string; rating: number; priceRange: string
+  location: string; description: string; url: string; city: string
+  tags?: string[]; distance?: number
 }
 
-interface Data {
-  restaurants: Restaurant[]
-  city: string
-  cityName: string
+interface Data { restaurants: Restaurant[]; city: string; cityName: string }
+
+// City centres (lat, lon) for nearest-city detection
+const CITY_COORDS: Record<string, { lat: number; lon: number; label: string }> = {
+  bratislava: { lat: 48.1486, lon: 17.1077, label: 'Bratislava' },
+  kosice:     { lat: 48.7163, lon: 21.2611, label: 'Košice' },
+  zilina:     { lat: 49.2231, lon: 18.7394, label: 'Žilina' },
+  presov:     { lat: 49.0017, lon: 21.2391, label: 'Prešov' },
+  nitra:      { lat: 48.3069, lon: 18.0869, label: 'Nitra' },
+  bystrica:   { lat: 48.7356, lon: 19.1503, label: 'B. Bystrica' },
+  trnava:     { lat: 48.3774, lon: 17.5872, label: 'Trnava' },
+  trencin:    { lat: 48.8947, lon: 18.0435, label: 'Trenčín' },
+}
+
+function nearestCity(lat: number, lon: number): string {
+  let best = 'bratislava'
+  let bestDist = Infinity
+  for (const [key, c] of Object.entries(CITY_COORDS)) {
+    const d = Math.sqrt((lat - c.lat) ** 2 + (lon - c.lon) ** 2)
+    if (d < bestDist) { bestDist = d; best = key }
+  }
+  return best
 }
 
 const CITIES = [
-  { key: 'bratislava', label: 'BA' },
-  { key: 'kosice', label: 'KE' },
-  { key: 'zilina', label: 'ZA' },
-  { key: 'presov', label: 'PO' },
-  { key: 'nitra', label: 'NR' },
-  { key: 'bystrica', label: 'BB' },
-  { key: 'trnava', label: 'TT' },
-  { key: 'trencin', label: 'TN' },
+  { key: 'bratislava', label: 'Bratislava' },
+  { key: 'kosice', label: 'Košice' },
+  { key: 'zilina', label: 'Žilina' },
+  { key: 'presov', label: 'Prešov' },
+  { key: 'nitra', label: 'Nitra' },
+  { key: 'bystrica', label: 'B. Bystrica' },
+  { key: 'trnava', label: 'Trnava' },
+  { key: 'trencin', label: 'Trenčín' },
 ]
 
 const PRICE_FILTERS = [
@@ -58,8 +69,24 @@ export default function RestaurantsWidget() {
   const [price, setPrice] = useState('all')
   const [diet, setDiet] = useState('all')
   const [sortBy, setSortBy] = useState<SortKey>('rating')
+  const [geoStatus, setGeoStatus] = useState<'idle' | 'detecting' | 'found' | 'denied'>('idle')
   const { data, loading, refetch } = useWidget<Data>(`/api/restaurants?city=${city}&price=${encodeURIComponent(price)}&diet=${diet}`, 60 * 60 * 1000)
   const { t, lang } = useLang()
+
+  // Auto-detect on first load
+  useEffect(() => {
+    if (typeof window === 'undefined' || !navigator.geolocation) return
+    setGeoStatus('detecting')
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const detected = nearestCity(pos.coords.latitude, pos.coords.longitude)
+        setCity(detected)
+        setGeoStatus('found')
+      },
+      () => setGeoStatus('denied'),
+      { timeout: 5000, maximumAge: 5 * 60 * 1000 }
+    )
+  }, [])
 
   const sortedRestaurants = [...(data?.restaurants ?? [])].sort((a, b) => {
     if (sortBy === 'rating') return b.rating - a.rating
@@ -68,6 +95,8 @@ export default function RestaurantsWidget() {
     return 0
   })
 
+  const currentCityLabel = CITY_COORDS[city]?.label ?? city
+
   return (
     <WidgetCard accent="orange" className="h-full">
       <div className="flex items-center justify-between mb-2">
@@ -75,13 +104,25 @@ export default function RestaurantsWidget() {
           <span>🍽️</span>
           <span>{t('restaurants.title')}</span>
         </div>
+        {geoStatus === 'detecting' && <span className="text-[10px] text-slate-500 animate-pulse">📍 Zisťujem polohu…</span>}
+        {geoStatus === 'found' && <span className="text-[10px] text-blue-400">📍 {currentCityLabel}</span>}
+        {geoStatus === 'denied' && (
+          <button onClick={() => { setGeoStatus('detecting'); navigator.geolocation?.getCurrentPosition(p => { setCity(nearestCity(p.coords.latitude, p.coords.longitude)); setGeoStatus('found') }, () => setGeoStatus('denied')) }}
+            className="text-[10px] text-slate-500 hover:text-slate-300 transition-colors">📍 Detekuj polohu</button>
+        )}
+        {geoStatus === 'idle' && typeof window !== 'undefined' && navigator.geolocation && (
+          <button onClick={() => { setGeoStatus('detecting'); navigator.geolocation.getCurrentPosition(p => { setCity(nearestCity(p.coords.latitude, p.coords.longitude)); setGeoStatus('found') }, () => setGeoStatus('denied'), { timeout: 5000 }) }}
+            className="text-[10px] text-slate-500 hover:text-blue-400 transition-colors border border-white/8 rounded-lg px-2 py-0.5">
+            📍 {lang === 'sk' ? 'Moja poloha' : 'My location'}
+          </button>
+        )}
       </div>
       {/* City pills */}
       <div className="flex flex-wrap gap-1 mb-2">
         {CITIES.map(c => (
           <button
             key={c.key}
-            onClick={() => setCity(c.key)}
+            onClick={() => { setCity(c.key); setGeoStatus('idle') }}
             className={`text-[10px] font-bold px-2 py-0.5 rounded-md transition-all ${
               city === c.key
                 ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'

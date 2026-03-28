@@ -20,7 +20,6 @@ import TrafficWidget from '@/components/widgets/TrafficWidget'
 import EventsWidget from '@/components/widgets/EventsWidget'
 import CountersWidget from '@/components/widgets/CountersWidget'
 import WikiWidget from '@/components/widgets/WikiWidget'
-import RealEstateWidget from '@/components/widgets/RealEstateWidget'
 import RestaurantsWidget from '@/components/widgets/RestaurantsWidget'
 import HackerNewsWidget from '@/components/widgets/HackerNewsWidget'
 import TwitterWidget from '@/components/widgets/TwitterWidget'
@@ -29,10 +28,16 @@ import GroceriesWidget from '@/components/widgets/GroceriesWidget'
 import ToolOfTheDayWidget from '@/components/widgets/ToolOfTheDayWidget'
 import FinanceNewsWidget from '@/components/widgets/FinanceNewsWidget'
 import DaySummaryWidget from '@/components/widgets/DaySummaryWidget'
+import GitHubTrendingWidget from '@/components/widgets/GitHubTrendingWidget'
+import MoonPhaseWidget from '@/components/widgets/MoonPhaseWidget'
+import WorldClockWidget from '@/components/widgets/WorldClockWidget'
+import FearGreedWidget from '@/components/widgets/FearGreedWidget'
+import EnergyWidget from '@/components/widgets/EnergyWidget'
+import ISSWidget from '@/components/widgets/ISSWidget'
 import { useLang } from '@/hooks/useLang'
 
 export default function Home() {
-  const { t } = useLang()
+  const { t, lang } = useLang()
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-root)', backgroundImage: 'var(--theme-bg-image, none)' }}>
@@ -66,7 +71,7 @@ export default function Home() {
             <CurrencyWidget />
             <CryptoWidget />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div className="mt-4">
             <FinanceNewsWidget />
           </div>
         </div>
@@ -104,9 +109,10 @@ export default function Home() {
         {/* Vesmír & Rakety */}
         <div id="sec-space">
           <SectionLabel label={t('sec.space')} />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <SpaceEnvWidget />
             <LaunchesWidget />
+            <ISSWidget />
           </div>
         </div>
 
@@ -124,11 +130,10 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Nehnuteľnosti & Reštaurácie */}
-        <div>
-          <SectionLabel label={t('sec.realestate')} />
+        {/* Reštaurácie */}
+        <div id="sec-restaurants">
+          <SectionLabel label={lang === 'sk' ? 'Reštaurácie v okolí' : 'Nearby Restaurants'} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <RealEstateWidget />
             <RestaurantsWidget />
           </div>
         </div>
@@ -137,6 +142,20 @@ export default function Home() {
         <div id="sec-tech">
           <SectionLabel label={t('sec.tech')} />
           <ToolOfTheDayWidget />
+        </div>
+
+        {/* GitHub, Moon, Clock, FearGreed, Energy */}
+        <div id="sec-extras">
+          <SectionLabel label={lang === 'sk' ? '🔭 Štatistiky & Objavy' : '🔭 Stats & Extras'} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <GitHubTrendingWidget />
+            <MoonPhaseWidget />
+            <WorldClockWidget />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <FearGreedWidget />
+            <EnergyWidget />
+          </div>
         </div>
 
         {/* História & Objavuj */}

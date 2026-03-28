@@ -104,37 +104,33 @@ export default function StatsWidget() {
           </div>
         </div>
 
-        {/* Row 2: City temperatures (only show cities; remove + for positives) */}
+        {/* Row 2: Combined city temp + AQI */}
         {cityTemps.length > 0 && (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1.5 border-t border-white/5">
-            <span className="text-[10px] text-slate-500 shrink-0">🌡️ {lang === 'sk' ? 'Teplota' : 'Temp'}:</span>
-            {cityTemps.map(c => (
-              <span key={c.key} className="text-[10px] flex items-center gap-0.5">
-                <span className="text-slate-500">{c.key}</span>
-                <span className={`font-bold ml-0.5 ${c.temp >= 20 ? 'text-orange-400' : c.temp >= 10 ? 'text-yellow-400' : c.temp >= 0 ? 'text-blue-300' : 'text-blue-500'}`}>
-                  {c.temp}°
-                </span>
-              </span>
-            ))}
-            {hottest && coldest && hottest.key !== coldest.key && (
-              <span className="text-[10px] text-slate-600 ml-1">
-                · 🔥 {hottest.name} · 🥶 {coldest.name}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Row 3: City AQI */}
-        {cityAQI.length > 0 && (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1 border-t border-white/5">
-            <span className="text-[10px] text-slate-500 shrink-0">💨 AQI:</span>
-            {cityAQI.map(c => {
-              const info = getAQIInfo(c.aqi)
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 pt-1.5 border-t border-white/5">
+            <span className="text-[10px] text-slate-500 shrink-0 mr-1">🗺️ {lang === 'sk' ? 'Mestá' : 'Cities'}:</span>
+            {cityTemps.map(c => {
+              const aqiData = cityAQI.find(a => a.key === c.key)
+              const aqiInfo = aqiData ? getAQIInfo(aqiData.aqi) : null
+              const tempColor = c.temp >= 25 ? '#f97316' : c.temp >= 15 ? '#fbbf24' : c.temp >= 5 ? '#60a5fa' : c.temp >= 0 ? '#818cf8' : '#c4b5fd'
+              const isHottest = hottest?.key === c.key && hottest.key !== coldest?.key
+              const isColdest = coldest?.key === c.key && hottest?.key !== coldest?.key
               return (
-                <span key={c.key} title={`${c.name}: ${info?.label ?? ''}`} className="text-[10px] flex items-center gap-0.5 cursor-default">
-                  <span className="text-slate-500">{c.key}</span>
-                  <span className="font-bold ml-0.5" style={{ color: info?.color ?? '#94a3b8' }}>{c.aqi}</span>
-                </span>
+                <div key={c.key} className="flex items-center gap-1 bg-white/[0.03] border border-white/8 rounded-lg px-2 py-1 hover:bg-white/5 transition-colors">
+                  <span className="text-[10px] text-slate-400 font-semibold shrink-0">{c.name}</span>
+                  <span className="text-[11px] font-bold" style={{ color: tempColor }}>
+                    {isHottest && <span className="mr-0.5">↑</span>}
+                    {isColdest && <span className="mr-0.5">↓</span>}
+                    {c.temp}°
+                  </span>
+                  {aqiData && aqiInfo && (
+                    <>
+                      <span className="text-white/15">·</span>
+                      <span className="text-[9px] font-semibold" style={{ color: aqiInfo.color }}>💨{aqiData.aqi}</span>
+                    </>
+                  )}
+                  {isHottest && <span className="text-sm leading-none">🔥</span>}
+                  {isColdest && <span className="text-sm leading-none">🥶</span>}
+                </div>
               )
             })}
           </div>
