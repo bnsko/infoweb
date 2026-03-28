@@ -91,12 +91,12 @@ function TabContent({ tabKey, isHN }: { tabKey: TabKey; isHN?: boolean }) {
   if (isHN) {
     if (hnState.loading) return <SkeletonRows rows={8} cols={2} />
     if (hnState.error || !hnState.data) return <p className="text-slate-500 text-sm py-4">{t('error')}</p>
-    return <HNItems items={hnState.data.items} />
+    return <HNItems items={hnState.data.items.slice(0, 12)} />
   }
 
   if (newsState.loading) return <SkeletonRows rows={8} />
   if (newsState.error || !newsState.data) return <p className="text-slate-500 text-sm py-4">{t('error')}</p>
-  return <NewsItems items={newsState.data.items} accentClass={tab.accent} />
+  return <NewsItems items={newsState.data.items.slice(0, 12)} accentClass={tab.accent} />
 }
 
 export default function NewsFeedWidget() {

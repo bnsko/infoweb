@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useWidget } from '@/hooks/useWidget'
 import { useLang } from '@/hooks/useLang'
 import WidgetCard from '@/components/ui/WidgetCard'
@@ -10,6 +10,7 @@ interface Podcast {
   title: string
   show: string
   link: string
+  audioUrl?: string
   date: string
   duration?: string
 }
@@ -50,9 +51,25 @@ function relativeDate(dateStr: string): string {
 export default function PodcastWidget() {
   const { lang } = useLang()
   const [tab, setTab] = useState<Tab>('today')
+  const [playingUrl, setPlayingUrl] = useState<string | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
   const { data, loading, error, refetch } = useWidget<PodcastData>('/api/podcasts', 15 * 60 * 1000)
 
   const podcasts = data ? (data[tab]?.length > 0 ? data[tab] : data.all) : []
+
+  const togglePlay = (url: string) => {
+    if (playingUrl === url) {
+      audioRef.current?.pause()
+      setPlayingUrl(null)
+    } else {
+      if (audioRef.current) audioRef.current.pause()
+      const audio = new Audio(url)
+      audio.play()
+      audio.onended = () => setPlayingUrl(null)
+      audioRef.current = audio
+      setPlayingUrl(url)
+    }
+  }
 
   return (
     <WidgetCard
@@ -95,7 +112,18 @@ export default function PodcastWidget() {
                 rel="noopener noreferrer"
                 className="flex items-start gap-2 rounded-lg p-1.5 hover:bg-white/[0.04] transition-all group"
               >
-                <span className="text-base shrink-0 mt-0.5">🎧</span>
+                {pod.audioUrl ? (
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); togglePlay(pod.audioUrl!) }}
+                    className={`text-base shrink-0 mt-0.5 w-7 h-7 flex items-center justify-center rounded-full transition-all ${
+                      playingUrl === pod.audioUrl ? 'bg-purple-500/30 text-purple-300' : 'bg-white/5 text-slate-400 hover:text-purple-300'
+                    }`}
+                  >
+                    {playingUrl === pod.audioUrl ? '⏸' : '▶️'}
+                  </button>
+                ) : (
+                  <span className="text-base shrink-0 mt-0.5">🎧</span>
+                )}
                 <div className="min-w-0 flex-1">
                   <p className="text-[11px] text-slate-200 group-hover:text-white leading-snug line-clamp-2 font-medium">{pod.title}</p>
                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">

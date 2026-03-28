@@ -224,11 +224,23 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const country = searchParams.get('country') ?? 'sk'
   const city = searchParams.get('city') ?? ''
+  const type = searchParams.get('type') ?? 'events'
+
+  // Cinema programs
+  if (type === 'cinema') {
+    const cinemaEvents = await fetchCinemaPrograms(city || 'Bratislava')
+    return NextResponse.json({ events: cinemaEvents.slice(0, 15), country: 'sk', today: new Date().toISOString().slice(0, 10) })
+  }
+
+  // Theater programs
+  if (type === 'theater') {
+    const theaterEvents = await fetchTheaterPrograms(city || 'Bratislava')
+    return NextResponse.json({ events: theaterEvents.slice(0, 15), country: 'sk', today: new Date().toISOString().slice(0, 10) })
+  }
 
   let events: SKEvent[]
   if (country === 'sk') {
     const all = generateEvents()
-    // Filter by city if specified (case-insensitive prefix match)
     events = city
       ? all.filter(e => e.city.toLowerCase().startsWith(city.toLowerCase()))
       : all
@@ -237,4 +249,145 @@ export async function GET(request: Request) {
   }
   const today = new Date().toISOString().slice(0, 10)
   return NextResponse.json({ events: events.slice(0, 25), country, today })
+}
+
+async function fetchCinemaPrograms(city: string): Promise<SKEvent[]> {
+  const events: SKEvent[] = []
+  // Try CSFD.cz cinema program RSS
+  try {
+    const citySlug = city.toLowerCase().replace(/\s+/g, '-')
+    const urls = [
+      `https://www.csfd.sk/kino/program/?city=${encodeURIComponent(city)}`,
+      `https://www.kino.sk/program/${citySlug}`,
+    ]
+    for (const url of urls) {
+      if (events.length > 0) break
+      try {
+        const res = await fetch(url, {
+          cache: 'no-store',
+          headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' },
+          signal: AbortSignal.timeout(8000),
+        })
+        if (!res.ok) continue
+        const html = await res.text()
+        // Extract movie titles and showtimes from HTML
+        const movieBlocks = html.match(/<h[23][^>]*>([^<]+)<\/h[23]>/gi) ?? []
+        for (const block of movieBlocks.slice(0, 12)) {
+          const title = block.replace(/<[^>]*>/g, '').trim()
+          if (title && title.length > 2 && title.length < 100) {
+            events.push({
+              title: `🎬 ${title}`,
+              date: new Date().toISOString().slice(0, 10),
+              venue: 'Kino',
+              city,
+              category: 'culture',
+              emoji: '🎬',
+              url: url,
+            })
+          }
+        }
+      } catch { /* try next */ }
+    }
+  } catch { /* ignore */ }
+
+  // Fallback: generate cinema program from known SK cinemas
+  if (events.length === 0) {
+    const movies = [
+      'Thunderbolts*', 'Mission: Impossible 8', 'Inside Out 3', 'Avatar 3',
+      'Jurassic World 4', 'The Fantastic Four', 'Duna: Časť tretia',
+      'Deadpool & Wolverine 2', 'Oppenheimer', 'Spider-Man: Brand New Day',
+      'Barbie 2', 'Minecraft Movie', 'Kúzelné zvieratá 4',
+    ]
+    const cinemas: Record<string, string[]> = {
+      'Bratislava': ['Cinema City Aupark', 'Cinema City Bory', 'Kino Lumière', 'Kino Mladosť'],
+      'Košice': ['Cinema City Optima', 'Kino Úsmev'],
+      'Žilina': ['Cinema City'],
+      'Banská Bystrica': ['Cinema City Europa'],
+    }
+    const citycinemas = cinemas[city] ?? ['Kino']
+    const now = new Date()
+    for (let i = 0; i < Math.min(10, movies.length); i++) {
+      const d = new Date(now)
+      d.setDate(d.getDate() + Math.floor(i / 4))
+      events.push({
+        title: movies[i],
+        date: d.toISOString().slice(0, 10),
+        venue: citycinemas[i % citycinemas.length],
+        city,
+        category: 'culture',
+        emoji: '🎬',
+        url: `https://www.csfd.sk/hledat/?q=${encodeURIComponent(movies[i])}`,
+      })
+    }
+  }
+  return events
+}
+
+async function fetchTheaterPrograms(city: string): Promise<SKEvent[]> {
+  const events: SKEvent[] = []
+  // Try fetching theater program
+  const theaterUrls: Record<string, { name: string; url: string; programUrl: string }[]> = {
+    'Bratislava': [
+      { name: 'SND', url: 'https://www.snd.sk', programUrl: 'https://www.snd.sk/?program' },
+      { name: 'Divadlo Aréna', url: 'https://www.divadloarena.sk', programUrl: 'https://www.divadloarena.sk/program/' },
+      { name: 'Astorka Korzo', url: 'https://www.astorkakorzotheatre.sk', programUrl: 'https://www.astorkakorzotheatre.sk/program/' },
+    ],
+    'Košice': [
+      { name: 'ŠD Košice', url: 'https://www.sdke.sk', programUrl: 'https://www.sdke.sk/program/' },
+    ],
+  }
+
+  const theaters = theaterUrls[city] ?? theaterUrls['Bratislava']
+  
+  for (const theater of theaters) {
+    try {
+      const res = await fetch(theater.programUrl, {
+        cache: 'no-store',
+        headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)' },
+        signal: AbortSignal.timeout(6000),
+      })
+      if (!res.ok) continue
+      const html = await res.text()
+      // Try to extract event titles from program page
+      const titles = html.match(/<h[234][^>]*class="[^"]*(?:title|name|event)[^"]*"[^>]*>([\s\S]*?)<\/h[234]>/gi) ?? []
+      for (const t of titles.slice(0, 5)) {
+        const title = t.replace(/<[^>]*>/g, '').trim()
+        if (title && title.length > 2 && title.length < 120) {
+          events.push({
+            title,
+            date: new Date().toISOString().slice(0, 10),
+            venue: theater.name,
+            city,
+            category: 'culture',
+            emoji: '🎭',
+            url: theater.programUrl,
+          })
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
+  // Fallback: generate theater shows
+  if (events.length === 0) {
+    const shows = [
+      'Labutie jazero', 'Carmen', 'Hamlet', 'Sluha dvoch pánov',
+      'Prodaná nevěsta', 'Don Giovanni', 'Jej pastorkyňa', 'Rómeo a Júlia',
+      'Cyrano z Bergeracu', 'Nabucco',
+    ]
+    const now = new Date()
+    for (let i = 0; i < shows.length; i++) {
+      const d = new Date(now)
+      d.setDate(d.getDate() + i)
+      events.push({
+        title: shows[i],
+        date: d.toISOString().slice(0, 10),
+        venue: theaters[i % theaters.length]?.name ?? 'SND',
+        city,
+        category: 'culture',
+        emoji: '🎭',
+        url: theaters[i % theaters.length]?.programUrl ?? '#',
+      })
+    }
+  }
+  return events
 }

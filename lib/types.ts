@@ -198,7 +198,7 @@ export interface OnThisDayResponse {
 }
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
-export interface CityTemp { key: string; name: string; temp: number; humidity: number; windSpeed: number; windDir: number; pressure: number; weatherCode: number; feelsLike: number; sunrise: string; sunset: string; uvIndex: number; tempMax: number; tempMin: number }
+export interface CityTemp { key: string; name: string; temp: number; humidity: number; windSpeed: number; windDir: number; pressure: number; weatherCode: number; feelsLike: number; sunrise: string; sunset: string; uvIndex: number; tempMax: number; tempMin: number; precipitation?: number; tomorrowCode?: number; tomorrowMax?: number; tomorrowMin?: number; tomorrowPrecipProb?: number; tomorrowWindMax?: number }
 export interface CityAQI  { key: string; name: string; aqi: number }
 
 export interface StatsData {
@@ -212,6 +212,7 @@ export interface StatsData {
   timestamp: number
   cityTemps?: CityTemp[]
   cityAQI?: CityAQI[]
+  warnings?: { type: string; message: string; severity: string }[]
 }
 
 // ─── Population ───────────────────────────────────────────────────────────────

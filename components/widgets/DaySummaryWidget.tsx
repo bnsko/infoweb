@@ -10,7 +10,7 @@ interface NewsItem { title: string; link: string; source: string }
 interface NewsData { items: NewsItem[] }
 
 interface VisitorData {
-  lifetimeViews: number; lifetimeUnique: number; activeNow: number; todayPageViews: number; uptimeMs: number
+  lifetimeViews: number; lifetimeUnique: number; activeNow: number; todayPageViews: number; uptimeMs: number; lastHourViews?: number
 }
 
 const SECTIONS = [
@@ -108,7 +108,6 @@ export default function DaySummaryWidget() {
     return (c - s) / (e - s)
   }, [sunrise, sunset, now])
 
-  const dayFraction = now ? ((now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) / 86400 * 100).toFixed(1) : '0'
   const topHeadline = news.data?.items?.find(i => i.title)
 
   return (
@@ -126,31 +125,50 @@ export default function DaySummaryWidget() {
 
           {/* Sunrise/Sunset arc */}
           {sunrise && sunset && (
-            <div className="flex items-center gap-2 bg-amber-500/8 border border-amber-500/15 rounded-xl px-2.5 py-1 shrink-0">
-              <div className="relative w-9 h-4.5 shrink-0">
-                <svg viewBox="0 0 40 20" className="w-full h-full">
-                  <path d="M 2 18 Q 20 -2 38 18" fill="none" stroke="rgba(251,191,36,0.2)" strokeWidth="1.5" strokeLinecap="round" />
-                  <path d="M 2 18 Q 20 -2 38 18" fill="none" stroke="rgba(251,191,36,0.7)" strokeWidth="1.5" strokeLinecap="round"
-                    strokeDasharray="60" strokeDashoffset={60 - sunProgress * 60} style={{ transition: 'stroke-dashoffset 2s ease-out' }} />
-                  <circle cx={2 + sunProgress * 36} cy={18 - Math.sin(sunProgress * Math.PI) * 20} r="2.5"
+            <div className="flex items-center gap-3 bg-gradient-to-r from-amber-500/10 via-orange-500/8 to-rose-500/5 border border-amber-500/15 rounded-xl px-3 py-1.5 shrink-0">
+              <div className="relative w-16 h-8 shrink-0">
+                <svg viewBox="0 0 64 32" className="w-full h-full">
+                  {/* Horizon line */}
+                  <line x1="2" y1="28" x2="62" y2="28" stroke="rgba(148,163,184,0.15)" strokeWidth="0.5" />
+                  {/* Full arc path (background) */}
+                  <path d="M 4 28 Q 32 -4 60 28" fill="none" stroke="rgba(251,191,36,0.12)" strokeWidth="2" strokeLinecap="round" />
+                  {/* Progress arc */}
+                  <path d="M 4 28 Q 32 -4 60 28" fill="none" stroke="url(#sunGrad)" strokeWidth="2" strokeLinecap="round"
+                    strokeDasharray="80" strokeDashoffset={80 - sunProgress * 80} style={{ transition: 'stroke-dashoffset 2s ease-out' }} />
+                  <defs>
+                    <linearGradient id="sunGrad" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#fbbf24" />
+                      <stop offset="50%" stopColor="#f97316" />
+                      <stop offset="100%" stopColor="#e11d48" />
+                    </linearGradient>
+                  </defs>
+                  {/* Sun glow */}
+                  <circle cx={4 + sunProgress * 56} cy={28 - Math.sin(sunProgress * Math.PI) * 32} r="6"
+                    fill={sunProgress >= 1 ? 'transparent' : 'rgba(251,191,36,0.15)'} />
+                  {/* Sun circle */}
+                  <circle cx={4 + sunProgress * 56} cy={28 - Math.sin(sunProgress * Math.PI) * 32} r="3"
                     fill={sunProgress >= 1 ? '#475569' : '#fbbf24'} className={sunProgress > 0 && sunProgress < 1 ? 'animate-pulse' : ''} />
+                  {/* Sunrise marker */}
+                  <circle cx="4" cy="28" r="1.5" fill="#fbbf24" opacity="0.5" />
+                  {/* Sunset marker */}
+                  <circle cx="60" cy="28" r="1.5" fill="#e11d48" opacity="0.5" />
                 </svg>
               </div>
-              <div className="flex flex-col text-[9px] leading-tight">
-                <span className="text-amber-300">🌅 {fmtSunTime(sunrise)}</span>
-                <span className="text-orange-400">🌇 {fmtSunTime(sunset)}</span>
+              <div className="flex flex-col gap-0.5">
+                <div className="flex items-center gap-1.5 text-[10px]">
+                  <span className="text-amber-400 font-bold">☀️ {fmtSunTime(sunrise)}</span>
+                  <span className="text-slate-600">→</span>
+                  <span className="text-rose-400 font-bold">🌙 {fmtSunTime(sunset)}</span>
+                </div>
+                <div className="text-[9px] text-slate-500">
+                  {(() => { if (!sunrise || !sunset) return ''; const mins = Math.round((new Date(sunset).getTime() - new Date(sunrise).getTime()) / 60000); return `${Math.floor(mins/60)}h ${mins%60}m svetla` })()}
+                </div>
               </div>
             </div>
           )}
 
-          {/* Day progress pill */}
-          <div className="flex items-center gap-1.5 bg-white/[0.03] border border-white/8 rounded-xl px-2.5 py-1 shrink-0" suppressHydrationWarning>
-            <span className="text-sm leading-none">📊</span>
-            <div>
-              <span className="text-[10px] font-bold text-slate-300 tabular-nums" suppressHydrationWarning>{dayFraction}%</span>
-              <span className="text-[9px] text-slate-500 ml-1">dňa</span>
-            </div>
-          </div>
+          {/* Last hour visitors */}
+          <Pill icon="⏰" value={visitors?.lastHourViews != null ? String(visitors.lastHourViews) : '...'} label="za hodinu" valueColor="text-cyan-400" />
 
           {/* Day of year */}
           <Pill icon="📅" value={stats.loading ? '...' : `${stats.data?.dayOfYear ?? '?'}/${stats.data?.daysInYear ?? 365}`} label="deň roka" />

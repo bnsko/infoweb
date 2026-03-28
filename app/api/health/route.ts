@@ -10,81 +10,81 @@ interface HealthAlert {
   severity: 'low' | 'medium' | 'high'
   category: string
   link?: string
+  region: 'sk' | 'world'
+}
+
+const UA = 'Mozilla/5.0 (compatible; InfoSK/1.0)'
+
+async function fetchRSS(url: string, source: string, region: 'sk' | 'world', maxItems = 8): Promise<HealthAlert[]> {
+  const alerts: HealthAlert[] = []
+  try {
+    const res = await fetch(url, {
+      cache: 'no-store',
+      headers: { 'User-Agent': UA, Accept: 'application/rss+xml, application/xml, text/xml, */*' },
+      signal: AbortSignal.timeout(8000),
+    })
+    if (!res.ok) return []
+    const xml = await res.text()
+    const items = xml.split(/<item[ >]/).slice(1, maxItems + 1)
+    for (const item of items) {
+      const titleRaw = item.match(/<title[^>]*>([\s\S]*?)<\/title>/)?.[1] ?? ''
+      const title = titleRaw.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim()
+      const descRaw = item.match(/<description[^>]*>([\s\S]*?)<\/description>/)?.[1] ?? ''
+      const desc = descRaw.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').trim().slice(0, 200)
+      const date = item.match(/<pubDate[^>]*>([\s\S]*?)<\/pubDate>/)?.[1]?.trim() ?? ''
+      const link = item.match(/<link[^>]*>([\s\S]*?)<\/link>/)?.[1]?.trim() ?? ''
+      if (!title) continue
+      const tl = title.toLowerCase()
+      const sev: 'low' | 'medium' | 'high' = (tl.includes('outbreak') || tl.includes('emergency') || tl.includes('epidemic') || tl.includes('pandemic')) ? 'high'
+        : (tl.includes('update') || tl.includes('risk') || tl.includes('alert') || tl.includes('warning')) ? 'medium' : 'low'
+      const cat = tl.includes('covid') ? 'COVID-19' : tl.includes('flu') || tl.includes('influenza') ? 'Chrípka'
+        : tl.includes('mpox') ? 'Mpox' : tl.includes('measles') ? 'Osýpky' : tl.includes('ebola') ? 'Ebola' : 'Infekčné'
+      alerts.push({ title, description: desc, source, date, severity: sev, category: cat, link, region })
+    }
+  } catch { /* skip */ }
+  return alerts
 }
 
 export async function GET() {
-  const alerts: HealthAlert[] = []
-
-  // WHO Disease Outbreak News RSS
-  const [whoRes, ecdcRes] = await Promise.allSettled([
-    fetch('https://www.who.int/feeds/entity/don/en/rss.xml', {
-      cache: 'no-store',
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; InfoSK/1.0)' },
-      signal: AbortSignal.timeout(8000),
-    }),
-    fetch('https://www.ecdc.europa.eu/en/publications-data?f%5B0%5D=output_types%3A1172', {
-      cache: 'no-store',
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; InfoSK/1.0)', Accept: 'text/html' },
-      signal: AbortSignal.timeout(8000),
-    }),
+  const feeds = await Promise.allSettled([
+    // WHO Disease Outbreak News
+    fetchRSS('https://www.who.int/feeds/entity/don/en/rss.xml', 'WHO', 'world'),
+    // WHO News RSS
+    fetchRSS('https://www.who.int/feeds/entity/news/en/rss.xml', 'WHO News', 'world'),
+    // ECDC RSS feed
+    fetchRSS('https://www.ecdc.europa.eu/en/rss.xml', 'ECDC', 'world'),
+    // ECDC Threat reports
+    fetchRSS('https://www.ecdc.europa.eu/en/threat-reports/rss.xml', 'ECDC CDTR', 'world'),
+    // Slovak UVZSR (public health authority) — try their RSS
+    fetchRSS('https://www.uvzsr.sk/rss', 'ÚVZSR', 'sk'),
+    // ProMED (disease surveillance)
+    fetchRSS('https://promedmail.org/feed/', 'ProMED', 'world'),
   ])
 
-  if (whoRes.status === 'fulfilled' && whoRes.value.ok) {
-    try {
-      const xml = await whoRes.value.text()
-      const items = xml.split(/<item[ >]/).slice(1, 8)
-      for (const item of items) {
-        const titleMatch = item.match(/<title[^>]*>([\s\S]*?)<\/title>/)
-        const descMatch = item.match(/<description[^>]*>([\s\S]*?)<\/description>/)
-        const dateMatch = item.match(/<pubDate[^>]*>([\s\S]*?)<\/pubDate>/)
-        const linkMatch = item.match(/<link[^>]*>([\s\S]*?)<\/link>/)
-
-        const title = titleMatch?.[1]?.replace(/<!\[CDATA\[|\]\]>/g, '').trim() ?? ''
-        const desc = descMatch?.[1]?.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<[^>]+>/g, '').trim().slice(0, 200) ?? ''
-
-        if (title) {
-          const sev = title.toLowerCase().includes('outbreak') || title.toLowerCase().includes('emergency')
-            ? 'high' : title.toLowerCase().includes('update') ? 'medium' : 'low'
-          const cat = title.toLowerCase().includes('covid') ? 'COVID-19'
-            : title.toLowerCase().includes('flu') || title.toLowerCase().includes('influenza') ? 'Chrípka'
-            : title.toLowerCase().includes('mpox') ? 'Mpox'
-            : 'Infectious'
-
-          alerts.push({
-            title,
-            description: desc,
-            source: 'WHO',
-            date: dateMatch?.[1]?.trim() ?? '',
-            severity: sev,
-            category: cat,
-            link: linkMatch?.[1]?.trim(),
-          })
-        }
-      }
-    } catch { /* skip */ }
+  const allAlerts: HealthAlert[] = []
+  for (const r of feeds) {
+    if (r.status === 'fulfilled') allAlerts.push(...r.value)
   }
 
-  // ECDC rapid risk assessments
-  if (ecdcRes.status === 'fulfilled' && ecdcRes.value.ok) {
-    try {
-      const html = await ecdcRes.value.text()
-      const items = html.match(/<h3[^>]*class="[^"]*title[^"]*"[^>]*>[\s\S]*?<\/h3>/g) ?? []
-      for (const item of items.slice(0, 3)) {
-        const titleMatch = item.match(/>([^<]+)</)
-        if (titleMatch?.[1]) {
-          alerts.push({
-            title: titleMatch[1].trim(),
-            description: '',
-            source: 'ECDC',
-            date: new Date().toISOString(),
-            severity: 'medium',
-            category: 'EU Alert',
-            link: 'https://www.ecdc.europa.eu',
-          })
-        }
+  // Sort by date descending
+  allAlerts.sort((a, b) => {
+    const da = a.date ? new Date(a.date).getTime() : 0
+    const db = b.date ? new Date(b.date).getTime() : 0
+    return db - da
+  })
+
+  // Also check Slovak alerts by looking for Slovakia mentions in world alerts
+  for (const alert of allAlerts) {
+    if (alert.region === 'world') {
+      const text = (alert.title + ' ' + alert.description).toLowerCase()
+      if (text.includes('slovakia') || text.includes('slovensko') || text.includes('slovak')) {
+        alert.region = 'sk'
       }
-    } catch { /* skip */ }
+    }
   }
 
-  return NextResponse.json({ alerts, timestamp: Date.now() })
+  const sk = allAlerts.filter(a => a.region === 'sk').slice(0, 10)
+  const world = allAlerts.filter(a => a.region === 'world').slice(0, 15)
+
+  return NextResponse.json({ sk, world, alerts: allAlerts.slice(0, 20), timestamp: Date.now() })
 }

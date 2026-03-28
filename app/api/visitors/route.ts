@@ -50,6 +50,9 @@ const store = {
   todayViews: _p.todayViews,
   // Sessions are always in-memory only (not persisted)
   sessions: new Map<string, number>(),
+  // Hourly views tracking
+  hourlyViews: [] as number[],
+  currentHour: new Date().getHours(),
 }
 
 function hashIP(ip: string): string {
@@ -83,9 +86,15 @@ export async function GET(request: Request) {
   cleanExpiredSessions()
 
   let needsSave = false
+  const nowHour = new Date().getHours()
+  if (nowHour !== store.currentHour) {
+    store.currentHour = nowHour
+    store.hourlyViews = []
+  }
   if (action === 'visit') {
     store.lifetimeViews++
     store.todayViews++
+    store.hourlyViews.push(Date.now())
     if (!store.uniqueHashes.has(hashedIP)) {
       store.uniqueHashes.add(hashedIP)
       store.lifetimeUnique++
@@ -103,6 +112,9 @@ export async function GET(request: Request) {
 
   if (needsSave) savePersisted()
 
+  const oneHourAgo = Date.now() - 3600000
+  const lastHourViews = store.hourlyViews.filter(t => t > oneHourAgo).length
+
   const deployTime = parseInt(process.env.NEXT_PUBLIC_BUILD_TIME ?? '0', 10)
   return NextResponse.json({
     lifetimeViews: store.lifetimeViews,
@@ -110,5 +122,6 @@ export async function GET(request: Request) {
     activeNow: store.sessions.size,
     todayPageViews: store.todayViews,
     uptimeMs: deployTime ? Date.now() - deployTime : 0,
+    lastHourViews,
   })
 }

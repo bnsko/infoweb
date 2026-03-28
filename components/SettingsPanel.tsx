@@ -10,7 +10,7 @@ const WIDGET_LIST = [
   { id: 'flashnews', label: '🔴 Flash správy', labelEn: '🔴 Flash News' },
   { id: 'stats', label: '☀️ Počasie', labelEn: '☀️ Weather' },
   { id: 'news', label: '📰 Správy', labelEn: '📰 News' },
-  { id: 'politics', label: '🏛️ Politika & Zdravie', labelEn: '🏛️ Politics & Health' },
+  { id: 'politics', label: '� Zdravie', labelEn: '🏥 Health' },
   { id: 'finance', label: '💶 Financie', labelEn: '💶 Finance' },
   { id: 'transport', label: '🚗 Doprava & Šport', labelEn: '🚗 Transport & Sports' },
   { id: 'prices', label: '💰 Ceny', labelEn: '💰 Prices' },

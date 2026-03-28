@@ -7,6 +7,7 @@ const FEEDS = [
   { name: 'The Verge AI', url: 'https://www.theverge.com/rss/ai-artificial-intelligence/index.xml' },
   { name: 'MIT Tech Review', url: 'https://www.technologyreview.com/feed/' },
   { name: 'TechCrunch AI', url: 'https://techcrunch.com/category/artificial-intelligence/feed/' },
+  { name: 'DSL.sk', url: 'https://www.dsl.sk/rss.php' },
 ]
 
 const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_' })

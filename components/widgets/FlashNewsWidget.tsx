@@ -15,6 +15,7 @@ interface FlashItem {
 
 interface FlashData {
   items: FlashItem[]
+  summary?: string
   timestamp: number
 }
 
@@ -51,6 +52,15 @@ export default function FlashNewsWidget() {
             </svg>
           </button>
         </div>
+
+        {/* AI Summary */}
+        {!loading && data?.summary && (
+          <div className="mb-2 px-2 py-1.5 rounded-lg bg-red-500/5 border border-red-500/10">
+            <p className="text-[10px] text-slate-300 leading-relaxed line-clamp-2">
+              {data.summary}
+            </p>
+          </div>
+        )}
 
         {/* News items */}
         {loading && <SkeletonRows rows={3} />}

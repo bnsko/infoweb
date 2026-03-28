@@ -9,6 +9,7 @@ interface LotteryResult {
   bonus?: number[]
   jackpot: string
   drawn: boolean
+  link: string
 }
 
 export async function GET() {
@@ -68,7 +69,7 @@ export async function GET() {
       const date = dateMatch ? `${dateMatch[1]}.${dateMatch[2]}.${dateMatch[3]}` : ''
 
       if (nums.length >= 5) {
-        results.push({ game: page.name, date, numbers: nums.slice(0, 7), bonus: nums.length > 5 ? nums.slice(5) : [], jackpot: jp ? `€${jp}` : '', drawn: true })
+        results.push({ game: page.name, date, numbers: nums.slice(0, 7), bonus: nums.length > 5 ? nums.slice(5) : [], jackpot: jp ? `€${jp}` : '', drawn: true, link: page.url })
       }
     } catch { /* try next */ }
   }
@@ -91,7 +92,7 @@ export async function GET() {
           if (block) {
             const nums = (block[1].match(/\d+/g) ?? []).map(Number).filter(n => n > 0 && n <= 90)
             if (nums.length >= 5) {
-              results.push({ game, date: '', numbers: nums.slice(0, 7), bonus: nums.length > 5 ? nums.slice(5) : [], jackpot: '', drawn: true })
+              results.push({ game, date: '', numbers: nums.slice(0, 7), bonus: nums.length > 5 ? nums.slice(5) : [], jackpot: '', drawn: true, link: `https://www.tipos.sk/${game.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}` })
             }
           }
         }
@@ -102,9 +103,9 @@ export async function GET() {
   // If still nothing, use static data marked as recent
   if (results.length === 0) {
     results.push(
-      { game: 'Loto 5 z 35', date: 'Posledné žrebovanie', numbers: [3, 11, 19, 27, 33], bonus: [7], jackpot: '€150 000', drawn: true },
-      { game: 'Eurojackpot', date: 'Posledné žrebovanie', numbers: [5, 12, 24, 36, 48], bonus: [3, 8], jackpot: '€10 000 000', drawn: true },
-      { game: 'Šanca', date: 'Posledné žrebovanie', numbers: [2, 8, 14, 22, 31, 35], jackpot: '€50 000', drawn: true },
+      { game: 'Loto 5 z 35', date: 'Posledné žrebovanie', numbers: [3, 11, 19, 27, 33], bonus: [7], jackpot: '€150 000', drawn: true, link: 'https://www.tipos.sk/loto-5-z-35' },
+      { game: 'Eurojackpot', date: 'Posledné žrebovanie', numbers: [5, 12, 24, 36, 48], bonus: [3, 8], jackpot: '€10 000 000', drawn: true, link: 'https://www.tipos.sk/eurojackpot' },
+      { game: 'Šanca', date: 'Posledné žrebovanie', numbers: [2, 8, 14, 22, 31, 35], jackpot: '€50 000', drawn: true, link: 'https://www.tipos.sk/sanca' },
     )
   }
 
