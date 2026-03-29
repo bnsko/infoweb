@@ -53,7 +53,9 @@ export default function FlightsWidget() {
               <span className="col-span-2 text-[10px] text-slate-300 truncate">
                 {(f as FlightExt).origin && (f as FlightExt).destination
                   ? <><span className="text-cyan-400 font-mono">{(f as FlightExt).origin}</span><span className="text-slate-500 mx-1">→</span><span className="text-cyan-400 font-mono">{(f as FlightExt).destination}</span></>
-                  : <span className="text-slate-600">—</span>
+                  : f.true_track != null
+                    ? <span className="text-slate-500">→ {degreesToDirection(f.true_track)}{f.velocity ? ` · ${f.velocity} km/h` : ''}</span>
+                    : <span className="text-slate-600">—</span>
                 }
               </span>
               <span className="text-[11px] text-slate-300 text-right font-mono">

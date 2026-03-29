@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useWidget } from '@/hooks/useWidget'
 import type { StatsData } from '@/lib/types'
 import { useLang } from '@/hooks/useLang'
-import { QuoteMini, HoroscopeMini, RandomFact } from '@/components/widgets/DailyQuoteWidget'
+import { QuoteMini, HoroscopeMini, FactMini } from '@/components/widgets/DailyQuoteWidget'
 import { NamedayMini } from '@/components/widgets/NamedayWidget'
 import { ISSPassMini } from '@/components/widgets/SpaceEnvWidget'
 import { LaunchesMini } from '@/components/widgets/LaunchesWidget'
@@ -109,33 +109,6 @@ export default function DaySummaryWidget() {
           </div>
           <div className="hidden md:block w-px h-8 bg-white/8" />
 
-          {/* Astronomy highlights */}
-          {astro?.nextShower && (
-            <div className={`hidden md:flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded-lg border ${
-              astro.nextShower.active ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-white/[0.02] border-white/5'
-            }`}>
-              <span className="text-sm">☄️</span>
-              <div>
-                <span className={`text-[10px] font-bold ${astro.nextShower.active ? 'text-yellow-300' : 'text-slate-300'}`}>{astro.nextShower.name}</span>
-                <span className="text-[9px] text-slate-500 ml-1">
-                  {astro.nextShower.active ? '🔥 AKTÍVNE' : `za ${astro.nextShower.daysUntil}d`}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {astro?.aurora && astro.aurora.kpIndex >= 4 && (
-            <div className={`hidden md:flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded-lg border ${
-              astro.aurora.visibleFromSK ? 'bg-green-500/10 border-green-500/20' : 'bg-purple-500/8 border-purple-500/15'
-            }`}>
-              <span className="text-sm">🌌</span>
-              <span className={`text-[10px] font-bold ${astro.aurora.visibleFromSK ? 'text-green-300' : 'text-purple-300'}`}>
-                Aurora Kp {astro.aurora.kpIndex}
-              </span>
-              {astro.aurora.visibleFromSK && <span className="text-[9px] text-green-400">🇸🇰 Viditeľná!</span>}
-            </div>
-          )}
-
           {/* Day of year */}
           <Pill icon="📅" value={stats.loading ? '...' : `${stats.data?.dayOfYear ?? '?'}/${stats.data?.daysInYear ?? 365}`} label="deň roka" />
           {/* Sources */}
@@ -144,13 +117,16 @@ export default function DaySummaryWidget() {
           <Pill icon="👥" value={visitors ? String(visitors.activeNow) : '...'} label="online" valueColor="text-yellow-400" />
           {/* Today visits */}
           <Pill icon="📊" value={visitors ? String(visitors.todayPageViews) : '...'} label="dnes" valueColor="text-orange-300" />
-          {/* Uptime */}
-          <Pill icon="⏱️" value={uptime} label="uptime" mono />
+          {/* Views per hour */}
+          <Pill icon="👁️" value={visitors?.lastHourViews != null ? String(visitors.lastHourViews) : '...'} label="/hod" valueColor="text-cyan-300" />
+          {/* Total visits */}
+          <Pill icon="🏆" value={visitors ? String(visitors.lifetimeViews) : '...'} label="celkom" valueColor="text-purple-300" />
 
-          {/* Planets tonight + mini widgets */}
+          {/* Mini widgets + astronomy + uptime (right side) */}
           <div className="ml-auto flex items-center gap-2">
             <NamedayMini />
             <QuoteMini />
+            <FactMini />
             <HoroscopeMini />
             <ISSPassMini />
             <LaunchesMini />
@@ -158,6 +134,31 @@ export default function DaySummaryWidget() {
               <div className="hidden xl:flex items-center gap-1.5 min-w-0 max-w-xs">
                 <span className="text-[9px] text-slate-600">🔭</span>
                 <span className="text-[9px] text-slate-400 truncate">{astro.planets.note}</span>
+              </div>
+            )}
+            {/* Astronomy highlights — before uptime */}
+            {astro?.nextShower && (
+              <div className={`hidden md:flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded-lg border ${
+                astro.nextShower.active ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-white/[0.02] border-white/5'
+              }`}>
+                <span className="text-sm">☄️</span>
+                <div>
+                  <span className={`text-[10px] font-bold ${astro.nextShower.active ? 'text-yellow-300' : 'text-slate-300'}`}>{astro.nextShower.name}</span>
+                  <span className="text-[9px] text-slate-500 ml-1">
+                    {astro.nextShower.active ? '🔥 AKTÍVNE' : `za ${astro.nextShower.daysUntil}d`}
+                  </span>
+                </div>
+              </div>
+            )}
+            {astro?.aurora && astro.aurora.kpIndex >= 4 && (
+              <div className={`hidden md:flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded-lg border ${
+                astro.aurora.visibleFromSK ? 'bg-green-500/10 border-green-500/20' : 'bg-purple-500/8 border-purple-500/15'
+              }`}>
+                <span className="text-sm">🌌</span>
+                <span className={`text-[10px] font-bold ${astro.aurora.visibleFromSK ? 'text-green-300' : 'text-purple-300'}`}>
+                  Aurora Kp {astro.aurora.kpIndex}
+                </span>
+                {astro.aurora.visibleFromSK && <span className="text-[9px] text-green-400">🇸🇰 Viditeľná!</span>}
               </div>
             )}
             {stats.data?.timestamp && (
@@ -168,11 +169,10 @@ export default function DaySummaryWidget() {
                 </span>
               </div>
             )}
+            {/* Uptime — last item */}
+            <Pill icon="⏱️" value={uptime} label="uptime" mono />
           </div>
         </div>
-
-        {/* Row 1.5: Random fact */}
-        <RandomFact />
 
         {/* Row 2: Section quick-nav */}
         <div className="flex flex-wrap items-center gap-0.5 pt-1.5 border-t border-white/5">
