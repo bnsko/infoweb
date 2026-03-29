@@ -84,6 +84,11 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Desktop zoom 133% — mobile stays 100% */
+@media (min-width: 769px) {
+  html { zoom: 1.33; }
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -136,7 +141,7 @@ body {
   border-radius: 16px;
   padding: 1.15rem;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
   backdrop-filter: blur(8px);
 }

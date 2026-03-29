@@ -11,7 +11,7 @@ interface Suggestion {
 
 interface SportData {
   suggestions: Suggestion[]
-  weather: { temp: number; weatherCode: number; windSpeed: number; precipitation: number }
+  weather: { temp: number; feelsLike: number; weatherCode: number; windSpeed: number; precipitation: number; weatherDesc: string }
 }
 
 const INTENSITY_COLORS: Record<string, string> = {
@@ -28,8 +28,12 @@ export default function SportSuggestionsWidget() {
     <WidgetCard accent="green" title={lang === 'sk' ? 'Čo robiť dnes?' : 'What to do today?'} icon="🏃" onRefresh={refetch}>
       {/* Current weather badge */}
       {data?.weather && (
-        <div className="flex items-center gap-2 mb-3 px-3 py-1.5 rounded-lg bg-blue-500/8 border border-blue-500/15 text-[10px]">
+        <div className="flex items-center gap-2 mb-3 px-3 py-1.5 rounded-lg bg-blue-500/8 border border-blue-500/15 text-[10px] flex-wrap">
           <span className="text-blue-300 font-semibold">🌡️ {data.weather.temp}°C</span>
+          <span className="text-slate-500">·</span>
+          <span className="text-cyan-300 font-semibold">🤒 pocit {data.weather.feelsLike}°C</span>
+          <span className="text-slate-500">·</span>
+          <span className="text-slate-400">{data.weather.weatherDesc}</span>
           <span className="text-slate-500">·</span>
           <span className="text-slate-400">💨 {data.weather.windSpeed} km/h</span>
           {data.weather.precipitation > 0 && (

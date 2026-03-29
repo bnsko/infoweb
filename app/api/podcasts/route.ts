@@ -12,11 +12,15 @@ interface Podcast {
 }
 
 const PODCAST_FEEDS = [
-  { name: 'SME Podcasty', url: 'https://podcasty.sme.sk/rss' },
+  { name: 'SME Podcasty', url: 'https://podcasty.sme.sk/rss/vse' },
+  { name: 'SME - Dobré ráno', url: 'https://podcasty.sme.sk/rss/dobre-rano' },
+  { name: 'SME - Svet', url: 'https://podcasty.sme.sk/rss/svet' },
   { name: 'Denník N', url: 'https://dennikn.sk/podcast/feed/' },
-  { name: 'Dobré ráno', url: 'https://anchor.fm/s/2c01c648/podcast/rss' },
+  { name: 'Startitup', url: 'https://anchor.fm/s/c7b3c730/podcast/rss' },
+  { name: 'Index (SME)', url: 'https://podcasty.sme.sk/rss/index' },
+  { name: 'Forbes SK', url: 'https://anchor.fm/s/e4f80b38/podcast/rss' },
+  { name: 'Pravda', url: 'https://podcasty.pravda.sk/rss/' },
   { name: 'RTVS', url: 'https://www.rtvs.sk/export/podcast.xml' },
-  { name: 'Podcasty.sk', url: 'https://www.podcasty.sk/feed/' },
 ]
 
 async function fetchPodcastFeed(feed: { name: string; url: string }): Promise<Podcast[]> {
@@ -34,17 +38,19 @@ async function fetchPodcastFeed(feed: { name: string; url: string }): Promise<Po
 
     for (const item of items) {
       const titleMatch = item.match(/<title[^>]*>([\s\S]*?)<\/title>/)
-      const linkMatch = item.match(/<link[^>]*>([\s\S]*?)<\/link>/) ?? item.match(/<enclosure[^>]*url="([^"]*)"/)
+      const linkMatch = item.match(/<link[^>]*>([\s\S]*?)<\/link>/)
+      const cdataLinkMatch = item.match(/<link[^>]*><!\[CDATA\[([\s\S]*?)\]\]><\/link>/)
       const enclosureMatch = item.match(/<enclosure[^>]*url="([^"]*)"/)
       const dateMatch = item.match(/<pubDate[^>]*>([\s\S]*?)<\/pubDate>/)
       const durMatch = item.match(/<itunes:duration[^>]*>([\s\S]*?)<\/itunes:duration>/)
 
       const title = titleMatch?.[1]?.replace(/<!\[CDATA\[|\]\]>/g, '').trim() ?? ''
+      const rawLink = cdataLinkMatch?.[1]?.trim() || linkMatch?.[1]?.replace(/<!\[CDATA\[|\]\]>/g, '').trim() || enclosureMatch?.[1]?.trim() || ''
       if (title) {
         podcasts.push({
           title,
           show: feed.name,
-          link: linkMatch?.[1]?.trim() ?? '',
+          link: rawLink,
           audioUrl: enclosureMatch?.[1]?.trim(),
           date: dateMatch?.[1]?.trim() ?? '',
           duration: durMatch?.[1]?.trim(),

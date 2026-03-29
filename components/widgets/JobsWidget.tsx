@@ -33,9 +33,33 @@ type Region = 'sk' | 'eu'
 export default function JobsWidget() {
   const { lang } = useLang()
   const [region, setRegion] = useState<Region>('sk')
+  const [category, setCategory] = useState<string>('all')
 
   const apiUrl = `/api/jobs?tab=${region}`
   const { data, loading, error, refetch } = useWidget<JobsData>(apiUrl, 30 * 60 * 1000)
+
+  const filteredJobs = category === 'all' ? data?.topJobs : data?.topJobs.filter(j => {
+    const tl = j.title.toLowerCase()
+    const catMap: Record<string, RegExp> = {
+      'IT & Vývoj': /it|develop|program|software|devops|data|cloud|web|frontend|backend|qa|test/,
+      'Administratíva': /admin|asisten|recep|office|sekretár/,
+      'Obchod': /obchod|predaj|sales|key account|obchodný/,
+      'Výroba & Logistika': /výrob|sklad|logist|operátor|montáž|skladník/,
+      'Financie': /účt|financ|ekon|audit|controlling/,
+      'Marketing': /market|brand|pr |comm|social/,
+    }
+    return catMap[category]?.test(tl) ?? true
+  })
+
+  const CATEGORIES = [
+    { key: 'all', emoji: '📋', label: 'Všetky' },
+    { key: 'IT & Vývoj', emoji: '💻', label: 'IT' },
+    { key: 'Administratíva', emoji: '📝', label: 'Admin' },
+    { key: 'Obchod', emoji: '🤝', label: 'Obchod' },
+    { key: 'Výroba & Logistika', emoji: '🏭', label: 'Výroba' },
+    { key: 'Financie', emoji: '💰', label: 'Financie' },
+    { key: 'Marketing', emoji: '📢', label: 'Marketing' },
+  ]
 
   return (
     <WidgetCard
@@ -59,10 +83,24 @@ export default function JobsWidget() {
         ))}
       </div>
 
+      {/* Category filter */}
+      <div className="flex items-center gap-1 mb-3 overflow-x-auto scrollbar-hide">
+        {CATEGORIES.map(c => (
+          <button key={c.key} onClick={() => setCategory(c.key)}
+            className={`shrink-0 text-[9px] font-semibold px-2 py-1 rounded-full transition-all ${
+              category === c.key
+                ? 'bg-blue-500/20 text-blue-300 ring-1 ring-blue-500/30'
+                : 'text-slate-500 hover:text-slate-300 hover:bg-white/[0.04]'
+            }`}>
+            {c.emoji} {c.label}
+          </button>
+        ))}
+      </div>
+
       {/* Stats bar */}
       {data && (
         <div className="flex items-center gap-3 mb-3 text-[10px]">
-          <span className="text-blue-400 font-bold">{data.totalNew} {lang === 'sk' ? 'ponúk' : 'offers'}</span>
+          <span className="text-blue-400 font-bold">{(filteredJobs?.length ?? 0)} {lang === 'sk' ? 'ponúk' : 'offers'}</span>
           <span className="text-slate-600">·</span>
           <span className="text-slate-500">{region === 'sk' ? 'profesia.sk' : 'EU portály'}</span>
         </div>
@@ -73,7 +111,10 @@ export default function JobsWidget() {
 
       {!loading && data && (
         <div className="space-y-0.5 max-h-[320px] overflow-y-auto scrollbar-hide">
-          {data.topJobs.map((job, i) => (
+          {(filteredJobs ?? []).length === 0 && (
+            <p className="text-[10px] text-slate-500 py-4 text-center">Žiadne ponuky v tejto kategórii</p>
+          )}
+          {(filteredJobs ?? []).map((job, i) => (
             <a
               key={i}
               href={job.link}

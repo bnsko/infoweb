@@ -10,6 +10,8 @@ interface Match {
   homeTeam: string; awayTeam: string
   homeScore: number | null; awayScore: number | null
   status: string; minute: string | null; startTime: string
+  homeCrest?: string | null
+  awayCrest?: string | null
 }
 
 const SPORTS = [
@@ -21,13 +23,17 @@ const SPORTS = [
   { key: 'mma', emoji: '🥊', sk: 'MMA', en: 'MMA' },
 ]
 
-function getStatusInfo(status: string): { label: string; color: string; isLive: boolean } {
+function getStatusInfo(status: string): { label: string; color: string; bg: string; isLive: boolean } {
   const s = status.toUpperCase()
-  if (s.includes('LIVE') || s.includes('IN_PLAY') || s.includes('PROGRESS')) return { label: '🔴 LIVE', color: 'text-red-400', isLive: true }
-  if (s.includes('PAUSE') || s.includes('HALFTIME')) return { label: '⏸️ HT', color: 'text-yellow-400', isLive: false }
-  if (s.includes('FINISH') || s.includes('FINAL')) return { label: '✅', color: 'text-green-400', isLive: false }
-  if (s.includes('SCHEDULED')) return { label: '⏰', color: 'text-slate-500', isLive: false }
-  return { label: status.slice(0, 10), color: 'text-slate-500', isLive: false }
+  if (s.includes('LIVE') || s.includes('IN_PLAY') || s.includes('PROGRESS'))
+    return { label: 'LIVE', color: 'text-red-400', bg: 'bg-red-500/15 border-red-500/30', isLive: true }
+  if (s.includes('PAUSE') || s.includes('HALFTIME'))
+    return { label: 'HT', color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/25', isLive: false }
+  if (s.includes('FINISH') || s.includes('FINAL'))
+    return { label: 'FT', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20', isLive: false }
+  if (s.includes('SCHEDULED'))
+    return { label: '', color: 'text-slate-500', bg: 'bg-white/[0.02] border-white/5', isLive: false }
+  return { label: status.slice(0, 8), color: 'text-slate-500', bg: 'bg-white/[0.02] border-white/5', isLive: false }
 }
 
 function formatTime(iso: string): string {
@@ -35,97 +41,127 @@ function formatTime(iso: string): string {
   catch { return '' }
 }
 
+function TeamLogo({ src, name }: { src?: string | null; name: string }) {
+  const fallback = name.slice(0, 2).toUpperCase()
+  if (!src) return (
+    <div className="w-8 h-8 rounded-full bg-white/[0.06] flex items-center justify-center text-[10px] font-bold text-slate-400 shrink-0">
+      {fallback}
+    </div>
+  )
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt={name} className="w-8 h-8 object-contain shrink-0"
+      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+  )
+}
+
+function MatchCard({ m }: { m: Match }) {
+  const si = getStatusInfo(m.status)
+  const hasScore = m.homeScore !== null
+  return (
+    <div className={`rounded-xl border p-3 transition-all hover:scale-[1.01] ${si.bg} ${si.isLive ? 'shadow-lg shadow-red-500/5' : ''}`}>
+      {/* Header: league + status */}
+      <div className="flex items-center justify-between mb-2.5">
+        <span className="text-[9px] text-slate-500 font-medium uppercase tracking-wider truncate">{m.competition}</span>
+        {si.isLive ? (
+          <span className="flex items-center gap-1 bg-red-500/20 rounded-full px-2 py-0.5">
+            <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+            <span className="text-[9px] text-red-400 font-black tracking-wide">{si.label}</span>
+            {m.minute && <span className="text-[9px] text-red-300 font-mono">{m.minute}&apos;</span>}
+          </span>
+        ) : si.label ? (
+          <span className={`text-[9px] font-bold ${si.color}`}>{si.label}</span>
+        ) : null}
+      </div>
+
+      {/* Teams + Score */}
+      <div className="space-y-1.5">
+        {/* Home */}
+        <div className="flex items-center gap-2">
+          <TeamLogo src={m.homeCrest} name={m.homeTeam} />
+          <span className={`flex-1 text-[12px] font-semibold truncate ${si.isLive ? 'text-white' : 'text-slate-200'}`}>{m.homeTeam}</span>
+          {hasScore ? (
+            <span className={`text-lg font-black tabular-nums min-w-[24px] text-right ${
+              si.isLive ? 'text-white' : m.homeScore! > (m.awayScore ?? 0) ? 'text-emerald-400' : 'text-slate-300'
+            }`}>{m.homeScore}</span>
+          ) : (
+            <span className="text-[10px] text-slate-500 font-mono">{formatTime(m.startTime)}</span>
+          )}
+        </div>
+        {/* Away */}
+        <div className="flex items-center gap-2">
+          <TeamLogo src={m.awayCrest} name={m.awayTeam} />
+          <span className={`flex-1 text-[12px] truncate ${si.isLive ? 'text-slate-100' : 'text-slate-400'}`}>{m.awayTeam}</span>
+          {hasScore && (
+            <span className={`text-lg font-black tabular-nums min-w-[24px] text-right ${
+              si.isLive ? 'text-white' : m.awayScore! > (m.homeScore ?? 0) ? 'text-emerald-400' : 'text-slate-300'
+            }`}>{m.awayScore}</span>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function SportsWidget() {
-  const { t, lang } = useLang()
+  const { lang } = useLang()
   const [sport, setSport] = useState('football')
   const { data, loading, refetch } = useWidget<{ matches: Match[]; source: string }>(`/api/sports?sport=${sport}`, 60 * 1000)
 
-  return (
-    <WidgetCard accent="green" className="col-span-1 md:col-span-2">
-      <div className="flex items-center justify-between mb-3">
-        <div className="widget-title mb-0">
-          <span>🏆</span>
-          <span>{lang === 'sk' ? 'Šport Live' : 'Sports Live'}</span>
-          {data?.matches?.some(m => getStatusInfo(m.status).isLive) && (
-            <span className="flex items-center gap-1 ml-2 bg-red-500/15 border border-red-500/25 rounded-full px-2 py-0.5">
-              <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
-              <span className="text-[9px] text-red-400 font-bold">LIVE</span>
-            </span>
-          )}
-        </div>
-        <button onClick={refetch} className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-500 hover:text-white hover:bg-white/5 transition-all">
-          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-        </button>
-      </div>
+  const liveCount = data?.matches?.filter(m => getStatusInfo(m.status).isLive).length ?? 0
 
+  return (
+    <WidgetCard accent="green" className="col-span-1 md:col-span-2"
+      title={lang === 'sk' ? 'Šport Live' : 'Sports Live'}
+      icon="🏆"
+      onRefresh={refetch}
+      headerRight={liveCount > 0 ? (
+        <span className="flex items-center gap-1.5 bg-red-500/15 border border-red-500/25 rounded-full px-2.5 py-1 ml-2">
+          <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+          <span className="text-[10px] text-red-400 font-black">{liveCount} LIVE</span>
+        </span>
+      ) : undefined}
+    >
       {/* Sport tabs */}
-      <div className="flex items-center gap-1 mb-3 overflow-x-auto scrollbar-hide">
-        {SPORTS.map(s => (
-          <button
-            key={s.key}
-            onClick={() => setSport(s.key)}
-            className={`flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-xl whitespace-nowrap transition-all ${
-              sport === s.key
-                ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25'
-                : 'text-slate-500 hover:text-slate-300 hover:bg-white/5 border border-transparent'
-            }`}
-          >
-            <span>{s.emoji}</span>
-            <span>{lang === 'sk' ? s.sk : s.en}</span>
-          </button>
-        ))}
+      <div className="flex items-center gap-1 mb-4 overflow-x-auto scrollbar-hide pb-0.5">
+        {SPORTS.map(s => {
+          const active = sport === s.key
+          return (
+            <button
+              key={s.key}
+              onClick={() => setSport(s.key)}
+              className={`flex items-center gap-1.5 text-[11px] font-bold px-3.5 py-2 rounded-xl whitespace-nowrap transition-all ${
+                active
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-lg shadow-emerald-500/5'
+                  : 'text-slate-500 hover:text-slate-300 hover:bg-white/5 border border-transparent'
+              }`}
+            >
+              <span className="text-sm">{s.emoji}</span>
+              <span>{lang === 'sk' ? s.sk : s.en}</span>
+            </button>
+          )
+        })}
       </div>
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          {[1,2,3,4].map(i => <div key={i} className="skeleton h-16 rounded-xl" />)}
+          {[1,2,3,4].map(i => <div key={i} className="skeleton h-20 rounded-xl" />)}
         </div>
       ) : (data?.matches?.length ?? 0) === 0 ? (
-        <div className="text-center py-8">
-          <span className="text-3xl mb-2 block">🏟️</span>
-          <p className="text-sm text-slate-500">{t('sports.noMatches')}</p>
+        <div className="text-center py-10">
+          <span className="text-4xl mb-3 block">🏟️</span>
+          <p className="text-sm text-slate-400 font-medium">{lang === 'sk' ? 'Žiadne zápasy' : 'No matches'}</p>
           <p className="text-[10px] text-slate-600 mt-1">
             {lang === 'sk' ? 'Skúste iný šport alebo sa vráťte neskôr' : 'Try another sport or come back later'}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 max-h-[500px] overflow-y-auto scrollbar-hide">
-          {data!.matches.map(m => {
-            const si = getStatusInfo(m.status)
-            return (
-              <div key={m.id} className={`rounded-xl p-2.5 border transition-all ${
-                si.isLive ? 'border-red-500/25 bg-red-500/5' : 'border-white/5 hover:bg-white/3'
-              }`}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[9px] text-slate-500 uppercase tracking-wide truncate">{m.competition}</span>
-                  <span className={`text-[9px] font-bold ${si.color} shrink-0 ml-1`}>
-                    {si.label} {m.minute && si.isLive ? `${m.minute}'` : ''}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className={`text-[11px] font-medium truncate ${si.isLive ? 'text-white' : 'text-slate-200'}`}>{m.homeTeam}</div>
-                    <div className="text-[11px] text-slate-400 truncate">{m.awayTeam}</div>
-                  </div>
-                  <div className="text-right shrink-0 ml-2">
-                    {m.homeScore !== null ? (
-                      <>
-                        <div className={`text-sm font-bold tabular-nums ${si.isLive ? 'text-white' : 'text-slate-200'}`}>{m.homeScore}</div>
-                        <div className={`text-sm font-bold tabular-nums ${si.isLive ? 'text-white' : 'text-slate-200'}`}>{m.awayScore}</div>
-                      </>
-                    ) : (
-                      <span className="text-[10px] text-slate-500">{formatTime(m.startTime)}</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )
-          })}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[520px] overflow-y-auto scrollbar-hide">
+          {data!.matches.map(m => <MatchCard key={m.id} m={m} />)}
         </div>
       )}
-      <p className="text-[10px] text-slate-600 mt-2">{data?.source ?? 'ESPN'}</p>
+
+      <p className="text-[9px] text-slate-600 mt-3 text-center">{data?.source ?? 'ESPN'} · {lang === 'sk' ? 'obnova 1 min' : 'refresh 1 min'}</p>
     </WidgetCard>
   )
 }

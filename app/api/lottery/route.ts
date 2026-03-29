@@ -17,9 +17,9 @@ export async function GET() {
 
   // Try Tipos.sk page scraping - multiple pages for different games
   const pages = [
-    { url: 'https://www.tipos.sk/loto', name: 'Loto 5 z 35' },
-    { url: 'https://www.tipos.sk/eurojackpot', name: 'Eurojackpot' },
-    { url: 'https://www.tipos.sk/loto-5-z-35', name: 'Loto 5 z 35' },
+    { url: 'https://www.tipos.sk/loterie/loto', name: 'Loto 5 z 35' },
+    { url: 'https://www.tipos.sk/loterie/eurojackpot', name: 'Eurojackpot' },
+    { url: 'https://www.tipos.sk/loterie/loto-5-z-35', name: 'Loto 5 z 35' },
   ]
 
   for (const page of pages) {
@@ -92,7 +92,7 @@ export async function GET() {
           if (block) {
             const nums = (block[1].match(/\d+/g) ?? []).map(Number).filter(n => n > 0 && n <= 90)
             if (nums.length >= 5) {
-              results.push({ game, date: '', numbers: nums.slice(0, 7), bonus: nums.length > 5 ? nums.slice(5) : [], jackpot: '', drawn: true, link: `https://www.tipos.sk/${game.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}` })
+              results.push({ game, date: '', numbers: nums.slice(0, 7), bonus: nums.length > 5 ? nums.slice(5) : [], jackpot: '', drawn: true, link: `https://www.tipos.sk/loterie/${game.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}` })
             }
           }
         }
@@ -111,10 +111,10 @@ export async function GET() {
     const fmtDate = (dt: Date) => `${dt.getDate()}.${dt.getMonth()+1}.${dt.getFullYear()}`
 
     results.push(
-      { game: 'Loto 5 z 35', date: fmtDate(lastLoto), numbers: [3, 11, 19, 27, 33], bonus: [7], jackpot: '€150 000', drawn: true, link: 'https://www.tipos.sk/loto-5-z-35' },
-      { game: 'Loto 5 z 35 (predch.)', date: fmtDate(prevLoto), numbers: [1, 8, 15, 22, 30], bonus: [12], jackpot: '€120 000', drawn: true, link: 'https://www.tipos.sk/loto-5-z-35' },
-      { game: 'Eurojackpot', date: fmtDate(lastEJ), numbers: [5, 12, 24, 36, 48], bonus: [3, 8], jackpot: '€10 000 000', drawn: true, link: 'https://www.tipos.sk/eurojackpot' },
-      { game: 'Šanca', date: fmtDate(lastLoto), numbers: [2, 8, 14, 22, 31, 35], jackpot: '€50 000', drawn: true, link: 'https://www.tipos.sk/sanca' },
+      { game: 'Loto 5 z 35', date: fmtDate(lastLoto), numbers: [3, 11, 19, 27, 33], bonus: [7], jackpot: '€150 000', drawn: true, link: 'https://www.tipos.sk/loterie/loto-5-z-35' },
+      { game: 'Loto 5 z 35 (predch.)', date: fmtDate(prevLoto), numbers: [1, 8, 15, 22, 30], bonus: [12], jackpot: '€120 000', drawn: true, link: 'https://www.tipos.sk/loterie/loto-5-z-35' },
+      { game: 'Eurojackpot', date: fmtDate(lastEJ), numbers: [5, 12, 24, 36, 48], bonus: [3, 8], jackpot: '€10 000 000', drawn: true, link: 'https://www.tipos.sk/loterie/eurojackpot' },
+      { game: 'Šanca', date: fmtDate(lastLoto), numbers: [2, 8, 14, 22, 31, 35], jackpot: '€50 000', drawn: true, link: 'https://www.tipos.sk/loterie/sanca' },
     )
   }
 

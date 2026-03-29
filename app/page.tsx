@@ -37,7 +37,6 @@ import HealthAlertsWidget from '@/components/widgets/HealthAlertsWidget'
 import JobsWidget from '@/components/widgets/JobsWidget'
 import DealsWidget from '@/components/widgets/DealsWidget'
 import PodcastWidget from '@/components/widgets/PodcastWidget'
-import ViralVideosWidget from '@/components/widgets/ViralVideosWidget'
 import SpeedtestWidget from '@/components/widgets/SpeedtestWidget'
 import OfficeWaitWidget from '@/components/widgets/OfficeWaitWidget'
 import InflationWidget from '@/components/widgets/InflationWidget'
@@ -143,11 +142,11 @@ export default function Home() {
               <FearGreedWidget />
               <InflationWidget />
             </div>
-            <div className="mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <FinanceNewsWidget />
+              <InvestmentWidget />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <InvestmentWidget />
               <EnergyWidget />
             </div>
             <div className="mt-4">
@@ -182,7 +181,6 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <PodcastWidget />
-              <ViralVideosWidget />
             </div>
           </div>
         )}

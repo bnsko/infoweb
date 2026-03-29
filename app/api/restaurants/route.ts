@@ -12,6 +12,7 @@ interface Restaurant {
   url: string
   city: string
   tags?: string[]
+  photoUrl?: string
 }
 
 // Deterministic pseudo-distance based on restaurant name (0.2–4.5 km from city center)
@@ -21,6 +22,24 @@ function calcDistance(name: string): number {
     hash = (hash * 31 + name.charCodeAt(i)) & 0xffff
   }
   return Math.round((0.2 + (hash % 43) * 0.1) * 10) / 10
+}
+
+// Generate a deterministic food photo URL from cuisine keywords
+function foodPhoto(cuisine: string, idx: number): string {
+  const keywords: Record<string, string> = {
+    'slovenská': 'traditional-food', 'medzinárodná': 'fine-dining', 'francúzska': 'french-cuisine',
+    'talianska': 'italian-pasta', 'mexická': 'mexican-food', 'ázijská': 'asian-food',
+    'vegánska': 'vegan-food', 'vegetariánska': 'vegetarian-food', 'burger': 'burger',
+    'steakhouse': 'steak', 'pizza': 'pizza', 'gastropub': 'pub-food', 'fusion': 'fusion-food',
+    'kaviareň': 'coffee-brunch', 'grill': 'grilled-meat', 'pivárska': 'beer-food',
+    'healthy': 'healthy-food',
+  }
+  const lower = cuisine.toLowerCase()
+  let kw = 'restaurant-food'
+  for (const [k, v] of Object.entries(keywords)) {
+    if (lower.includes(k)) { kw = v; break }
+  }
+  return `https://source.unsplash.com/400x300/?${kw}&sig=${idx}`
 }
 
 // Curated real restaurants for all regional capitals
@@ -111,7 +130,11 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.json({
-    restaurants: restaurants.map(r => ({ ...r, distance: calcDistance(r.name) })),
+    restaurants: restaurants.map((r, i) => ({
+      ...r,
+      distance: calcDistance(r.name),
+      photoUrl: r.photoUrl || foodPhoto(r.cuisine, i),
+    })),
     city,
     cityName: CITY_NAMES[city],
     cities: Object.entries(CITY_NAMES).map(([key, name]) => ({ key, name })),
