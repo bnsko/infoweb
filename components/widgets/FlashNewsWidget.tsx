@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useState, useCallback } from 'react'
+import { useRef, useEffect, useState, useCallback, useMemo } from 'react'
 
 interface FlashItem {
   title: string
@@ -21,49 +21,42 @@ export default function FlashNewsWidget() {
   const [loading, setLoading] = useState(true)
   const trackRef = useRef<HTMLDivElement>(null)
   const [isPaused, setIsPaused] = useState(false)
+  const [dataKey, setDataKey] = useState(0)
 
   const fetchNews = useCallback(() => {
     fetch(`/api/flashnews?_t=${Date.now()}`)
       .then(r => r.json())
-      .then((d: FlashData) => { setData(d); setLoading(false) })
+      .then((d: FlashData) => {
+        setData(prev => {
+          const newTitles = (d.items ?? []).map(i => i.title).join('|')
+          const oldTitles = (prev?.items ?? []).map(i => i.title).join('|')
+          if (newTitles !== oldTitles) setDataKey(k => k + 1)
+          return d
+        })
+        setLoading(false)
+      })
       .catch(() => setLoading(false))
   }, [])
 
-  // Fetch on mount + every 60s
   useEffect(() => {
     fetchNews()
     const iv = setInterval(fetchNews, 60 * 1000)
     return () => clearInterval(iv)
   }, [fetchNews])
 
-  const items = (data?.items ?? []).slice(0, 10)
+  const items = useMemo(() => (data?.items ?? []).slice(0, 10), [data])
 
   useEffect(() => {
     const el = trackRef.current
     if (!el || items.length === 0) return
 
-    // Reset animation on new data
     el.style.animation = 'none'
-    el.offsetHeight // force reflow
+    void el.offsetHeight
     const scrollW = el.scrollWidth / 2
     const speed = 50
-    const dur = scrollW / speed
-    el.style.animation = ''
-    el.style.animationDuration = `${dur}s`
-  }, [items])
-
-  // When animation ends (one full cycle), restart from beginning
-  useEffect(() => {
-    const el = trackRef.current
-    if (!el) return
-    const handleEnd = () => {
-      el.style.animation = 'none'
-      el.offsetHeight
-      el.style.animation = ''
-    }
-    el.addEventListener('animationiteration', handleEnd)
-    return () => el.removeEventListener('animationiteration', handleEnd)
-  }, [])
+    const dur = Math.max(20, scrollW / speed)
+    el.style.animation = `flashScrollLeft ${dur}s linear infinite`
+  }, [dataKey, items.length])
 
   if (loading || items.length === 0) return null
 
@@ -75,7 +68,6 @@ export default function FlashNewsWidget() {
       onMouseLeave={() => setIsPaused(false)}
     >
       <div className="flex items-center min-h-[30px]">
-        {/* Red FLASH dot + label */}
         <div className="flex items-center gap-1.5 shrink-0 px-3 z-10 bg-red-500/10">
           <span className="relative flex h-1.5 w-1.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-60" />
@@ -84,15 +76,15 @@ export default function FlashNewsWidget() {
           <span className="text-[9px] font-bold text-red-400 uppercase tracking-widest">Flash</span>
         </div>
 
-        {/* Scrolling ticker track */}
         <div className="flex-1 overflow-hidden">
           <div
+            key={dataKey}
             ref={trackRef}
             className={`flash-scroll-track inline-flex items-center whitespace-nowrap ${isPaused ? 'paused' : ''}`}
           >
             {[...items, ...items].map((item, i) => (
               <a
-                key={i}
+                key={`${dataKey}-${i}`}
                 href={item.link}
                 target="_blank"
                 rel="noopener noreferrer"

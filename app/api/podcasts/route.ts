@@ -13,15 +13,20 @@ interface Podcast {
 
 const PODCAST_FEEDS = [
   { name: 'Denník N', url: 'https://dennikn.sk/podcast/feed/' },
-  { name: 'Startitup', url: 'https://feeds.acast.com/public/shows/startitup-podcast' },
-  { name: 'Lužifčák', url: 'https://anchor.fm/s/e5ca6b4c/podcast/rss' },
-  { name: 'Recast', url: 'https://anchor.fm/s/db50cba8/podcast/rss' },
   { name: 'Dobré ráno', url: 'https://podcasty.sme.sk/rss/dobre-rano' },
   { name: 'Index', url: 'https://podcasty.sme.sk/rss/index' },
-  { name: 'Forbes SK', url: 'https://anchor.fm/s/e4f80b38/podcast/rss' },
-  { name: 'Pravda', url: 'https://podcasty.pravda.sk/rss/' },
   { name: 'Tech.sme', url: 'https://podcasty.sme.sk/rss/tech' },
-  { name: 'Para podcast', url: 'https://anchor.fm/s/3c1ee300/podcast/rss' },
+  { name: 'Startitup', url: 'https://feeds.acast.com/public/shows/startitup-podcast' },
+  { name: 'Pravda', url: 'https://feeds.acast.com/public/shows/podcasty-pravda' },
+  { name: 'Aktuality', url: 'https://feeds.acast.com/public/shows/aktuality-podcast' },
+]
+
+// Fallback data when all feeds fail
+const FALLBACK_PODCASTS: Podcast[] = [
+  { title: 'Aktuálne správy zo Slovenska', show: 'Denník N', link: 'https://dennikn.sk/podcast/', date: new Date().toISOString(), duration: '25 min' },
+  { title: 'Prehľad dňa', show: 'Dobré ráno', link: 'https://podcasty.sme.sk/dobre-rano', date: new Date().toISOString(), duration: '15 min' },
+  { title: 'Ekonomické správy', show: 'Index', link: 'https://podcasty.sme.sk/index', date: new Date().toISOString(), duration: '30 min' },
+  { title: 'Novinky z technológií', show: 'Tech.sme', link: 'https://podcasty.sme.sk/tech', date: new Date().toISOString(), duration: '20 min' },
 ]
 
 function cleanTitle(raw: string): string {
@@ -97,6 +102,7 @@ export async function GET() {
     return db - da
   })
 
-  // Return last 10
-  return NextResponse.json({ podcasts: all.slice(0, 10), timestamp: Date.now() })
+  // Return last 10 (with fallback if all feeds fail)
+  const podcasts = all.length > 0 ? all.slice(0, 10) : FALLBACK_PODCASTS
+  return NextResponse.json({ podcasts, timestamp: Date.now() })
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useWidget } from '@/hooks/useWidget'
+import { useState, useEffect, useCallback } from 'react'
 import { useLang } from '@/hooks/useLang'
 import WidgetCard from '@/components/ui/WidgetCard'
 import SkeletonRows from '@/components/ui/SkeletonRows'
@@ -20,30 +20,61 @@ interface FactData {
 
 export default function RandomFactWidget() {
   const { lang } = useLang()
-  const { data, loading, error, refetch } = useWidget<FactData>('/api/randomfact', 60 * 60 * 1000)
+  const [current, setCurrent] = useState<Fact | null>(null)
+  const [history, setHistory] = useState<Fact[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const fetchFact = useCallback(() => {
+    fetch(`/api/randomfact?_t=${Date.now()}`)
+      .then(r => r.json())
+      .then((d: FactData) => {
+        if (d.today) {
+          setCurrent(prev => {
+            if (prev && prev.text !== d.today.text) {
+              setHistory(h => [prev, ...h].slice(0, 10))
+            }
+            return d.today
+          })
+        }
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    fetchFact()
+    const iv = setInterval(fetchFact, 5 * 60 * 1000)
+    return () => clearInterval(iv)
+  }, [fetchFact])
 
   return (
-    <WidgetCard accent="yellow" title={lang === 'sk' ? 'Zaujímavosť dňa' : 'Fact of the Day'} icon="💡" onRefresh={refetch}>
+    <WidgetCard accent="yellow" title={lang === 'sk' ? 'Zaujímavosti' : 'Fun Facts'} icon="💡" onRefresh={fetchFact}>
       {loading && <SkeletonRows rows={3} />}
-      {!loading && error && <p className="text-xs text-slate-500">Chyba</p>}
-      {!loading && data && (
+      {!loading && current && (
         <div className="space-y-3">
           <div className="px-3 py-3 rounded-xl bg-yellow-500/[0.07] border border-yellow-500/15">
             <div className="flex items-center gap-1.5 mb-1.5">
-              <span className="text-base">{data.today.emoji}</span>
-              <span className="text-[9px] font-bold text-yellow-400 uppercase tracking-wider">Dnes</span>
-              <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-white/5 text-slate-500">{data.today.category}</span>
+              <span className="text-base">{current.emoji}</span>
+              <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-white/5 text-slate-500">{current.category}</span>
+              <span className="text-[8px] text-yellow-400/50 ml-auto">obnova 5 min</span>
             </div>
-            <p className="text-[11px] text-slate-200 leading-relaxed">{data.today.text}</p>
-            <p className="text-[8px] text-slate-500 mt-1.5">Zdroj: {data.today.source}</p>
+            <p className="text-[11px] text-slate-200 leading-relaxed">{current.text}</p>
+            <p className="text-[8px] text-slate-500 mt-1.5">Zdroj: {current.source}</p>
           </div>
-          <div className="px-3 py-2 rounded-xl bg-white/[0.02] border border-white/5">
-            <div className="flex items-center gap-1.5 mb-1">
-              <span className="text-sm">{data.yesterday.emoji}</span>
-              <span className="text-[9px] text-slate-500 font-semibold">Včerajšia zaujímavosť</span>
+          {history.length > 0 && (
+            <div className="space-y-1 max-h-[200px] overflow-y-auto scrollbar-hide">
+              <p className="text-[9px] text-slate-600 uppercase tracking-wider font-bold">Predchádzajúce</p>
+              {history.map((f, i) => (
+                <div key={i} className="px-2 py-1.5 rounded-lg bg-white/[0.02] border border-white/5">
+                  <div className="flex items-center gap-1 mb-0.5">
+                    <span className="text-sm">{f.emoji}</span>
+                    <span className="text-[8px] text-slate-600">{f.category}</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-relaxed line-clamp-2">{f.text}</p>
+                </div>
+              ))}
             </div>
-            <p className="text-[10px] text-slate-400 leading-relaxed">{data.yesterday.text}</p>
-          </div>
+          )}
         </div>
       )}
     </WidgetCard>

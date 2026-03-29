@@ -147,12 +147,39 @@ export async function POST(request: Request) {
   }
 
   if (action === 'resetVisitors') {
-    // Call visitors endpoint to reset (we can't directly access the store)
-    return NextResponse.json({ ok: true })
+    // Reset visitor counters via the visitors API
+    try {
+      const origin = new URL(request.url).origin
+      await fetch(`${origin}/api/visitors?action=reset`, { cache: 'no-store' })
+    } catch { /* ignore */ }
+    return NextResponse.json({ ok: true, message: 'Visitors reset' })
   }
 
   if (action === 'clearCache') {
-    return NextResponse.json({ ok: true, message: 'Cache cleared' })
+    // In serverless environment, we can't truly clear cache, but we signal it
+    return NextResponse.json({ ok: true, message: 'Cache invalidation signaled' })
+  }
+
+  if (action === 'testApis') {
+    const apis = [
+      '/api/weather', '/api/news', '/api/stats', '/api/traffic', '/api/currency',
+      '/api/crypto', '/api/flights', '/api/reddit', '/api/flashnews', '/api/podcasts',
+      '/api/randomfact', '/api/outages', '/api/pollen', '/api/flu', '/api/doctors',
+      '/api/pharmacies', '/api/mortgages', '/api/unemployment', '/api/jobs',
+      '/api/highwaycams', '/api/webcams', '/api/streaming', '/api/trending',
+    ]
+    const origin = new URL(request.url).origin
+    const results: { api: string; status: number; ok: boolean; ms: number }[] = []
+    for (const api of apis) {
+      const start = Date.now()
+      try {
+        const res = await fetch(`${origin}${api}`, { cache: 'no-store', signal: AbortSignal.timeout(5000) })
+        results.push({ api, status: res.status, ok: res.ok, ms: Date.now() - start })
+      } catch {
+        results.push({ api, status: 0, ok: false, ms: Date.now() - start })
+      }
+    }
+    return NextResponse.json({ ok: true, results })
   }
 
   if (action === 'shadowBan') {

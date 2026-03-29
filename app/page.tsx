@@ -14,7 +14,6 @@ import PopulationWidget from '@/components/widgets/PopulationWidget'
 import SteamWidget from '@/components/widgets/SteamWidget'
 import SportsWidget from '@/components/widgets/SportsWidget'
 import RedditGlobalWidget from '@/components/widgets/RedditGlobalWidget'
-import TrafficWidget from '@/components/widgets/TrafficWidget'
 import EventsWidget from '@/components/widgets/EventsWidget'
 import CountersWidget from '@/components/widgets/CountersWidget'
 import WikiWidget from '@/components/widgets/WikiWidget'
@@ -32,8 +31,6 @@ import EnergyWidget from '@/components/widgets/EnergyWidget'
 import InvestmentWidget from '@/components/widgets/InvestmentWidget'
 import FlashNewsWidget from '@/components/widgets/FlashNewsWidget'
 import LotteryWidget from '@/components/widgets/LotteryWidget'
-import HealthAlertsWidget from '@/components/widgets/HealthAlertsWidget'
-import JobsWidget from '@/components/widgets/JobsWidget'
 import DealsWidget from '@/components/widgets/DealsWidget'
 import PodcastWidget from '@/components/widgets/PodcastWidget'
 import SpeedtestWidget from '@/components/widgets/SpeedtestWidget'
@@ -46,27 +43,20 @@ import SportSuggestionsWidget from '@/components/widgets/SportSuggestionsWidget'
 import MHDWidget from '@/components/widgets/MHDWidget'
 import ToolOfTheDayWidget from '@/components/widgets/ToolOfTheDayWidget'
 import WebcamsWidget from '@/components/widgets/WebcamsWidget'
-import SlovakFactsWidget from '@/components/widgets/SlovakFactsWidget'
-import ViralVideosWidget from '@/components/widgets/ViralVideosWidget'
 import TrainDelaysWidget from '@/components/widgets/TrainDelaysWidget'
-import PharmaciesWidget from '@/components/widgets/PharmaciesWidget'
 import OutagesWidget from '@/components/widgets/OutagesWidget'
 import HighwayCamsWidget from '@/components/widgets/HighwayCamsWidget'
-import PackageTrackingWidget from '@/components/widgets/PackageTrackingWidget'
-import UnemploymentWidget from '@/components/widgets/UnemploymentWidget'
 import MortgagesWidget from '@/components/widgets/MortgagesWidget'
 import TrendingSearchesWidget from '@/components/widgets/TrendingSearchesWidget'
 import StreamingWidget from '@/components/widgets/StreamingWidget'
 import RandomFactWidget from '@/components/widgets/RandomFactWidget'
-import PollenWidget from '@/components/widgets/PollenWidget'
 import NoiseWidget from '@/components/widgets/NoiseWidget'
 import ReservoirsWidget from '@/components/widgets/ReservoirsWidget'
-import FluWidget from '@/components/widgets/FluWidget'
-import DoctorsWidget from '@/components/widgets/DoctorsWidget'
-import EmergencyWidget from '@/components/widgets/EmergencyWidget'
 import WasteWidget from '@/components/widgets/WasteWidget'
 import WaterQualityWidget from '@/components/widgets/WaterQualityWidget'
-import LocalOutagesWidget from '@/components/widgets/LocalOutagesWidget'
+import SummaryWidget from '@/components/widgets/SummaryWidget'
+import HealthWidget from '@/components/widgets/HealthWidget'
+import JobMarketWidget from '@/components/widgets/JobMarketWidget'
 import SettingsPanel from '@/components/SettingsPanel'
 import { useLang } from '@/hooks/useLang'
 import { usePrefs } from '@/hooks/usePrefs'
@@ -87,11 +77,11 @@ export default function Home() {
         {/* Flash News - breaking news ticker */}
         {isWidgetVisible('flashnews') && <FlashNewsWidget />}
 
-        {/* Stats bar + City Weather + Traffic side by side */}
+        {/* Stats bar + City Weather half + Summary widget beside */}
         {isWidgetVisible('stats') && (
           <div id="sec-weather" className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <StatsWidget />
-            <TrafficWidget />
+            <SummaryWidget />
           </div>
         )}
 
@@ -110,25 +100,18 @@ export default function Home() {
           <div id="sec-slovensko">
             <SectionLabel label={lang === 'sk' ? '🇸🇰 Slovensko' : '🇸🇰 Slovakia'} />
 
-            {/* Health Alerts, Flights, MHD, Office (compact) */}
+            {/* Health (combined), Flights, MHD, Office */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-              <HealthAlertsWidget />
+              <HealthWidget />
               <FlightsWidget />
               <MHDWidget />
               <OfficeWaitWidget />
             </div>
 
-            {/* Train delays, Pharmacies, Emergency */}
+            {/* Train delays, Events, Sport suggestions */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
               <TrainDelaysWidget />
-              <PharmaciesWidget />
-              <EmergencyWidget />
-            </div>
-
-            {/* Events, Jobs, Sport suggestions */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
               <EventsWidget />
-              <JobsWidget />
               <SportSuggestionsWidget />
             </div>
 
@@ -145,29 +128,18 @@ export default function Home() {
               <PopulationWidget />
             </div>
 
-            {/* Environment: Pollen, Noise, Reservoirs, Water, Flu */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-              <PollenWidget />
-              <FluWidget />
+            {/* Environment: Reservoirs, Noise, Water, Waste */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
               <ReservoirsWidget />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
               <WaterQualityWidget />
               <NoiseWidget />
               <WasteWidget />
             </div>
 
-            {/* Local disruptions, Doctors */}
+            {/* Outages, Highway cams */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <LocalOutagesWidget />
-              <DoctorsWidget />
-            </div>
-
-            {/* Outages, Highway cams, Package tracking */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
               <OutagesWidget />
               <HighwayCamsWidget />
-              <PackageTrackingWidget />
             </div>
 
             {/* Sports */}
@@ -193,10 +165,10 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <EnergyWidget />
+              <MortgagesWidget />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <UnemploymentWidget />
-              <MortgagesWidget />
+              <JobMarketWidget />
             </div>
             <div className="mt-4">
               <CountersWidget />
@@ -254,13 +226,11 @@ export default function Home() {
               <RandomFactWidget />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <SlovakFactsWidget />
               <WebcamsWidget />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
               <GitHubTrendingWidget />
+            </div>
+            <div className="mt-4">
               <WikiWidget />
-              <ViralVideosWidget />
             </div>
           </div>
         )}

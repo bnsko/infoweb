@@ -72,7 +72,6 @@ export default function Header() {
           </a>
           <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-3 py-1">
             <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-            <span className="text-[11px] text-emerald-400 font-medium">Live</span>
           </div>
         </div>
       </div>

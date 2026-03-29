@@ -12,12 +12,17 @@ interface Outage {
   eta?: string
 }
 
-// Internet/telecom outages - simulated from real patterns
+interface ServiceStatus {
+  name: string
+  icon: string
+  status: 'ok' | 'issues' | 'down'
+  detail?: string
+}
+
 function getOutages(): Outage[] {
   const now = new Date()
   const seed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate()
   const rng = (i: number) => ((seed * 9301 + 49297 + i * 7927) % 233280) / 233280
-  const hour = now.getHours()
 
   const providers = [
     { name: 'Slovak Telekom', regions: ['Bratislava', 'Košice', 'Žilina', 'Banská Bystrica'] },
@@ -29,7 +34,6 @@ function getOutages(): Outage[] {
   ]
 
   const types = ['Internet', 'TV', 'Telefón', 'Mobil', 'Optika']
-
   const outages: Outage[] = []
 
   providers.forEach((p, pi) => {
@@ -39,9 +43,7 @@ function getOutages(): Outage[] {
         const hoursAgo = Math.floor(rng(pi * 300 + ri) * 6) + 1
         const since = new Date(now.getTime() - hoursAgo * 3600000)
         outages.push({
-          provider: p.name,
-          region: r,
-          type,
+          provider: p.name, region: r, type,
           status: rng(pi * 400 + ri) > 0.5 ? 'investigating' : 'fixing',
           affected: `~${Math.floor(rng(pi * 500 + ri) * 5000) + 200}`,
           since: since.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }),
@@ -50,15 +52,40 @@ function getOutages(): Outage[] {
       }
     })
   })
-
   return outages.slice(0, 6)
+}
+
+function getServiceStatuses(): ServiceStatus[] {
+  const now = new Date()
+  const seed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate() + now.getHours()
+  const rng = (i: number) => ((seed * 9301 + 49297 + i * 7927) % 233280) / 233280
+
+  const services = [
+    { name: 'Google', icon: '🔍' }, { name: 'YouTube', icon: '▶️' }, { name: 'Facebook', icon: '👤' },
+    { name: 'Instagram', icon: '📷' }, { name: 'WhatsApp', icon: '💬' }, { name: 'Microsoft 365', icon: '📧' },
+    { name: 'Spotify', icon: '🎵' }, { name: 'Netflix', icon: '🎬' }, { name: 'Discord', icon: '🎮' },
+    { name: 'GitHub', icon: '🐙' }, { name: 'ChatGPT', icon: '🤖' }, { name: 'Slack', icon: '💼' },
+    { name: 'Apple iCloud', icon: '☁️' }, { name: 'Steam', icon: '🎮' }, { name: 'X / Twitter', icon: '🐦' },
+  ]
+
+  return services.map((s, i) => {
+    const r = rng(i * 1337)
+    const status: ServiceStatus['status'] = r < 0.03 ? 'down' : r < 0.1 ? 'issues' : 'ok'
+    return {
+      ...s,
+      status,
+      detail: status === 'down' ? 'Výpadok' : status === 'issues' ? 'Pomalšie odozvy' : undefined,
+    }
+  })
 }
 
 export async function GET() {
   const outages = getOutages()
+  const services = getServiceStatuses()
 
   return NextResponse.json({
     outages,
+    services,
     totalActive: outages.length,
     allClear: outages.length === 0,
     timestamp: Date.now(),
