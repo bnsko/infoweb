@@ -436,6 +436,10 @@ export default function StatsWidget() {
                   {/* Details grid */}
                   {sections.details && (
                     <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[9px]">
+                      <span className="text-slate-500">🌅 Východ</span>
+                      <span className="text-amber-400 text-right font-semibold">{c.sunrise ? new Date(c.sunrise).toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }) : '–'}</span>
+                      <span className="text-slate-500">🌇 Západ</span>
+                      <span className="text-orange-400 text-right font-semibold">{c.sunset ? new Date(c.sunset).toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }) : '–'}</span>
                       <span className="text-slate-500">💨 Vietor</span>
                       <span className="text-slate-300 text-right">{c.windSpeed} km/h {windDirStr(c.windDir)}</span>
                       <span className="text-slate-500">🌡️ Tlak</span>

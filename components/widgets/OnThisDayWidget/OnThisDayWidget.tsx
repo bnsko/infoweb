@@ -11,13 +11,14 @@ import { useLang } from '@/hooks/useLang'
 const SK_MONTHS = ['januára', 'februára', 'marca', 'apríla', 'mája', 'júna', 'júla', 'augusta', 'septembra', 'októbra', 'novembra', 'decembra']
 const EN_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
-type HistoryType = 'events' | 'births' | 'deaths' | 'selected'
+type HistoryType = 'events' | 'births' | 'deaths' | 'selected' | 'holidays'
 
 const TABS: { key: HistoryType; emoji: string; sk: string; en: string }[] = [
   { key: 'events', emoji: '📅', sk: 'Udalosti', en: 'Events' },
   { key: 'births', emoji: '👶', sk: 'Narodení', en: 'Births' },
   { key: 'deaths', emoji: '🕯️', sk: 'Úmrtia', en: 'Deaths' },
   { key: 'selected', emoji: '⭐', sk: 'Zaujímavosti', en: 'Highlights' },
+  { key: 'holidays', emoji: '🎉', sk: 'Sviatky', en: 'Holidays' },
 ]
 
 export default function OnThisDayWidget() {

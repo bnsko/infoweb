@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useWidget } from '@/hooks/useWidget'
 import { useLang } from '@/hooks/useLang'
 import WidgetCard from '@/components/ui/WidgetCard'
@@ -13,6 +13,7 @@ interface SKEvent {
   category: 'concert' | 'sport' | 'culture' | 'festival' | 'other'
   emoji: string
   url?: string
+  distance?: number
 }
 
 interface EventsData {
@@ -69,12 +70,31 @@ export default function EventsWidget() {
   const [viewMode, setViewMode] = useState<ViewMode>('events')
   const [country, setCountry] = useState('sk')
   const [city, setCity] = useState('Bratislava')
+  const [nearbyMode, setNearbyMode] = useState(false)
+  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null)
+  const [geoError, setGeoError] = useState(false)
 
-  const apiUrl = viewMode === 'events'
-    ? (country === 'sk'
-        ? `/api/events?country=sk&city=${encodeURIComponent(city)}`
-        : `/api/events?country=${country}`)
-    : `/api/events?type=${viewMode}&city=${encodeURIComponent(city)}`
+  const requestLocation = useCallback(() => {
+    if (userCoords) { setNearbyMode(true); return }
+    if (!navigator.geolocation) { setGeoError(true); return }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+        setNearbyMode(true)
+        setGeoError(false)
+      },
+      () => setGeoError(true),
+      { enableHighAccuracy: false, timeout: 10000 }
+    )
+  }, [userCoords])
+
+  const apiUrl = nearbyMode && userCoords
+    ? `/api/events?nearby=1&lat=${userCoords.lat}&lng=${userCoords.lng}`
+    : viewMode === 'events'
+      ? (country === 'sk'
+          ? `/api/events?country=sk&city=${encodeURIComponent(city)}`
+          : `/api/events?country=${country}`)
+      : `/api/events?type=${viewMode}&city=${encodeURIComponent(city)}`
 
   const { data, loading, refetch } = useWidget<EventsData>(apiUrl, 60 * 60 * 1000)
 
@@ -92,18 +112,32 @@ export default function EventsWidget() {
       {/* View mode selector */}
       <div className="flex items-center gap-0.5 mb-3 bg-white/[0.03] rounded-lg p-0.5 border border-white/5">
         {VIEW_MODES.map(vm => (
-          <button key={vm.key} onClick={() => setViewMode(vm.key)}
+          <button key={vm.key} onClick={() => { setViewMode(vm.key); setNearbyMode(false) }}
             className={`flex-1 flex items-center justify-center gap-1 text-[10px] font-semibold py-1.5 rounded-md transition-all ${
-              viewMode === vm.key ? 'bg-amber-500/20 text-amber-300' : 'text-slate-500 hover:text-slate-300'
+              !nearbyMode && viewMode === vm.key ? 'bg-amber-500/20 text-amber-300' : 'text-slate-500 hover:text-slate-300'
             }`}>
             <span>{vm.icon}</span>
             <span>{vm.label}</span>
           </button>
         ))}
+        <button onClick={requestLocation}
+          className={`flex-1 flex items-center justify-center gap-1 text-[10px] font-semibold py-1.5 rounded-md transition-all ${
+            nearbyMode ? 'bg-emerald-500/20 text-emerald-300' : 'text-slate-500 hover:text-slate-300'
+          }`}
+          title={lang === 'sk' ? 'Podujatia v okolí dnes' : 'Nearby events today'}>
+          <span>📍</span>
+          <span>{lang === 'sk' ? 'V okolí' : 'Nearby'}</span>
+        </button>
       </div>
 
-      {/* Country selector (only for events) */}
-      {viewMode === 'events' && (
+      {geoError && nearbyMode && (
+        <div className="text-[10px] text-red-400 mb-2 text-center">
+          {lang === 'sk' ? '⚠️ Nepodarilo sa získať polohu' : '⚠️ Could not get location'}
+        </div>
+      )}
+
+      {/* Country selector (only for events, hidden in nearby mode) */}
+      {viewMode === 'events' && !nearbyMode && (
         <div className="flex items-center gap-0.5 mb-3 bg-white/[0.03] rounded-lg p-0.5 border border-white/5">
           {COUNTRIES.map(c => (
             <button key={c.key} onClick={() => setCountry(c.key)}
@@ -118,8 +152,8 @@ export default function EventsWidget() {
         </div>
       )}
 
-      {/* City selector (for SK events, cinema, theater) */}
-      {(viewMode !== 'events' || country === 'sk') && (
+      {/* City selector (for SK events, cinema, theater) - hidden in nearby mode */}
+      {!nearbyMode && (viewMode !== 'events' || country === 'sk') && (
         <div className="flex flex-wrap gap-1 mb-3">
           {SK_CITIES.map(c => (
             <button key={c.key} onClick={() => setCity(c.key)}
@@ -158,9 +192,12 @@ export default function EventsWidget() {
                         {ev.category}
                       </span>
                       <span className="text-[10px] text-slate-500 truncate">📍 {ev.city} · {ev.venue}</span>
+                      {ev.distance != null && (
+                        <span className="text-[9px] text-emerald-400/80 font-semibold shrink-0 ml-auto">~{ev.distance} km</span>
+                      )}
                     </div>
                     <div className="text-[10px] text-amber-400/80 mt-0.5 font-medium">
-                      {formatDate(ev.date)}
+                      {nearbyMode ? (lang === 'sk' ? '📌 Dnes' : '📌 Today') : formatDate(ev.date)}
                     </div>
                   </div>
                 </div>

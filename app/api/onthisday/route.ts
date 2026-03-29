@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-const VALID_TYPES = ['events', 'births', 'deaths', 'selected']
+const VALID_TYPES = ['events', 'births', 'deaths', 'selected', 'holidays']
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseEntries(items: any[], currentYear: number, limit: number) {

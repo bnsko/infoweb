@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { useWidget } from '@/hooks/useWidget'
 import { useLang } from '@/hooks/useLang'
 import WidgetCard from '@/components/ui/WidgetCard'
@@ -37,8 +36,10 @@ function getStyle(game: string) {
 
 export default function LotteryWidget() {
   const { lang } = useLang()
-  const [expandedGame, setExpandedGame] = useState<string | null>(null)
   const { data, loading, error, refetch } = useWidget<LotteryData>('/api/lottery', 5 * 60 * 1000)
+
+  // Only show first 3 games
+  const results = (data?.results ?? []).slice(0, 3)
 
   return (
     <WidgetCard
@@ -51,13 +52,16 @@ export default function LotteryWidget() {
       {!loading && error && <p className="text-xs text-slate-500">{lang === 'sk' ? 'Chyba' : 'Error'}</p>}
       {!loading && data && (
         <div className="space-y-2">
-          {data.results.map((result, i) => {
+          {results.map((result, i) => {
             const style = getStyle(result.game)
-            const isExpanded = expandedGame === result.game
-            const card = (
-              <div
-                className={`rounded-xl border ${style.border} bg-gradient-to-r ${style.bg} to-transparent p-3 cursor-pointer transition-all hover:scale-[1.01]`}
-                onClick={() => setExpandedGame(isExpanded ? null : result.game)}
+            const link = result.link || `https://www.tipos.sk/loterie/${result.game.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`
+            return (
+              <a
+                key={i}
+                href={link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`block rounded-xl border ${style.border} bg-gradient-to-r ${style.bg} to-transparent p-3 cursor-pointer transition-all hover:scale-[1.01]`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
@@ -66,19 +70,11 @@ export default function LotteryWidget() {
                       <span className="text-[9px] text-slate-500">{result.date}</span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    {result.jackpot && (
-                      <span className={`text-xs font-bold ${style.text} bg-black/20 px-2 py-0.5 rounded-lg`}>
-                        💰 {result.jackpot}
-                      </span>
-                    )}
-                    <a href={result.link || `https://www.tipos.sk/loterie/${result.game.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`}
-                       target="_blank" rel="noopener noreferrer"
-                       onClick={e => e.stopPropagation()}
-                       className={`text-[9px] px-1.5 py-0.5 rounded-md border ${style.border} ${style.text} hover:opacity-80 transition-opacity`}>
-                      tipos.sk ↗
-                    </a>
-                  </div>
+                  {result.jackpot && (
+                    <span className={`text-xs font-bold ${style.text} bg-black/20 px-2 py-0.5 rounded-lg`}>
+                      💰 {result.jackpot}
+                    </span>
+                  )}
                 </div>
 
                 {result.drawn && result.numbers.length > 0 ? (
@@ -112,21 +108,12 @@ export default function LotteryWidget() {
                     {lang === 'sk' ? 'Čaká sa na žrebovanie...' : 'Waiting for draw...'}
                   </div>
                 )}
-              </div>
+              </a>
             )
-            return <div key={i}>{card}</div>
           })}
         </div>
       )}
-      <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-white/5">
-        <div className="flex gap-2">
-          <a href="https://www.tipos.sk/loterie/vysledky" target="_blank" rel="noopener noreferrer"
-             className="text-[9px] text-slate-500 hover:text-yellow-400 transition-colors">📊 {lang === 'sk' ? 'Výsledky' : 'Results'} ↗</a>
-          <a href="https://www.tipos.sk" target="_blank" rel="noopener noreferrer"
-             className="text-[9px] text-slate-500 hover:text-yellow-400 transition-colors">🎰 Tipos.sk ↗</a>
-        </div>
-        <span className="text-[9px] text-slate-600">{lang === 'sk' ? 'obnova 5 min' : 'refresh 5 min'}</span>
-      </div>
+      <p className="text-[9px] text-slate-600 mt-2">{lang === 'sk' ? 'obnova 5 min' : 'refresh 5 min'}</p>
     </WidgetCard>
   )
 }
