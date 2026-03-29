@@ -31,9 +31,10 @@ interface RSSSource {
 const RSS_SOURCES: RSSSource[] = [
   { url: 'https://rss.sme.sk/rss/rss.asp?s=top', name: 'SME.sk' },
   { url: 'https://dennikn.sk/feed/', name: 'Denník N' },
-  { url: 'https://feeds.bbci.co.uk/news/world/rss.xml', name: 'BBC World' },
-  { url: 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml', name: 'NYTimes' },
   { url: 'https://www.aktuality.sk/rss/', name: 'Aktuality' },
+  { url: 'https://spravy.pravda.sk/rss/xml/', name: 'Pravda' },
+  { url: 'https://www.teraz.sk/rss/slovensko.rss', name: 'TASR' },
+  { url: 'https://www.topky.sk/rss.xml', name: 'Topky' },
 ]
 
 async function fetchRSS(source: RSSSource): Promise<FlashItem[]> {
@@ -76,10 +77,10 @@ export async function GET() {
     if (r.status === 'fulfilled') allItems.push(...r.value)
   }
 
-  // Filter: only last 15 minutes
-  const fifteenMinAgo = Date.now() - 15 * 60 * 1000
-  let recentItems = allItems.filter(i => i.timestamp >= fifteenMinAgo)
-  // If nothing in 15 min, take last 60 min as fallback
+  // Filter: only last 20 minutes
+  const twentyMinAgo = Date.now() - 20 * 60 * 1000
+  let recentItems = allItems.filter(i => i.timestamp >= twentyMinAgo)
+  // If nothing in 20 min, take last 60 min as fallback
   if (recentItems.length === 0) {
     const hourAgo = Date.now() - 60 * 60 * 1000
     recentItems = allItems.filter(i => i.timestamp >= hourAgo)
@@ -88,14 +89,9 @@ export async function GET() {
   // Sort by timestamp descending
   recentItems.sort((a, b) => b.timestamp - a.timestamp)
 
-  // Translate non-SK titles to Slovak (simple keyword-based translation for common EN headlines)
+  // All sources are Slovak, just add ago labels
   const translated = recentItems.slice(0, 12).map(item => {
-    let title = item.title
-    // If source is English (BBC, NYTimes), do basic translation
-    if (item.source === 'BBC World' || item.source === 'NYTimes') {
-      title = translateHeadline(title)
-    }
-    return { ...item, title, ago: relativeAgo(item.timestamp) }
+    return { ...item, ago: relativeAgo(item.timestamp) }
   })
 
   const summaryItems = translated.slice(0, 5).map(item => item.title)

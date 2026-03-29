@@ -39,18 +39,18 @@ export default function FlashNewsWidget() {
   return (
     <div
       className="relative overflow-hidden rounded-lg card-entrance"
-      style={{ background: 'rgba(10,12,18,0.6)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+      style={{ background: 'rgba(30,10,10,0.7)', borderBottom: '2px solid rgba(239,68,68,0.3)' }}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
       <div className="flex items-center min-h-[30px]">
-        {/* Subtle FLASH dot + label */}
-        <div className="flex items-center gap-1.5 shrink-0 px-3 z-10">
+        {/* Red FLASH dot + label */}
+        <div className="flex items-center gap-1.5 shrink-0 px-3 z-10 bg-red-500/10">
           <span className="relative flex h-1.5 w-1.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-60" />
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-60" />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
           </span>
-          <span className="text-[9px] font-bold text-amber-500/70 uppercase tracking-widest">Správy</span>
+          <span className="text-[9px] font-bold text-red-400 uppercase tracking-widest">Flash</span>
         </div>
 
         {/* Scrolling ticker track */}
@@ -67,7 +67,7 @@ export default function FlashNewsWidget() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-1 text-[11px] text-slate-400 hover:text-slate-200 transition-colors shrink-0 group"
               >
-                <span className="w-1 h-1 rounded-full bg-slate-600 group-hover:bg-amber-400 transition-colors shrink-0" />
+                <span className="w-1 h-1 rounded-full bg-red-600/60 group-hover:bg-red-400 transition-colors shrink-0" />
                 <span className="group-hover:underline decoration-slate-500/40 underline-offset-2">{item.title}</span>
                 <span className="text-[8px] text-slate-600 font-normal">{item.ago}</span>
               </a>

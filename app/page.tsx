@@ -44,6 +44,10 @@ import OfficeWaitWidget from '@/components/widgets/OfficeWaitWidget'
 import InflationWidget from '@/components/widgets/InflationWidget'
 import SportSuggestionsWidget from '@/components/widgets/SportSuggestionsWidget'
 import MHDWidget from '@/components/widgets/MHDWidget'
+import ToolOfTheDayWidget from '@/components/widgets/ToolOfTheDayWidget'
+import WebcamsWidget from '@/components/widgets/WebcamsWidget'
+import SlovakFactsWidget from '@/components/widgets/SlovakFactsWidget'
+import ViralVideosWidget from '@/components/widgets/ViralVideosWidget'
 import SettingsPanel from '@/components/SettingsPanel'
 import { useLang } from '@/hooks/useLang'
 import { usePrefs } from '@/hooks/usePrefs'
@@ -60,9 +64,6 @@ export default function Home() {
 
         {/* Day summary */}
         {isWidgetVisible('daysummary') && <DaySummaryWidget />}
-
-        {/* Internet Speed Test */}
-        {isWidgetVisible('speedtest') && <SpeedtestWidget />}
 
         {/* Flash News - breaking news ticker */}
         {isWidgetVisible('flashnews') && <FlashNewsWidget />}
@@ -111,11 +112,10 @@ export default function Home() {
               <GroceriesWidget />
             </div>
 
-            {/* Lottery, Deals, Nameday, Population */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+            {/* Lottery, Deals, Population */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
               <LotteryWidget />
               <DealsWidget />
-              <NamedayWidget />
               <PopulationWidget />
             </div>
 
@@ -191,6 +191,14 @@ export default function Home() {
           <div id="sec-extras">
             <SectionLabel label={lang === 'sk' ? '🔭 Objavy' : '🔭 Discover'} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <ToolOfTheDayWidget />
+              <SlovakFactsWidget />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <WebcamsWidget />
+              <ViralVideosWidget />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <GitHubTrendingWidget />
               <WikiWidget />
             </div>
