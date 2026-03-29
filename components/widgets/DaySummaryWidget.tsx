@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useWidget } from '@/hooks/useWidget'
 import type { StatsData } from '@/lib/types'
 import { useLang } from '@/hooks/useLang'
@@ -12,6 +12,9 @@ import { SpeedtestMini } from '@/components/widgets/SpeedtestWidget'
 import { getHoliday, getNextHolidays } from '@/lib/namedays'
 import { format } from 'date-fns'
 import { sk, enUS } from 'date-fns/locale'
+
+interface SlovakFact { icon: string; title: string; value: string; detail: string }
+interface SlovakFactsData { staticFacts: SlovakFact[]; dynamicFacts: SlovakFact[]; generalStats: Record<string, number>; dayOfYear: number }
 
 interface VisitorData {
   lifetimeViews: number; activeNow: number; todayPageViews: number
@@ -60,6 +63,10 @@ export default function DaySummaryWidget() {
   const [showerOpen, setShowerOpen] = useState(false)
   const [auroraOpen, setAuroraOpen] = useState(false)
   const [holidayOpen, setHolidayOpen] = useState(false)
+  const [dayPopupOpen, setDayPopupOpen] = useState(false)
+  const slovakFacts = useWidget<SlovakFactsData>('/api/slovakfacts', 60 * 1000)
+
+  const anyPopupOpen = showerOpen || auroraOpen || holidayOpen || dayPopupOpen
 
   const holiday = useMemo(() => now ? getHoliday(now) : null, [now])
   const nextHolidays = useMemo(() => now ? getNextHolidays(now, 6) : [], [now])
@@ -96,7 +103,7 @@ export default function DaySummaryWidget() {
   const astro = astronomy.data
 
   return (
-    <div className="widget-card !py-3 !px-4 border-violet-500/15 relative card-entrance">
+    <div className={`widget-card !py-3 !px-4 border-violet-500/15 relative card-entrance ${anyPopupOpen ? 'z-[9998]' : ''}`} style={anyPopupOpen ? { backdropFilter: 'none', WebkitBackdropFilter: 'none' } : undefined}>
       <div className="absolute inset-0 bg-gradient-to-br from-violet-600/5 via-indigo-600/3 to-transparent pointer-events-none" />
       <div className="relative space-y-2">
         {/* Row 1: Clock + Meniny + Horoskop + ISS/Launches + Stats + Fact */}
@@ -104,7 +111,7 @@ export default function DaySummaryWidget() {
           {/* Clock */}
           <div className="flex flex-col shrink-0">
             <span className="text-2xl font-mono font-bold text-white tabular-nums tracking-tight leading-none" suppressHydrationWarning>{timeStr}</span>
-            <span className="text-[10px] text-slate-400 capitalize mt-0.5 leading-none" suppressHydrationWarning>{today}</span>
+            <button onClick={() => setDayPopupOpen(o => !o)} className="text-[10px] text-slate-400 capitalize mt-0.5 leading-none hover:text-amber-300 transition-colors text-left cursor-pointer" suppressHydrationWarning>{today}</button>
           </div>
           <div className="hidden md:block w-px h-8 bg-white/8" />
 
@@ -149,6 +156,49 @@ export default function DaySummaryWidget() {
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Day popup - Slovensko v číslach */}
+          {dayPopupOpen && (
+            <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setDayPopupOpen(false)}>
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+              <div className="relative w-full max-w-[420px] bg-[var(--bg-card)] border border-amber-500/20 rounded-2xl shadow-2xl p-4 space-y-3 max-h-[70vh] overflow-y-auto scrollbar-hide" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-amber-300">🇸🇰 Slovensko v číslach</span>
+                  <button onClick={() => setDayPopupOpen(false)} className="text-slate-500 hover:text-white text-lg">✕</button>
+                </div>
+                {slovakFacts.loading && <p className="text-xs text-slate-500">Načítavam...</p>}
+                {slovakFacts.data && (
+                  <>
+                    <p className="text-[9px] text-amber-400/60 uppercase tracking-widest font-bold">Dnes na Slovensku</p>
+                    <div className="space-y-1">
+                      {slovakFacts.data.dynamicFacts.map((f, i) => (
+                        <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/[0.03]">
+                          <span className="text-base w-6 text-center">{f.icon}</span>
+                          <span className="text-[11px] text-slate-400 flex-1">{f.title}</span>
+                          <span className="text-[12px] font-bold text-white tabular-nums">{f.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="border-t border-white/5 pt-2">
+                      <p className="text-[9px] text-amber-400/60 uppercase tracking-widest font-bold mb-1">Zaujímavé fakty</p>
+                      <div className="space-y-1">
+                        {slovakFacts.data.staticFacts.map((f, i) => (
+                          <div key={i} className="px-2 py-1.5 rounded-lg hover:bg-white/[0.03]">
+                            <div className="flex items-center gap-2">
+                              <span className="text-base">{f.icon}</span>
+                              <span className="text-[11px] font-semibold text-slate-200">{f.title}</span>
+                              <span className="text-[11px] font-bold text-amber-300 ml-auto">{f.value}</span>
+                            </div>
+                            <p className="text-[9px] text-slate-500 mt-0.5 pl-8">{f.detail}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -284,9 +334,7 @@ export default function DaySummaryWidget() {
           <div className="ml-auto flex items-center gap-2">
             <div className="hidden xl:flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 anim-pulse-dot" />
-              <span className="text-[10px] text-green-400 font-medium">Live</span>
             </div>
-            <Pill icon="⏱️" value={now ? now.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }) : '--:--'} label="aktualizované" mono />
           </div>
         </div>
       </div>
