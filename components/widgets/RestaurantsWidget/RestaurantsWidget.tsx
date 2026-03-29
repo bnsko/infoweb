@@ -9,7 +9,7 @@ import SkeletonRows from '@/components/ui/SkeletonRows'
 interface Restaurant {
   name: string; cuisine: string; rating: number; priceRange: string
   location: string; description: string; url: string; city: string
-  tags?: string[]; distance?: number
+  tags?: string[]; distance?: number; photoUrl?: string
 }
 
 interface Data { restaurants: Restaurant[]; city: string; cityName: string }
@@ -176,37 +176,43 @@ export default function RestaurantsWidget() {
       </div>
       {loading && <SkeletonRows rows={6} />}
       {!loading && data && sortedRestaurants.length > 0 && (
-        <div className="space-y-1 max-h-[360px] overflow-y-auto scrollbar-hide">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[420px] overflow-y-auto scrollbar-hide">
           {sortedRestaurants.map((r, i) => (
             <a
               key={i}
               href={r.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-start gap-2.5 hover:bg-white/3 rounded-lg p-2 transition-colors group"
+              className="rounded-xl border border-white/5 hover:border-orange-500/20 bg-white/[0.02] hover:bg-white/[0.04] transition-all group overflow-hidden"
             >
-              <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-orange-500/10 border border-orange-500/20 text-sm font-bold text-orange-300">
-                {i + 1}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-slate-200 group-hover:text-white font-semibold line-clamp-1">{r.name}</span>
-                  {r.tags?.includes('vegan') && <span className="text-[8px] bg-green-500/15 text-green-400 px-1 py-0.5 rounded-full font-bold">🌱</span>}
-                  {r.tags?.includes('vegetarian') && !r.tags?.includes('vegan') && <span className="text-[8px] bg-lime-500/15 text-lime-400 px-1 py-0.5 rounded-full font-bold">🥬</span>}
-                  <span className="text-[10px] text-slate-600 shrink-0">{r.priceRange}</span>
-                </div>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[10px] text-amber-400">{ratingStars(r.rating)} {r.rating}</span>
-                  <span className="text-[10px] text-slate-600">·</span>
-                  <span className="text-[10px] text-slate-500">{r.cuisine}</span>
-                  {r.distance != null && (
-                    <>
-                      <span className="text-[10px] text-slate-600">·</span>
-                      <span className="text-[10px] text-slate-500">📍{r.distance} km</span>
-                    </>
+              {/* Food image */}
+              {r.photoUrl && (
+                <div className="relative h-28 overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={r.photoUrl} alt={r.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  <div className="absolute bottom-1.5 left-2 flex items-center gap-1.5">
+                    <span className="text-[10px] font-black text-amber-400 bg-black/50 backdrop-blur-sm px-1.5 py-0.5 rounded">
+                      ★ {r.rating}
+                    </span>
+                    <span className="text-[10px] font-bold text-white/80 bg-black/50 backdrop-blur-sm px-1.5 py-0.5 rounded">
+                      {r.priceRange}
+                    </span>
+                  </div>
+                  {r.tags?.includes('vegan') && (
+                    <span className="absolute top-1.5 right-2 text-[9px] bg-green-500/80 backdrop-blur-sm text-white px-1.5 py-0.5 rounded-full font-bold">🌱 Vegan</span>
                   )}
                 </div>
-                <p className="text-[10px] text-slate-500 line-clamp-1 mt-0.5">{r.description}</p>
+              )}
+              {/* Info */}
+              <div className="p-2.5">
+                <p className="text-[12px] text-slate-200 group-hover:text-white font-bold line-clamp-1">{r.name}</p>
+                <p className="text-[10px] text-slate-500 mt-0.5">{r.cuisine} · {r.location}</p>
+                <p className="text-[10px] text-slate-600 line-clamp-1 mt-0.5">{r.description}</p>
+                {r.distance != null && (
+                  <p className="text-[9px] text-slate-600 mt-1">📍 {r.distance} km od centra</p>
+                )}
               </div>
             </a>
           ))}

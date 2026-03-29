@@ -27,11 +27,14 @@ function parseRSSPosts(xml: string) {
     const updated = getTag('updated')
     const id = entry.match(/\/comments\/([a-z0-9]+)\//)?.[1] ?? Math.random().toString(36).slice(2, 8)
     const content = getTag('content')
-    // Reddit RSS score patterns: "N points", or encoded as "&lt;...&gt;" within content
-    const decoded = content.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
+    // Decode all HTML entities in content for reliable parsing
+    const decoded = content
+      .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
+      .replace(/&#39;/g, "'").replace(/&quot;/g, '"')
+    // Reddit RSS: scores in "submitted by ... <span>N points</span>" or plain "N points"
     const scoreMatch = decoded.match(/(\d+)\s*point/) ?? content.match(/(\d+)\s*point/)
-    // Comment count: "[N comments]" or "N comment"
-    const commentsMatch = decoded.match(/\[(\d+)\s*comment/) ?? decoded.match(/(\d+)\s*comment/) ?? content.match(/(\d+)\s*comment/)
+    // Comment count from "[N comments]", "N comment", or the link text
+    const commentsMatch = decoded.match(/(\d+)\s*comment/) ?? content.match(/(\d+)\s*comment/)
 
     if (title) {
       posts.push({
@@ -60,16 +63,20 @@ export async function GET(request: Request) {
   const rssSort = sort === 'best' ? 'top' : sort
 
   // Try JSON API first — multiple endpoints for reliability
+  const UAs = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.15',
+    'Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0',
+  ]
+  const ua = UAs[Math.floor(Math.random() * UAs.length)]
   const jsonUrls = sort === 'best'
     ? [
         `https://old.reddit.com/r/Slovakia/top.json?limit=25&t=week&raw_json=1`,
         `https://www.reddit.com/r/Slovakia/top.json?limit=25&t=week&raw_json=1`,
-        `https://api.reddit.com/r/Slovakia/top?limit=25&t=week&raw_json=1`,
       ]
     : [
         `https://old.reddit.com/r/Slovakia/${sort}.json?limit=25&raw_json=1`,
         `https://www.reddit.com/r/Slovakia/${sort}.json?limit=25&raw_json=1`,
-        `https://api.reddit.com/r/Slovakia/${sort}?limit=25&raw_json=1`,
       ]
 
   for (const url of jsonUrls) {
@@ -77,9 +84,9 @@ export async function GET(request: Request) {
       const res = await fetch(url, {
         cache: 'no-store',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.7',
-          'Accept-Language': 'en-US,en;q=0.9',
+          'User-Agent': ua,
+          Accept: 'application/json, text/html;q=0.9, */*;q=0.7',
+          'Accept-Language': 'en-US,en;q=0.9,sk;q=0.8',
         },
         signal: AbortSignal.timeout(8000),
       })
@@ -151,8 +158,8 @@ async function enrichWithScores(posts: { id: string; title: string; url: string;
       const res = await fetch(enrichUrl, {
         cache: 'no-store',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.7',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+          Accept: 'application/json, text/html;q=0.9, */*;q=0.7',
         },
         signal: AbortSignal.timeout(5000),
       })

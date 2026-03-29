@@ -47,6 +47,13 @@ function parseRSSEntries(xml: string) {
 }
 
 export async function GET() {
+  const UAs = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.15',
+    'Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0',
+  ]
+  const ua = UAs[Math.floor(Math.random() * UAs.length)]
+
   // Try JSON API first — multiple endpoints for reliability
   const jsonUrls = [
     'https://old.reddit.com/r/all/top.json?limit=10&t=day&raw_json=1',
@@ -58,9 +65,9 @@ export async function GET() {
       const res = await fetch(url, {
         cache: 'no-store',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.7',
-          'Accept-Language': 'en-US,en;q=0.9',
+          'User-Agent': ua,
+          Accept: 'application/json, text/html;q=0.9, */*;q=0.7',
+          'Accept-Language': 'en-US,en;q=0.9,sk;q=0.8',
         },
         signal: AbortSignal.timeout(8000),
       })

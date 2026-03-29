@@ -35,8 +35,8 @@ function QuoteMini() {
         <span className="hidden sm:inline">{lang === 'sk' ? 'Citát' : 'Quote'}</span>
       </button>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4" onClick={() => setOpen(false)}>
-          <div className="w-full max-w-sm bg-slate-900/98 border border-purple-500/20 rounded-2xl p-4 shadow-2xl backdrop-blur-xl" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)}>
+          <div className="w-full max-w-sm bg-slate-900 border border-purple-500/20 rounded-2xl p-4 shadow-2xl backdrop-blur-xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-purple-300">💬 {lang === 'sk' ? 'Denný citát' : 'Daily Quote'}</h3>
               <button onClick={() => setOpen(false)} className="text-slate-500 hover:text-white text-lg">✕</button>
@@ -78,8 +78,8 @@ function HoroscopeMini() {
         <span className="hidden sm:inline">{current?.name}</span>
       </button>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4" onClick={() => setOpen(false)}>
-          <div className="w-full max-w-sm max-h-[80vh] overflow-y-auto bg-slate-900/98 border border-indigo-500/20 rounded-2xl p-4 shadow-2xl backdrop-blur-xl" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4 bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)}>
+          <div className="w-full max-w-sm max-h-[80vh] overflow-y-auto bg-slate-900 border border-indigo-500/20 rounded-2xl p-4 shadow-2xl backdrop-blur-xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-indigo-300">{current?.emoji} {lang === 'sk' ? 'Horoskop' : 'Horoscope'}</h3>
               <button onClick={() => setOpen(false)} className="text-slate-500 hover:text-white text-lg">✕</button>

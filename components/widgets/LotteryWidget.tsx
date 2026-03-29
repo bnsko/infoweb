@@ -72,7 +72,7 @@ export default function LotteryWidget() {
                         💰 {result.jackpot}
                       </span>
                     )}
-                    <a href={result.link || `https://www.tipos.sk/${result.game.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`}
+                    <a href={result.link || `https://www.tipos.sk/loterie/${result.game.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`}
                        target="_blank" rel="noopener noreferrer"
                        onClick={e => e.stopPropagation()}
                        className={`text-[9px] px-1.5 py-0.5 rounded-md border ${style.border} ${style.text} hover:opacity-80 transition-opacity`}>
@@ -120,7 +120,7 @@ export default function LotteryWidget() {
       )}
       <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-white/5">
         <div className="flex gap-2">
-          <a href="https://www.tipos.sk/vysledky-zirebovani" target="_blank" rel="noopener noreferrer"
+          <a href="https://www.tipos.sk/loterie/vysledky" target="_blank" rel="noopener noreferrer"
              className="text-[9px] text-slate-500 hover:text-yellow-400 transition-colors">📊 {lang === 'sk' ? 'Výsledky' : 'Results'} ↗</a>
           <a href="https://www.tipos.sk" target="_blank" rel="noopener noreferrer"
              className="text-[9px] text-slate-500 hover:text-yellow-400 transition-colors">🎰 Tipos.sk ↗</a>
