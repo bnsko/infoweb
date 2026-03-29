@@ -21,6 +21,9 @@ const SPORTS = [
   { key: 'tennis', emoji: '🎾', sk: 'Tenis', en: 'Tennis' },
   { key: 'f1', emoji: '🏎️', sk: 'F1', en: 'F1' },
   { key: 'mma', emoji: '🥊', sk: 'MMA', en: 'MMA' },
+  { key: 'handball', emoji: '🤾', sk: 'Hádzaná', en: 'Handball' },
+  { key: 'volleyball', emoji: '🏐', sk: 'Volejbal', en: 'Volleyball' },
+  { key: 'rugby', emoji: '🏉', sk: 'Rugby', en: 'Rugby' },
 ]
 
 function getStatusInfo(status: string): { label: string; color: string; bg: string; isLive: boolean } {
@@ -106,7 +109,7 @@ function MatchCard({ m }: { m: Match }) {
 export default function SportsWidget() {
   const { lang } = useLang()
   const [sport, setSport] = useState('football')
-  const { data, loading, refetch } = useWidget<{ matches: Match[]; source: string }>(`/api/sports?sport=${sport}`, 60 * 1000)
+  const { data, loading, refetch } = useWidget<{ matches: Match[]; source: string }>(`/api/sports?sport=${sport}`, 30 * 1000)
 
   const liveCount = data?.matches?.filter(m => getStatusInfo(m.status).isLive).length ?? 0
 

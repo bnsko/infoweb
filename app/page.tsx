@@ -8,8 +8,7 @@ import OnThisDayWidget from '@/components/widgets/OnThisDayWidget'
 import CurrencyWidget from '@/components/widgets/CurrencyWidget'
 import CryptoWidget from '@/components/widgets/CryptoWidget'
 import FlightsWidget from '@/components/widgets/FlightsWidget'
-import SpaceEnvWidget from '@/components/widgets/SpaceEnvWidget'
-import LaunchesWidget from '@/components/widgets/LaunchesWidget'
+// SpaceEnvWidget & LaunchesWidget moved to DaySummary panel
 import NamedayWidget from '@/components/widgets/NamedayWidget'
 import PopulationWidget from '@/components/widgets/PopulationWidget'
 import SteamWidget from '@/components/widgets/SteamWidget'
@@ -89,19 +88,13 @@ export default function Home() {
           <div id="sec-slovensko">
             <SectionLabel label={lang === 'sk' ? '🇸🇰 Slovensko' : '🇸🇰 Slovakia'} />
 
-            {/* Health alerts */}
-
-            {/* Transport & Flights + Health */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+            {/* Transport & Flights + Health Alerts (compact) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mt-4">
               <TrafficWidget />
+              <HealthAlertsWidget />
               <FlightsWidget />
               <MHDWidget />
               <OfficeWaitWidget />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-3">
-              <div className="lg:col-span-4">
-                <HealthAlertsWidget />
-              </div>
             </div>
 
             {/* Events, Jobs, Sport suggestions */}
@@ -155,16 +148,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* Vesmír & Rakety */}
-        {isWidgetVisible('space') && (
-          <div id="sec-space">
-            <SectionLabel label={t('sec.space')} />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <SpaceEnvWidget />
-              <LaunchesWidget />
-            </div>
-          </div>
-        )}
+        {/* Vesmír & Rakety — now embedded in DaySummary panel */}
 
         {/* Zábava & Komunita */}
         {isWidgetVisible('fun') && (

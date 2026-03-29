@@ -164,8 +164,8 @@ export default function FuelPricesWidget() {
       {!loading && tab === 'chart' && data?.history && (
         <div>
           <p className="text-[10px] text-slate-500 mb-2">{lang === 'sk' ? 'Benzín 95 — posledných 12 mesiacov (€/l)' : 'Petrol 95 — last 12 months (€/l)'}</p>
-          <div className="relative h-[180px] bg-white/[0.02] rounded-xl border border-white/5 p-3">
-            <svg viewBox="0 0 320 130" className="w-full h-full" preserveAspectRatio="none">
+          <div className="relative bg-white/[0.02] rounded-xl border border-white/5 p-3" style={{ aspectRatio: '16/7' }}>
+            <svg viewBox="0 0 320 130" className="w-full h-full">{/* preserveAspectRatio removed for proper fit */}
               {(() => {
                 const pts = data.history
                 const minP = Math.min(...pts.map(p => p.price)) - 0.02

@@ -36,12 +36,15 @@ async function fetchAlzaDeals(): Promise<Deal[]> {
       const priceMatch = desc.match(/(\d[\d\s,.]*)\s*€/) ?? desc.match(/(\d[\d\s,.]*)\s*Kč/)
       const discMatch = desc.match(/-(\d+)\s*%/) ?? title.match(/-(\d+)\s*%/)
       if (title) {
+        // Ensure link is absolute
+        let fullLink = link || 'https://www.alza.sk'
+        if (fullLink.startsWith('/')) fullLink = `https://www.alza.sk${fullLink}`
         deals.push({
           title: title.slice(0, 100),
           price: priceMatch ? `${priceMatch[1].trim()} €` : '',
           discount: discMatch ? `-${discMatch[1]}%` : undefined,
           store: 'Alza.sk',
-          link: link || 'https://www.alza.sk',
+          link: fullLink,
         })
       }
     }

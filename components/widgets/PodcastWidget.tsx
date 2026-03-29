@@ -25,9 +25,17 @@ interface PodcastData {
 
 const SHOW_COLORS: Record<string, string> = {
   'SME Podcasty': '#ef4444',
+  'SME - Dobré ráno': '#f59e0b',
+  'SME - Svet': '#3b82f6',
+  'Index (SME)': '#f97316',
   'Denník N': '#6366f1',
+  'Startitup Podcast': '#10b981',
+  'Forbes SK': '#8b5cf6',
+  'Pravda': '#ec4899',
+  'RTVS': '#0ea5e9',
+  'Aktuality.sk': '#14b8a6',
+  'Podcast.sk': '#a855f7',
   'Dobré ráno': '#f59e0b',
-  'RTVS': '#3b82f6',
   'Podcasty.sk': '#10b981',
 }
 

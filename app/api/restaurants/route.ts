@@ -27,19 +27,19 @@ function calcDistance(name: string): number {
 // Generate a deterministic food photo URL from cuisine keywords
 function foodPhoto(cuisine: string, idx: number): string {
   const keywords: Record<string, string> = {
-    'slovenská': 'traditional-food', 'medzinárodná': 'fine-dining', 'francúzska': 'french-cuisine',
-    'talianska': 'italian-pasta', 'mexická': 'mexican-food', 'ázijská': 'asian-food',
-    'vegánska': 'vegan-food', 'vegetariánska': 'vegetarian-food', 'burger': 'burger',
-    'steakhouse': 'steak', 'pizza': 'pizza', 'gastropub': 'pub-food', 'fusion': 'fusion-food',
-    'kaviareň': 'coffee-brunch', 'grill': 'grilled-meat', 'pivárska': 'beer-food',
-    'healthy': 'healthy-food',
+    'slovenská': 'food', 'medzinárodná': 'dinner', 'francúzska': 'french,food',
+    'talianska': 'pasta', 'mexická': 'mexican,food', 'ázijská': 'asian,food',
+    'vegánska': 'vegan,food', 'vegetariánska': 'salad', 'burger': 'burger',
+    'steakhouse': 'steak', 'pizza': 'pizza', 'gastropub': 'food,pub', 'fusion': 'food,plate',
+    'kaviareň': 'coffee,brunch', 'grill': 'grill,meat', 'pivárska': 'beer,food',
+    'healthy': 'healthy,food',
   }
   const lower = cuisine.toLowerCase()
-  let kw = 'restaurant-food'
+  let kw = 'restaurant,food'
   for (const [k, v] of Object.entries(keywords)) {
     if (lower.includes(k)) { kw = v; break }
   }
-  return `https://source.unsplash.com/400x300/?${kw}&sig=${idx}`
+  return `https://loremflickr.com/400/300/${kw}?lock=${idx}`
 }
 
 // Curated real restaurants for all regional capitals

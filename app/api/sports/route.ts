@@ -48,6 +48,16 @@ const SPORT_ENDPOINTS: Record<string, { url: string; name: string }[]> = {
     { url: 'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard', name: 'UFC' },
     { url: 'https://site.api.espn.com/apis/site/v2/sports/mma/bellator/scoreboard', name: 'Bellator' },
   ],
+  handball: [
+    { url: 'https://site.api.espn.com/apis/site/v2/sports/handball/ehf.cl/scoreboard', name: 'EHF Champions League' },
+  ],
+  volleyball: [
+    { url: 'https://site.api.espn.com/apis/site/v2/sports/volleyball/fivb/scoreboard', name: 'FIVB' },
+  ],
+  rugby: [
+    { url: 'https://site.api.espn.com/apis/site/v2/sports/rugby/rugby-world-cup/scoreboard', name: 'Rugby WC' },
+    { url: 'https://site.api.espn.com/apis/site/v2/sports/rugby/six-nations/scoreboard', name: 'Six Nations' },
+  ],
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

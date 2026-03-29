@@ -13,7 +13,7 @@ interface SKEvent {
 }
 
 // Generate upcoming events based on date patterns, real Slovak venues and recurring events
-function generateEvents(): SKEvent[] {
+function generateEvents(todayOnly = false): SKEvent[] {
   const now = new Date()
   const events: SKEvent[] = []
 
@@ -27,6 +27,12 @@ function generateEvents(): SKEvent[] {
     { title: 'Rock Night', venue: 'Majestic Music Club', city: 'Bratislava', category: 'concert' },
     { title: 'Koncert Štátneho divadla', venue: 'ŠD Košice', city: 'Košice', category: 'concert' },
     { title: 'Folk Music Festival', venue: 'Amfiteáter', city: 'Banská Bystrica', category: 'concert' },
+    { title: 'Acoustic Session', venue: 'Collosseum', city: 'Košice', category: 'concert' },
+    { title: 'Klavírny recitál', venue: 'Reduta', city: 'Žilina', category: 'concert' },
+    { title: 'Open Mic Night', venue: 'Tabačka', city: 'Košice', category: 'concert' },
+    { title: 'Symfonický koncert', venue: 'Štátna filharmónia', city: 'Košice', category: 'concert' },
+    { title: 'Blues Night', venue: 'Old Herold Pub', city: 'Trenčín', category: 'concert' },
+    { title: 'DJs na terase', venue: 'KC Dunaj', city: 'Bratislava', category: 'concert' },
   ]
 
   const sports: Omit<SKEvent, 'date' | 'emoji'>[] = [
@@ -37,6 +43,10 @@ function generateEvents(): SKEvent[] {
     { title: 'MŠK Žilina – futbal', venue: 'Štadión MŠK', city: 'Žilina', category: 'sport' },
     { title: 'Bežecký maratón', venue: 'Staré Mesto', city: 'Bratislava', category: 'sport' },
     { title: 'Tenis – ATP Challenger', venue: 'NTC', city: 'Bratislava', category: 'sport' },
+    { title: 'FC Nitra – futbal', venue: 'Štadión pod Zoborom', city: 'Nitra', category: 'sport' },
+    { title: 'Dukla B. Bystrica – futbal', venue: 'Štiavničky', city: 'Banská Bystrica', category: 'sport' },
+    { title: 'AS Trenčín – futbal', venue: 'Štadión na Sihoti', city: 'Trenčín', category: 'sport' },
+    { title: 'Tatran Prešov – hádzaná', venue: 'Mestská hala', city: 'Prešov', category: 'sport' },
   ]
 
   const culture: Omit<SKEvent, 'date' | 'emoji'>[] = [
@@ -46,6 +56,11 @@ function generateEvents(): SKEvent[] {
     { title: 'Letné kino', venue: 'Amfiteáter', city: 'Košice', category: 'culture' },
     { title: 'Výstava súčasného umenia', venue: 'Kunsthalle', city: 'Bratislava', category: 'culture' },
     { title: 'Bábkové divadlo pre deti', venue: 'Bibiana', city: 'Bratislava', category: 'culture' },
+    { title: 'Premietanie pod hviezdami', venue: 'Kasárne', city: 'Košice', category: 'culture' },
+    { title: 'Literárny večer', venue: 'Stanica Žilina-Záriečie', city: 'Žilina', category: 'culture' },
+    { title: 'Nitrianska galéria – vernisáž', venue: 'Galéria', city: 'Nitra', category: 'culture' },
+    { title: 'Prehliadka historického centra', venue: 'Starý Zámok', city: 'Banská Bystrica', category: 'culture' },
+    { title: 'Výstava v Synagóge', venue: 'Synagóga', city: 'Trenčín', category: 'culture' },
   ]
 
   const festivals: Omit<SKEvent, 'date' | 'emoji'>[] = [
@@ -75,15 +90,16 @@ function generateEvents(): SKEvent[] {
     { list: festivals, weight: 1 },
   ]
 
-  // Generate events for next 14 days
-  for (let d = 0; d < 14; d++) {
+  // Generate events for next 14 days (or today only for nearby mode)
+  const days = todayOnly ? 1 : 14
+  for (let d = 0; d < days; d++) {
     const eventDate = new Date(now)
     eventDate.setDate(eventDate.getDate() + d)
     const dateStr = eventDate.toISOString().split('T')[0]
 
-    // 2-4 events per day, seeded by date
+    // More events per day in todayOnly mode to cover all cities
     const seed = dayOfYear + d
-    const eventsPerDay = 2 + (seed % 3)
+    const eventsPerDay = todayOnly ? 8 + (seed % 4) : 2 + (seed % 3)
 
     for (let e = 0; e < eventsPerDay; e++) {
       const srcIdx = (seed * 7 + e * 13) % allSources.length
@@ -112,7 +128,7 @@ function generateEvents(): SKEvent[] {
     if (seen.has(key)) return false
     seen.add(key)
     return true
-  }).slice(0, 20)
+  }).slice(0, todayOnly ? 30 : 20)
 }
 
 // Country ticket portals for proper event URLs
@@ -220,11 +236,35 @@ function generateNeighborEvents(country: string): SKEvent[] {
   }).slice(0, 20)
 }
 
+// GPS coordinates for Slovak cities
+const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
+  'Bratislava': { lat: 48.1486, lng: 17.1077 },
+  'Košice': { lat: 48.7164, lng: 21.2611 },
+  'Žilina': { lat: 49.2231, lng: 18.7394 },
+  'Prešov': { lat: 48.9984, lng: 21.2394 },
+  'Nitra': { lat: 48.3069, lng: 18.0864 },
+  'Banská Bystrica': { lat: 48.7360, lng: 19.1461 },
+  'Trnava': { lat: 48.3774, lng: 17.5878 },
+  'Trenčín': { lat: 48.8945, lng: 18.0441 },
+  'Piešťany': { lat: 48.5944, lng: 17.8258 },
+}
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const country = searchParams.get('country') ?? 'sk'
   const city = searchParams.get('city') ?? ''
   const type = searchParams.get('type') ?? 'events'
+  const nearby = searchParams.get('nearby') === '1'
+  const userLat = parseFloat(searchParams.get('lat') ?? '')
+  const userLng = parseFloat(searchParams.get('lng') ?? '')
 
   // Cinema programs
   if (type === 'cinema') {
@@ -238,6 +278,21 @@ export async function GET(request: Request) {
     return NextResponse.json({ events: theaterEvents.slice(0, 15), country: 'sk', today: new Date().toISOString().slice(0, 10) })
   }
 
+  const today = new Date().toISOString().slice(0, 10)
+
+  // Nearby mode: today's events from all SK cities, sorted by distance
+  if (nearby && !isNaN(userLat) && !isNaN(userLng)) {
+    const all = generateEvents(true)
+    const todayEvents = all.filter(e => e.date === today)
+    const withDist = todayEvents.map(e => {
+      const coords = CITY_COORDS[e.city]
+      const dist = coords ? haversineKm(userLat, userLng, coords.lat, coords.lng) : 9999
+      return { ...e, distance: Math.round(dist) }
+    })
+    withDist.sort((a, b) => a.distance - b.distance)
+    return NextResponse.json({ events: withDist.slice(0, 25), country: 'sk', today })
+  }
+
   let events: SKEvent[]
   if (country === 'sk') {
     const all = generateEvents()
@@ -247,7 +302,6 @@ export async function GET(request: Request) {
   } else {
     events = generateNeighborEvents(country)
   }
-  const today = new Date().toISOString().slice(0, 10)
   return NextResponse.json({ events: events.slice(0, 25), country, today })
 }
 
