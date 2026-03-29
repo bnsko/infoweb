@@ -48,6 +48,25 @@ import ToolOfTheDayWidget from '@/components/widgets/ToolOfTheDayWidget'
 import WebcamsWidget from '@/components/widgets/WebcamsWidget'
 import SlovakFactsWidget from '@/components/widgets/SlovakFactsWidget'
 import ViralVideosWidget from '@/components/widgets/ViralVideosWidget'
+import TrainDelaysWidget from '@/components/widgets/TrainDelaysWidget'
+import PharmaciesWidget from '@/components/widgets/PharmaciesWidget'
+import OutagesWidget from '@/components/widgets/OutagesWidget'
+import HighwayCamsWidget from '@/components/widgets/HighwayCamsWidget'
+import PackageTrackingWidget from '@/components/widgets/PackageTrackingWidget'
+import UnemploymentWidget from '@/components/widgets/UnemploymentWidget'
+import MortgagesWidget from '@/components/widgets/MortgagesWidget'
+import TrendingSearchesWidget from '@/components/widgets/TrendingSearchesWidget'
+import StreamingWidget from '@/components/widgets/StreamingWidget'
+import RandomFactWidget from '@/components/widgets/RandomFactWidget'
+import PollenWidget from '@/components/widgets/PollenWidget'
+import NoiseWidget from '@/components/widgets/NoiseWidget'
+import ReservoirsWidget from '@/components/widgets/ReservoirsWidget'
+import FluWidget from '@/components/widgets/FluWidget'
+import DoctorsWidget from '@/components/widgets/DoctorsWidget'
+import EmergencyWidget from '@/components/widgets/EmergencyWidget'
+import WasteWidget from '@/components/widgets/WasteWidget'
+import WaterQualityWidget from '@/components/widgets/WaterQualityWidget'
+import LocalOutagesWidget from '@/components/widgets/LocalOutagesWidget'
 import SettingsPanel from '@/components/SettingsPanel'
 import { useLang } from '@/hooks/useLang'
 import { usePrefs } from '@/hooks/usePrefs'
@@ -68,10 +87,11 @@ export default function Home() {
         {/* Flash News - breaking news ticker */}
         {isWidgetVisible('flashnews') && <FlashNewsWidget />}
 
-        {/* Stats bar + City Weather (Moon & Sky popup is inside) */}
+        {/* Stats bar + City Weather + Traffic side by side */}
         {isWidgetVisible('stats') && (
-          <div id="sec-weather">
+          <div id="sec-weather" className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <StatsWidget />
+            <TrafficWidget />
           </div>
         )}
 
@@ -90,13 +110,19 @@ export default function Home() {
           <div id="sec-slovensko">
             <SectionLabel label={lang === 'sk' ? '🇸🇰 Slovensko' : '🇸🇰 Slovakia'} />
 
-            {/* Transport & Flights + Health Alerts (compact) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mt-4">
-              <TrafficWidget />
+            {/* Health Alerts, Flights, MHD, Office (compact) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
               <HealthAlertsWidget />
               <FlightsWidget />
               <MHDWidget />
               <OfficeWaitWidget />
+            </div>
+
+            {/* Train delays, Pharmacies, Emergency */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <TrainDelaysWidget />
+              <PharmaciesWidget />
+              <EmergencyWidget />
             </div>
 
             {/* Events, Jobs, Sport suggestions */}
@@ -117,6 +143,31 @@ export default function Home() {
               <LotteryWidget />
               <DealsWidget />
               <PopulationWidget />
+            </div>
+
+            {/* Environment: Pollen, Noise, Reservoirs, Water, Flu */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+              <PollenWidget />
+              <FluWidget />
+              <ReservoirsWidget />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+              <WaterQualityWidget />
+              <NoiseWidget />
+              <WasteWidget />
+            </div>
+
+            {/* Local disruptions, Doctors */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <LocalOutagesWidget />
+              <DoctorsWidget />
+            </div>
+
+            {/* Outages, Highway cams, Package tracking */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <OutagesWidget />
+              <HighwayCamsWidget />
+              <PackageTrackingWidget />
             </div>
 
             {/* Sports */}
@@ -143,6 +194,10 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <EnergyWidget />
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <UnemploymentWidget />
+              <MortgagesWidget />
+            </div>
             <div className="mt-4">
               <CountersWidget />
             </div>
@@ -166,6 +221,10 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <PodcastWidget />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <StreamingWidget />
+              <TrendingSearchesWidget />
             </div>
           </div>
         )}
@@ -192,15 +251,16 @@ export default function Home() {
             <SectionLabel label={lang === 'sk' ? '🔭 Objavy' : '🔭 Discover'} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <ToolOfTheDayWidget />
+              <RandomFactWidget />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <SlovakFactsWidget />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <WebcamsWidget />
-              <ViralVideosWidget />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
               <GitHubTrendingWidget />
               <WikiWidget />
+              <ViralVideosWidget />
             </div>
           </div>
         )}
