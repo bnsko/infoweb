@@ -415,23 +415,23 @@ export function getHoliday(date: Date): string | null {
 }
 
 export function getNextHoliday(date: Date): { name: string; date: Date; daysUntil: number } {
+  return getNextHolidays(date, 1)[0] ?? { name: 'Deň vzniku SR', date: new Date(date.getFullYear() + 1, 0, 1), daysUntil: 365 }
+}
+
+export function getNextHolidays(date: Date, count: number): { name: string; date: Date; daysUntil: number }[] {
   const year = date.getFullYear()
   const today = new Date(year, date.getMonth(), date.getDate())
+  const all: { name: string; date: Date; daysUntil: number }[] = []
 
-  let nearest: { name: string; date: Date; daysUntil: number } | null = null
-
-  // Check current year and next year
   for (const y of [year, year + 1]) {
     for (const [key, name] of Object.entries(SK_HOLIDAYS)) {
       const [m, d] = key.split('-').map(Number)
       const hDate = new Date(y, m - 1, d)
       const diff = Math.ceil((hDate.getTime() - today.getTime()) / 86400000)
-      if (diff > 0 && (nearest === null || diff < nearest.daysUntil)) {
-        nearest = { name, date: hDate, daysUntil: diff }
-      }
+      if (diff > 0) all.push({ name, date: hDate, daysUntil: diff })
     }
-    if (nearest) break // Found in current year, no need to check next
   }
 
-  return nearest ?? { name: 'Deň vzniku SR', date: new Date(year + 1, 0, 1), daysUntil: 365 }
+  all.sort((a, b) => a.daysUntil - b.daysUntil)
+  return all.slice(0, count)
 }

@@ -9,7 +9,7 @@ import { NamedayMini } from '@/components/widgets/NamedayWidget'
 import { ISSPassMini } from '@/components/widgets/SpaceEnvWidget'
 import { LaunchesMini } from '@/components/widgets/LaunchesWidget'
 import { SpeedtestMini } from '@/components/widgets/SpeedtestWidget'
-import { getHoliday, getNextHoliday } from '@/lib/namedays'
+import { getHoliday, getNextHolidays } from '@/lib/namedays'
 import { format } from 'date-fns'
 import { sk, enUS } from 'date-fns/locale'
 
@@ -33,8 +33,6 @@ const SECTIONS = [
   { id: 'sec-fun', icon: '🎮', label: 'Zábava' },
   { id: 'sec-history', icon: '📚', label: 'História' },
 ]
-
-const SOURCES = 32
 
 function scrollTo(id: string) {
   const el = document.getElementById(id)
@@ -61,9 +59,11 @@ export default function DaySummaryWidget() {
   const [visitors, setVisitors] = useState<VisitorData | null>(null)
   const [showerOpen, setShowerOpen] = useState(false)
   const [auroraOpen, setAuroraOpen] = useState(false)
+  const [holidayOpen, setHolidayOpen] = useState(false)
 
   const holiday = useMemo(() => now ? getHoliday(now) : null, [now])
-  const nextHol = useMemo(() => now ? getNextHoliday(now) : null, [now])
+  const nextHolidays = useMemo(() => now ? getNextHolidays(now, 6) : [], [now])
+  const nextHol = nextHolidays[0] ?? null
 
   useEffect(() => {
     setNow(new Date())
@@ -110,18 +110,48 @@ export default function DaySummaryWidget() {
 
           {/* Holiday / Next holiday */}
           {holiday ? (
-            <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20 text-[10px] shrink-0">
+            <button onClick={() => setHolidayOpen(o => !o)} className="flex items-center gap-1 px-2 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20 text-[10px] shrink-0 hover:bg-rose-500/15 transition-colors">
               <span>🎉</span>
               <span className="text-rose-300 font-bold">{holiday}</span>
-            </div>
+            </button>
           ) : nextHol ? (
-            <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/8 border border-emerald-500/15 text-[10px] shrink-0 cursor-help"
-                 title={`${format(nextHol.date, 'd. MMMM', { locale: loc })}`}>
+            <button onClick={() => setHolidayOpen(o => !o)} className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/8 border border-emerald-500/15 text-[10px] shrink-0 hover:bg-emerald-500/12 transition-colors">
               <span>🗓️</span>
               <span className="text-emerald-300 font-bold">{nextHol.name}</span>
               <span className="text-[9px] text-slate-500">za {nextHol.daysUntil}d</span>
-            </div>
+            </button>
           ) : null}
+          {holidayOpen && (
+            <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setHolidayOpen(false)}>
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+              <div className="relative w-full max-w-[360px] bg-[var(--bg-card)] border border-emerald-500/20 rounded-2xl shadow-2xl p-4 space-y-3" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-emerald-300">🗓️ Nadchádzajúce sviatky</span>
+                  <button onClick={() => setHolidayOpen(false)} className="text-slate-500 hover:text-white text-lg">✕</button>
+                </div>
+                {holiday && (
+                  <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 flex items-center gap-2">
+                    <span className="text-lg">🎉</span>
+                    <div>
+                      <span className="text-sm font-bold text-rose-300">Dnes: {holiday}</span>
+                    </div>
+                  </div>
+                )}
+                <div className="space-y-1">
+                  {nextHolidays.slice(0, 5).map((h, i) => (
+                    <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.03] hover:bg-white/[0.05] transition-colors">
+                      <span className="text-sm">🗓️</span>
+                      <div className="flex-1">
+                        <span className="text-[11px] font-semibold text-slate-200">{h.name}</span>
+                        <span className="text-[10px] text-slate-500 ml-2">{format(h.date, 'd. MMMM yyyy', { locale: loc })}</span>
+                      </div>
+                      <span className="text-[10px] text-emerald-400 font-bold">za {h.daysUntil}d</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Meniny (clickable mini widget) */}
           <NamedayMini showLabel />
@@ -130,8 +160,9 @@ export default function DaySummaryWidget() {
 
           <div className="hidden md:block w-px h-6 bg-white/5" />
 
-          {/* Day of year */}
+          {/* Day + week of year */}
           <Pill icon="📅" value={stats.loading ? '...' : `${stats.data?.dayOfYear ?? '?'}/${stats.data?.daysInYear ?? 365}`} label="deň roka" />
+          {now && <Pill icon="📆" value={`${Math.ceil((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 604800000)}`} label="týždeň" />}
 
           {/* ISS & Launches (before online) */}
           <ISSPassMini />
@@ -222,20 +253,21 @@ export default function DaySummaryWidget() {
 
           <div className="hidden md:block w-px h-6 bg-white/5" />
 
-          {/* Sources / Online / visits */}
-          <Pill icon="�" value={`${SOURCES}`} label="zdrojov" valueColor="text-emerald-400" />
-          <Pill icon="🟢" value={visitors ? String(visitors.activeNow) : '...'} label="online" valueColor="text-green-400" />
-          <Pill icon="📈" value={visitors ? String(visitors.todayPageViews) : '...'} label="dnes" valueColor="text-orange-300" />
-          <Pill icon="👁️" value={visitors ? String(visitors.lifetimeViews) : '...'} label="celkom" valueColor="text-purple-300" />
+          {/* Online indicator */}
+          <div className="hidden lg:flex items-center gap-1.5 shrink-0" suppressHydrationWarning>
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-50" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
+            </span>
+            <span className="text-[10px] font-bold text-green-400">{visitors ? String(visitors.activeNow) : '...'}</span>
+            <span className="text-[9px] text-slate-600">online</span>
+          </div>
+          <Pill icon="" value={visitors ? String(visitors.todayPageViews) : '...'} label="dnes" valueColor="text-orange-300" />
+          <Pill icon="" value={visitors ? String(visitors.lifetimeViews) : '...'} label="celkom" valueColor="text-purple-300" />
 
           {/* Speedtest mini - far right */}
-          <div className="ml-auto flex flex-col items-end gap-1 max-w-xs">
+          <div className="ml-auto">
             <SpeedtestMini />
-            {astro?.planets && (
-              <span className="text-[9px] text-slate-500 italic truncate max-w-[220px]" title={astro.planets.note}>
-                🔭 {astro.planets.note}
-              </span>
-            )}
           </div>
         </div>
 
@@ -252,9 +284,7 @@ export default function DaySummaryWidget() {
           <div className="ml-auto flex items-center gap-2">
             <div className="hidden xl:flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 anim-pulse-dot" />
-              <span className="text-[10px] text-green-400 font-medium" suppressHydrationWarning>
-                Live · {now ? now.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--:--:--'}
-              </span>
+              <span className="text-[10px] text-green-400 font-medium">Live</span>
             </div>
             <Pill icon="⏱️" value={now ? now.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }) : '--:--'} label="aktualizované" mono />
           </div>

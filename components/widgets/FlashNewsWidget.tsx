@@ -1,7 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
-import { useWidget } from '@/hooks/useWidget'
+import { useRef, useEffect, useState, useCallback } from 'react'
 
 interface FlashItem {
   title: string
@@ -18,21 +17,53 @@ interface FlashData {
 }
 
 export default function FlashNewsWidget() {
-  const { data, loading } = useWidget<FlashData>('/api/flashnews', 30 * 1000)
+  const [data, setData] = useState<FlashData | null>(null)
+  const [loading, setLoading] = useState(true)
   const trackRef = useRef<HTMLDivElement>(null)
   const [isPaused, setIsPaused] = useState(false)
 
-  // Only show last 10 items
+  const fetchNews = useCallback(() => {
+    fetch(`/api/flashnews?_t=${Date.now()}`)
+      .then(r => r.json())
+      .then((d: FlashData) => { setData(d); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [])
+
+  // Fetch on mount + every 60s
+  useEffect(() => {
+    fetchNews()
+    const iv = setInterval(fetchNews, 60 * 1000)
+    return () => clearInterval(iv)
+  }, [fetchNews])
+
   const items = (data?.items ?? []).slice(0, 10)
 
   useEffect(() => {
     const el = trackRef.current
     if (!el || items.length === 0) return
+
+    // Reset animation on new data
+    el.style.animation = 'none'
+    el.offsetHeight // force reflow
     const scrollW = el.scrollWidth / 2
     const speed = 50
     const dur = scrollW / speed
+    el.style.animation = ''
     el.style.animationDuration = `${dur}s`
   }, [items])
+
+  // When animation ends (one full cycle), restart from beginning
+  useEffect(() => {
+    const el = trackRef.current
+    if (!el) return
+    const handleEnd = () => {
+      el.style.animation = 'none'
+      el.offsetHeight
+      el.style.animation = ''
+    }
+    el.addEventListener('animationiteration', handleEnd)
+    return () => el.removeEventListener('animationiteration', handleEnd)
+  }, [])
 
   if (loading || items.length === 0) return null
 
