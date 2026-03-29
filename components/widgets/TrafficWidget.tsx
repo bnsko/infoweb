@@ -27,7 +27,7 @@ interface HistoryItem extends TrafficItem {
 }
 
 type LeftTab = 'incidents' | 'history'
-type RightTab = 'restrictions' | 'cameras'
+type RightTab = 'cameras' | 'restrictions'
 
 function formatTime(iso: string): string {
   if (!iso) return ''
@@ -77,7 +77,7 @@ function TrafficItemRow({ item, showLink }: { item: TrafficItem; showLink?: bool
 export default function TrafficWidget() {
   const { t, lang } = useLang()
   const [leftTab, setLeftTab] = useState<LeftTab>('incidents')
-  const [rightTab, setRightTab] = useState<RightTab>('restrictions')
+  const [rightTab, setRightTab] = useState<RightTab>('cameras')
   const [history, setHistory] = useState<HistoryItem[]>([])
   const { data, loading, error, refetch } = useWidget<TrafficData>('/api/traffic', 2 * 60 * 1000)
 
@@ -120,8 +120,8 @@ export default function TrafficWidget() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {/* LEFT: Incidents + History */}
+      <div className="space-y-3">
+        {/* TOP: Incidents + History */}
         <div>
           <div className="flex gap-0.5 mb-2 bg-white/[0.03] rounded-lg p-0.5 border border-white/5">
             {([
@@ -178,12 +178,12 @@ export default function TrafficWidget() {
           )}
         </div>
 
-        {/* RIGHT: Restrictions + Speed Cameras */}
+        {/* BOTTOM: Speed Cameras + Restrictions */}
         <div>
           <div className="flex gap-0.5 mb-2 bg-white/[0.03] rounded-lg p-0.5 border border-white/5">
             {([
-              { key: 'restrictions' as RightTab, icon: '🔧', label: lang === 'sk' ? 'Obmedzenia' : 'Restrictions', badge: data?.restrictions?.length },
               { key: 'cameras' as RightTab, icon: '📸', label: lang === 'sk' ? 'Radary' : 'Cameras', badge: data?.speedCameras?.length },
+              { key: 'restrictions' as RightTab, icon: '🔧', label: lang === 'sk' ? 'Obmedzenia' : 'Restrictions', badge: data?.restrictions?.length },
             ]).map(tb => (
               <button key={tb.key} onClick={() => setRightTab(tb.key)}
                 className={`flex-1 flex items-center justify-center gap-1 text-[10px] font-semibold py-1.5 rounded-md transition-all ${

@@ -188,3 +188,42 @@ export default function SpeedtestWidget() {
     </WidgetCard>
   )
 }
+
+/* ── Mini speedtest for main panel ── */
+export function SpeedtestMini() {
+  const [open, setOpen] = useState(false)
+  const [history] = useState<SpeedResult[]>(() => loadHistory())
+  const last = history[0]
+
+  return (
+    <>
+      <button onClick={() => setOpen(o => !o)}
+        className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-semibold transition-all border shrink-0 ${
+          open ? 'bg-cyan-500/15 border-cyan-500/25 text-cyan-300' : 'bg-white/[0.02] border-white/5 text-slate-400 hover:text-cyan-300 hover:border-cyan-500/20'
+        }`}>
+        <span>📶</span>
+        {last ? (
+          <span className="font-mono tabular-nums">
+            <span className="text-green-400">⬇{last.download}</span>
+            <span className="text-slate-600 mx-0.5">/</span>
+            <span className="text-blue-400">⬆{last.upload}</span>
+            <span className="text-slate-600 mx-0.5">/</span>
+            <span className="text-cyan-400">{last.ping}ms</span>
+          </span>
+        ) : (
+          <span className="text-slate-500">Merať</span>
+        )}
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setOpen(false)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="relative w-full max-w-[480px]" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setOpen(false)} className="absolute -top-2 -right-2 z-10 w-7 h-7 rounded-full bg-slate-800 border border-white/10 text-slate-400 hover:text-white flex items-center justify-center text-sm">✕</button>
+            <SpeedtestWidget />
+          </div>
+        </div>
+      )}
+    </>
+  )
+}

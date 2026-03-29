@@ -1,16 +1,20 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useWidget } from '@/hooks/useWidget'
 import type { StatsData } from '@/lib/types'
 import { useLang } from '@/hooks/useLang'
-import { HoroscopeMini, FactMini } from '@/components/widgets/DailyQuoteWidget'
+import { HoroscopeMini } from '@/components/widgets/DailyQuoteWidget'
 import { NamedayMini } from '@/components/widgets/NamedayWidget'
 import { ISSPassMini } from '@/components/widgets/SpaceEnvWidget'
 import { LaunchesMini } from '@/components/widgets/LaunchesWidget'
+import { SpeedtestMini } from '@/components/widgets/SpeedtestWidget'
+import { getHoliday, getNextHoliday } from '@/lib/namedays'
+import { format } from 'date-fns'
+import { sk, enUS } from 'date-fns/locale'
 
 interface VisitorData {
-  lifetimeViews: number; lifetimeUnique: number; activeNow: number; todayPageViews: number; todayUnique?: number
+  lifetimeViews: number; activeNow: number; todayPageViews: number
 }
 
 interface AstronomyData {
@@ -49,11 +53,17 @@ function getSessionId(): string {
 
 export default function DaySummaryWidget() {
   const { lang } = useLang()
+  const loc = lang === 'sk' ? sk : enUS
   const stats = useWidget<StatsData>('/api/stats', 60 * 1000)
   const astronomy = useWidget<AstronomyData>('/api/astronomy', 30 * 60 * 1000)
 
   const [now, setNow] = useState<Date | null>(null)
   const [visitors, setVisitors] = useState<VisitorData | null>(null)
+  const [showerOpen, setShowerOpen] = useState(false)
+  const [auroraOpen, setAuroraOpen] = useState(false)
+
+  const holiday = useMemo(() => now ? getHoliday(now) : null, [now])
+  const nextHol = useMemo(() => now ? getNextHoliday(now) : null, [now])
 
   useEffect(() => {
     setNow(new Date())
@@ -98,6 +108,21 @@ export default function DaySummaryWidget() {
           </div>
           <div className="hidden md:block w-px h-8 bg-white/8" />
 
+          {/* Holiday / Next holiday */}
+          {holiday ? (
+            <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20 text-[10px] shrink-0">
+              <span>🎉</span>
+              <span className="text-rose-300 font-bold">{holiday}</span>
+            </div>
+          ) : nextHol ? (
+            <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/8 border border-emerald-500/15 text-[10px] shrink-0 cursor-help"
+                 title={`${format(nextHol.date, 'd. MMMM', { locale: loc })}`}>
+              <span>🗓️</span>
+              <span className="text-emerald-300 font-bold">{nextHol.name}</span>
+              <span className="text-[9px] text-slate-500">za {nextHol.daysUntil}d</span>
+            </div>
+          ) : null}
+
           {/* Meniny (clickable mini widget) */}
           <NamedayMini showLabel />
           {/* Horoscope (next to meniny) */}
@@ -112,41 +137,100 @@ export default function DaySummaryWidget() {
           <ISSPassMini />
           <LaunchesMini />
 
-          {/* Meteor shower / Aurora (moved up here) */}
+          {/* Meteor shower / Aurora (clickable with popup) */}
           {astro?.nextShower && (
-            <div className={`hidden md:flex items-center gap-1.5 shrink-0 px-2 py-1 rounded-lg border cursor-help ${
-              astro.nextShower.active ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-white/[0.02] border-white/5'
-            }`} title={`ZHR: ${astro.nextShower.zhr} · ${astro.nextShower.active ? 'Aktívny meteorický roj!' : `Ďalšie za ${astro.nextShower.daysUntil} dní`}`}>
-              <span className="text-sm">☄️</span>
-              <span className={`text-[10px] font-bold ${astro.nextShower.active ? 'text-yellow-300' : 'text-slate-300'}`}>{astro.nextShower.name}</span>
-              <span className="text-[9px] text-slate-500">
-                {astro.nextShower.active ? '🔥' : `${astro.nextShower.daysUntil}d`}
-              </span>
-            </div>
+            <>
+              <button onClick={() => setShowerOpen(o => !o)}
+                className={`hidden md:flex items-center gap-1.5 shrink-0 px-2 py-1 rounded-lg border transition-all ${
+                  astro.nextShower.active ? 'bg-yellow-500/10 border-yellow-500/20 hover:bg-yellow-500/15' : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04]'
+                }`}>
+                <span className="text-sm">☄️</span>
+                <span className={`text-[10px] font-bold ${astro.nextShower.active ? 'text-yellow-300' : 'text-slate-300'}`}>{astro.nextShower.name}</span>
+                <span className="text-[9px] text-slate-500">{astro.nextShower.active ? '🔥' : `${astro.nextShower.daysUntil}d`}</span>
+              </button>
+              {showerOpen && (
+                <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setShowerOpen(false)}>
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                  <div className="relative w-full max-w-[360px] bg-[var(--bg-card)] border border-yellow-500/20 rounded-2xl shadow-2xl p-4 space-y-3" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold text-yellow-300">☄️ Meteorický roj</span>
+                      <button onClick={() => setShowerOpen(false)} className="text-slate-500 hover:text-white text-lg">✕</button>
+                    </div>
+                    <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-base font-bold text-yellow-300">{astro.nextShower.name}</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${astro.nextShower.active ? 'bg-green-500/20 text-green-300' : 'bg-slate-500/20 text-slate-400'}`}>
+                          {astro.nextShower.active ? '🔥 Aktívny' : `Za ${astro.nextShower.daysUntil} dní`}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-[10px]">
+                        <div><span className="text-slate-500">ZHR:</span> <span className="text-yellow-300 font-bold">{astro.nextShower.zhr} meteoritov/h</span></div>
+                        <div><span className="text-slate-500">Pôvod:</span> <span className="text-slate-300">{astro.nextShower.parent}</span></div>
+                      </div>
+                      <p className="text-[10px] text-slate-400 leading-relaxed">
+                        {astro.nextShower.active
+                          ? 'Meteorický roj je práve aktívny! Najlepšie pozorovanie po polnoci za tmavej oblohy, ďaleko od svetelného znečistenia.'
+                          : `Ďalší meteorický roj "${astro.nextShower.name}" bude aktívny za ${astro.nextShower.daysUntil} dní. Očakávaná intenzita je ${astro.nextShower.zhr} meteoritov za hodinu.`}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
           {astro?.aurora && astro.aurora.kpIndex >= 3 && (
-            <div className={`hidden md:flex items-center gap-1.5 shrink-0 px-2 py-1 rounded-lg border cursor-help ${
-              astro.aurora.visibleFromSK ? 'bg-green-500/10 border-green-500/20' : 'bg-purple-500/8 border-purple-500/15'
-            }`} title={`Kp Index: ${astro.aurora.kpIndex} · Šanca: ${astro.aurora.chance} · ${astro.aurora.visibleFromSK ? 'Viditeľná zo SK!' : 'Nie je viditeľná zo SK'}`}>
-              <span className="text-sm">🌌</span>
-              <span className={`text-[10px] font-bold ${astro.aurora.visibleFromSK ? 'text-green-300' : 'text-purple-300'}`}>
-                Aurora Kp{astro.aurora.kpIndex}
-              </span>
-            </div>
+            <>
+              <button onClick={() => setAuroraOpen(o => !o)}
+                className={`hidden md:flex items-center gap-1.5 shrink-0 px-2 py-1 rounded-lg border transition-all ${
+                  astro.aurora.visibleFromSK ? 'bg-green-500/10 border-green-500/20 hover:bg-green-500/15' : 'bg-purple-500/8 border-purple-500/15 hover:bg-purple-500/12'
+                }`}>
+                <span className="text-sm">🌌</span>
+                <span className={`text-[10px] font-bold ${astro.aurora.visibleFromSK ? 'text-green-300' : 'text-purple-300'}`}>
+                  Aurora Kp{astro.aurora.kpIndex}
+                </span>
+              </button>
+              {auroraOpen && (
+                <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setAuroraOpen(false)}>
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                  <div className="relative w-full max-w-[360px] bg-[var(--bg-card)] border border-green-500/20 rounded-2xl shadow-2xl p-4 space-y-3" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold text-green-300">🌌 Polárna žiara</span>
+                      <button onClick={() => setAuroraOpen(false)} className="text-slate-500 hover:text-white text-lg">✕</button>
+                    </div>
+                    <div className={`rounded-xl p-3 space-y-2 border ${astro.aurora.visibleFromSK ? 'bg-green-500/10 border-green-500/20' : 'bg-purple-500/10 border-purple-500/20'}`}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-base font-bold text-white">Kp Index: {astro.aurora.kpIndex}</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${astro.aurora.visibleFromSK ? 'bg-green-500/20 text-green-300' : 'bg-orange-500/20 text-orange-300'}`}>
+                          {astro.aurora.visibleFromSK ? '✅ Viditeľná zo SK' : '❌ Nie zo SK'}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-[10px]">
+                        <div><span className="text-slate-500">Šanca:</span> <span className="text-green-300 font-bold">{astro.aurora.chance}</span></div>
+                        <div><span className="text-slate-500">Viditeľnosť:</span> <span className="text-slate-300">{astro.aurora.visibleFromSK ? 'Áno, na severe SK' : 'Len severnejšie šírky'}</span></div>
+                      </div>
+                      <p className="text-[10px] text-slate-400 leading-relaxed">
+                        {astro.aurora.visibleFromSK
+                          ? 'Polárna žiara by mohla byť viditeľná aj zo Slovenska! Pozrite sa na sever po zotmení, ideálne z tmavého miesta bez svetelného znečistenia.'
+                          : `Kp index ${astro.aurora.kpIndex} naznačuje zvýšenú geomagnetickú aktivitu. Z nášho pozorovacieho bodu (48°N) však aurora pravdepodobne nebude viditeľná. Kp 7+ je potrebný pre viditeľnosť zo SK.`}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           <div className="hidden md:block w-px h-6 bg-white/5" />
 
           {/* Sources / Online / visits */}
-          <Pill icon="🔄" value={`${SOURCES}`} label="zdrojov" valueColor="text-emerald-400" />
-          <Pill icon="👥" value={visitors ? String(visitors.activeNow) : '...'} label="online" valueColor="text-yellow-400" />
-          <Pill icon="📊" value={visitors ? String(visitors.todayPageViews) : '...'} label="dnes" valueColor="text-orange-300" />
-          <Pill icon="👤" value={visitors ? String(visitors.todayUnique ?? 0) : '...'} label="unikát" valueColor="text-cyan-300" />
-          <Pill icon="🏆" value={visitors ? String(visitors.lifetimeViews) : '...'} label="celkom" valueColor="text-purple-300" />
+          <Pill icon="�" value={`${SOURCES}`} label="zdrojov" valueColor="text-emerald-400" />
+          <Pill icon="🟢" value={visitors ? String(visitors.activeNow) : '...'} label="online" valueColor="text-green-400" />
+          <Pill icon="📈" value={visitors ? String(visitors.todayPageViews) : '...'} label="dnes" valueColor="text-orange-300" />
+          <Pill icon="👁️" value={visitors ? String(visitors.lifetimeViews) : '...'} label="celkom" valueColor="text-purple-300" />
 
-          {/* Fact - subtle, far right */}
+          {/* Speedtest mini - far right */}
           <div className="ml-auto flex flex-col items-end gap-1 max-w-xs">
-            <FactMini />
+            <SpeedtestMini />
             {astro?.planets && (
               <span className="text-[9px] text-slate-500 italic truncate max-w-[220px]" title={astro.planets.note}>
                 🔭 {astro.planets.note}
@@ -172,7 +256,7 @@ export default function DaySummaryWidget() {
                 Live · {now ? now.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--:--:--'}
               </span>
             </div>
-            <Pill icon="⏱️" value={visitors ? String(visitors.lifetimeUnique) : '...'} label="unikát celkom" />
+            <Pill icon="⏱️" value={now ? now.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }) : '--:--'} label="aktualizované" mono />
           </div>
         </div>
       </div>

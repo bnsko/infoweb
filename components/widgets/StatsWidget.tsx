@@ -297,6 +297,133 @@ function MoonSkyPopup({ onClose }: { onClose: () => void }) {
   )
 }
 
+/* ── Sun arc mini icon ── */
+function SunArcMini({ sunrise, sunset }: { sunrise: string; sunset: string }) {
+  const now = Date.now()
+  const riseMs = new Date(sunrise).getTime()
+  const setMs = new Date(sunset).getTime()
+  const dayLen = setMs - riseMs
+  const isDay = now >= riseMs && now <= setMs
+  const pct = isDay ? Math.max(0, Math.min(1, (now - riseMs) / dayLen)) : (now < riseMs ? 0 : 1)
+  const angle = Math.PI * pct
+  const cx = 10 + (1 - Math.cos(angle)) * 5
+  const cy = 12 - Math.sin(angle) * 9
+  return (
+    <svg width="22" height="14" viewBox="0 0 22 14" className="shrink-0">
+      <path d="M 2 12 Q 11 -4 20 12" fill="none" stroke="rgba(251,191,36,0.3)" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="2" y1="12" x2="20" y2="12" stroke="rgba(255,255,255,0.08)" strokeWidth="0.5" />
+      <circle cx={cx} cy={cy} r={isDay ? 2.5 : 2} fill={isDay ? '#fbbf24' : '#94a3b8'} className={isDay ? 'drop-shadow-[0_0_3px_#fbbf24]' : ''} />
+    </svg>
+  )
+}
+
+/* ── Sunrise/Sunset popup with extended info ── */
+function SunriseSunsetPopup({ sunrise, sunset, onClose }: { sunrise: string; sunset: string; onClose: () => void }) {
+  const riseMs = new Date(sunrise).getTime()
+  const setMs = new Date(sunset).getTime()
+  const dayLenMin = Math.round((setMs - riseMs) / 60000)
+  const dayH = Math.floor(dayLenMin / 60)
+  const dayM = dayLenMin % 60
+  const now = Date.now()
+  const isDay = now >= riseMs && now <= setMs
+  const pct = isDay ? Math.max(0, Math.min(1, (now - riseMs) / (setMs - riseMs))) : (now < riseMs ? 0 : 1)
+
+  // Monthly sunrise/sunset estimates for Bratislava (approx)
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Máj', 'Jún', 'Júl', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
+  const riseTimes = ['7:35', '7:00', '6:10', '6:05', '5:20', '4:55', '5:05', '5:40', '6:20', '6:55', '7:30', '7:55']
+  const setTimes = ['16:20', '17:05', '17:50', '19:35', '20:15', '20:50', '20:45', '20:05', '19:10', '18:10', '16:25', '16:05']
+  const dayLengths = ['8:45', '10:05', '11:40', '13:30', '14:55', '15:55', '15:40', '14:25', '12:50', '11:15', '8:55', '8:10']
+  const currentMonth = new Date().getMonth()
+
+  const fmt = (ms: number) => new Date(ms).toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' })
+
+  // Sun arc SVG
+  const arcW = 280, arcH = 100
+  const sunAngle = Math.PI * pct
+  const sunX = 20 + pct * (arcW - 40)
+  const sunY = arcH - 10 - Math.sin(sunAngle) * (arcH - 30)
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="relative w-full max-w-[400px] bg-[var(--bg-card)] border border-amber-500/20 rounded-2xl shadow-2xl p-4 space-y-3 max-h-[80vh] overflow-y-auto"
+           onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-bold text-amber-300">☀️ Východ & Západ slnka</span>
+          <button onClick={onClose} className="text-slate-500 hover:text-white text-lg">✕</button>
+        </div>
+
+        {/* Sun arc animation */}
+        <div className="bg-gradient-to-b from-sky-900/30 via-amber-900/10 to-slate-900/20 rounded-xl p-3 border border-amber-500/10">
+          <svg width={arcW} height={arcH} viewBox={`0 0 ${arcW} ${arcH}`} className="w-full">
+            <defs>
+              <linearGradient id="skyGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.3" />
+                <stop offset="50%" stopColor="#3b82f6" stopOpacity="0.15" />
+                <stop offset="100%" stopColor="#f97316" stopOpacity="0.3" />
+              </linearGradient>
+            </defs>
+            <path d={`M 20 ${arcH - 10} Q ${arcW / 2} ${-arcH * 0.3} ${arcW - 20} ${arcH - 10}`} fill="url(#skyGrad)" opacity="0.5" />
+            <path d={`M 20 ${arcH - 10} Q ${arcW / 2} ${-arcH * 0.3} ${arcW - 20} ${arcH - 10}`} fill="none" stroke="rgba(251,191,36,0.4)" strokeWidth="1.5" strokeDasharray="4 3" />
+            <line x1="20" y1={arcH - 10} x2={arcW - 20} y2={arcH - 10} stroke="rgba(255,255,255,0.1)" strokeWidth="0.5" />
+            {isDay && <circle cx={sunX} cy={sunY} r="8" fill="#fbbf24" opacity="0.15" />}
+            <circle cx={sunX} cy={sunY} r="5" fill={isDay ? '#fbbf24' : '#64748b'} className={isDay ? 'drop-shadow-[0_0_8px_#fbbf24]' : ''} />
+            {isDay && <>
+              {[0, 45, 90, 135, 180, 225, 270, 315].map(a => {
+                const rad = (a * Math.PI) / 180
+                return <line key={a} x1={sunX + Math.cos(rad) * 7} y1={sunY + Math.sin(rad) * 7} x2={sunX + Math.cos(rad) * 10} y2={sunY + Math.sin(rad) * 10} stroke="#fbbf24" strokeWidth="1" opacity="0.5" />
+              })}
+            </>}
+            <text x="20" y={arcH - 2} fontSize="9" fill="#f59e0b" textAnchor="middle">🌅</text>
+            <text x={arcW - 20} y={arcH - 2} fontSize="9" fill="#f97316" textAnchor="middle">🌇</text>
+          </svg>
+        </div>
+
+        {/* Current info */}
+        <div className="grid grid-cols-3 gap-2">
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2 text-center">
+            <div className="text-[9px] text-amber-600 uppercase font-semibold">Východ</div>
+            <div className="text-base font-bold text-amber-300 font-mono">{fmt(riseMs)}</div>
+          </div>
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-2 text-center">
+            <div className="text-[9px] text-blue-400 uppercase font-semibold">Deň</div>
+            <div className="text-base font-bold text-blue-300 font-mono">{dayH}h {dayM}m</div>
+          </div>
+          <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-2 text-center">
+            <div className="text-[9px] text-orange-400 uppercase font-semibold">Západ</div>
+            <div className="text-base font-bold text-orange-300 font-mono">{fmt(setMs)}</div>
+          </div>
+        </div>
+
+        {isDay ? (
+          <div className="text-center text-[10px] text-amber-400/70">
+            ☀️ Slnko je hore — {Math.round(pct * 100)}% dňa ubehlo
+          </div>
+        ) : (
+          <div className="text-center text-[10px] text-slate-500">
+            🌙 Noc — slnko je pod horizontom
+          </div>
+        )}
+
+        {/* Monthly table */}
+        <div>
+          <div className="text-[10px] text-slate-400 font-semibold mb-1.5">📅 Prehľad po mesiacoch (Bratislava)</div>
+          <div className="space-y-0.5 max-h-[200px] overflow-y-auto scrollbar-hide">
+            {months.map((m, i) => (
+              <div key={i} className={`flex items-center gap-2 text-[10px] px-2 py-1 rounded-lg ${i === currentMonth ? 'bg-amber-500/10 border border-amber-500/20 text-white font-semibold' : 'hover:bg-white/[0.03] text-slate-400'}`}>
+                <span className="w-8 font-semibold">{m}</span>
+                <span className="text-amber-400 font-mono w-10">🌅 {riseTimes[i]}</span>
+                <span className="text-orange-400 font-mono w-10">🌇 {setTimes[i]}</span>
+                <span className="text-blue-400 font-mono ml-auto">{dayLengths[i]}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ── Temperature bar showing min/current/max ── */
 function TempBar({ min, current, max }: { min: number; max: number; current: number }) {
   const range = max - min || 1
@@ -317,6 +444,7 @@ export default function StatsWidget() {
   const { data, loading, refetch } = useWidget<StatsData>('/api/stats', 60 * 1000)
   const { lang } = useLang()
   const [moonOpen, setMoonOpen] = useState(false)
+  const [sunOpen, setSunOpen] = useState(false)
   const [sections, setSections] = useState<WeatherSections>(defaultSections)
   const [showPrefs, setShowPrefs] = useState(false)
 
@@ -354,13 +482,24 @@ export default function StatsWidget() {
               <span>{moon.illumination}%</span>
             </button>
           )}
-          {/* Sunrise/Sunset single info */}
+          {/* Sunrise/Sunset clickable */}
           {cityTemps[0]?.sunrise && (
-            <span className="flex items-center gap-1 text-[10px] text-amber-400/80 font-mono tabular-nums">
-              🌅 {new Date(cityTemps[0].sunrise).toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' })}
-              <span className="text-slate-600 mx-0.5">·</span>
-              🌇 {cityTemps[0].sunset ? new Date(cityTemps[0].sunset).toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }) : '–'}
-            </span>
+            <button onClick={() => setSunOpen(o => !o)}
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold transition-all border ${
+                sunOpen ? 'bg-amber-500/20 border-amber-500/30 text-amber-300' : 'bg-white/[0.03] border-white/8 text-amber-400/80 hover:text-amber-300 hover:border-amber-500/20'
+              }`}>
+              <SunArcMini
+                sunrise={cityTemps[0].sunrise}
+                sunset={cityTemps[0].sunset ?? ''}
+              />
+              <span className="font-mono tabular-nums">
+                {new Date(cityTemps[0].sunrise).toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+              <span className="text-slate-600">·</span>
+              <span className="font-mono tabular-nums">
+                {cityTemps[0].sunset ? new Date(cityTemps[0].sunset).toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }) : '–'}
+              </span>
+            </button>
           )}
           {/* Settings trigger */}
           <button onClick={() => setShowPrefs(p => !p)}
@@ -368,6 +507,13 @@ export default function StatsWidget() {
               showPrefs ? 'bg-blue-500/20 border-blue-500/30 text-blue-300' : 'bg-white/[0.03] border-white/8 text-slate-500 hover:text-blue-300'
             }`}>⚙️</button>
           {moonOpen && <MoonSkyPopup onClose={closeMoon} />}
+          {sunOpen && cityTemps[0]?.sunrise && (
+            <SunriseSunsetPopup
+              sunrise={cityTemps[0].sunrise}
+              sunset={cityTemps[0].sunset ?? ''}
+              onClose={() => setSunOpen(false)}
+            />
+          )}
         </div>
       }
     >
