@@ -30,30 +30,26 @@ import FearGreedWidget from '@/components/widgets/FearGreedWidget'
 import EnergyWidget from '@/components/widgets/EnergyWidget'
 import InvestmentWidget from '@/components/widgets/InvestmentWidget'
 import FlashNewsWidget from '@/components/widgets/FlashNewsWidget'
-import LotteryWidget from '@/components/widgets/LotteryWidget'
-import DealsWidget from '@/components/widgets/DealsWidget'
+// LotteryWidget & DealsWidget moved to DaySummary panel
 import PodcastWidget from '@/components/widgets/PodcastWidget'
 import SpeedtestWidget from '@/components/widgets/SpeedtestWidget'
 import SlovakHistoryWidget from '@/components/widgets/SlovakHistoryWidget'
 import YearsAgoWidget from '@/components/widgets/YearsAgoWidget'
 import HistoryNumbersWidget from '@/components/widgets/HistoryNumbersWidget'
-import OfficeWaitWidget from '@/components/widgets/OfficeWaitWidget'
+// OfficeWaitWidget moved to DaySummary panel
 import InflationWidget from '@/components/widgets/InflationWidget'
 import SportSuggestionsWidget from '@/components/widgets/SportSuggestionsWidget'
-import MHDWidget from '@/components/widgets/MHDWidget'
+// MHDWidget moved to DaySummary panel
 import ToolOfTheDayWidget from '@/components/widgets/ToolOfTheDayWidget'
 import WebcamsWidget from '@/components/widgets/WebcamsWidget'
-import TrainDelaysWidget from '@/components/widgets/TrainDelaysWidget'
+// TrainDelaysWidget moved to DaySummary panel
 import OutagesWidget from '@/components/widgets/OutagesWidget'
 import HighwayCamsWidget from '@/components/widgets/HighwayCamsWidget'
 import MortgagesWidget from '@/components/widgets/MortgagesWidget'
 import TrendingSearchesWidget from '@/components/widgets/TrendingSearchesWidget'
 import StreamingWidget from '@/components/widgets/StreamingWidget'
 import RandomFactWidget from '@/components/widgets/RandomFactWidget'
-import NoiseWidget from '@/components/widgets/NoiseWidget'
-import ReservoirsWidget from '@/components/widgets/ReservoirsWidget'
-import WasteWidget from '@/components/widgets/WasteWidget'
-import WaterQualityWidget from '@/components/widgets/WaterQualityWidget'
+import EnvironmentWidget from '@/components/widgets/EnvironmentWidget'
 import SummaryWidget from '@/components/widgets/SummaryWidget'
 import HealthWidget from '@/components/widgets/HealthWidget'
 import JobMarketWidget from '@/components/widgets/JobMarketWidget'
@@ -100,17 +96,14 @@ export default function Home() {
           <div id="sec-slovensko">
             <SectionLabel label={lang === 'sk' ? '🇸🇰 Slovensko' : '🇸🇰 Slovakia'} />
 
-            {/* Health (combined), Flights, MHD, Office */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+            {/* Health (combined), Flights */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <HealthWidget />
               <FlightsWidget />
-              <MHDWidget />
-              <OfficeWaitWidget />
             </div>
 
-            {/* Train delays, Events, Sport suggestions */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-              <TrainDelaysWidget />
+            {/* Events, Sport suggestions */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <EventsWidget />
               <SportSuggestionsWidget />
             </div>
@@ -121,19 +114,10 @@ export default function Home() {
               <GroceriesWidget />
             </div>
 
-            {/* Lottery, Deals, Population */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-              <LotteryWidget />
-              <DealsWidget />
+            {/* Population + Environment (merged) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <PopulationWidget />
-            </div>
-
-            {/* Environment: Reservoirs, Noise, Water, Waste */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-              <ReservoirsWidget />
-              <WaterQualityWidget />
-              <NoiseWidget />
-              <WasteWidget />
+              <EnvironmentWidget />
             </div>
 
             {/* Outages, Highway cams */}

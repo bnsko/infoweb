@@ -41,9 +41,11 @@ function computeNextPasses(currentLat: number, currentLon: number): { time: stri
 }
 
 /* ── ISS pass mini widget for main panel ── */
-export function ISSPassMini() {
+export function ISSPassMini(props: { onOpenChange?: (open: boolean) => void }) {
+  const { onOpenChange } = props
   const iss = useWidget<ISSData>('/api/iss', 30 * 1000)
   const [open, setOpen] = useState(false)
+  useEffect(() => { onOpenChange?.(open) }, [open, onOpenChange])
   const [passes, setPasses] = useState<{ time: string; type: string; direction: string; duration: string }[]>([])
 
   const lat = iss.data ? Number(iss.data.latitude) : null

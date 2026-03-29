@@ -7,11 +7,16 @@ import { useLang } from '@/hooks/useLang'
 import { HoroscopeMini } from '@/components/widgets/DailyQuoteWidget'
 import { NamedayMini } from '@/components/widgets/NamedayWidget'
 import { ISSPassMini } from '@/components/widgets/SpaceEnvWidget'
-import { LaunchesMini } from '@/components/widgets/LaunchesWidget'
+import { LaunchesMini } from '@/components/widgets/LaunchesWidget/LaunchesWidget'
 import { SpeedtestMini } from '@/components/widgets/SpeedtestWidget'
 import { getHoliday, getNextHolidays } from '@/lib/namedays'
 import { format } from 'date-fns'
 import { sk, enUS } from 'date-fns/locale'
+import MHDWidget from '@/components/widgets/MHDWidget'
+import TrainDelaysWidget from '@/components/widgets/TrainDelaysWidget'
+import OfficeWaitWidget from '@/components/widgets/OfficeWaitWidget'
+import LotteryWidget from '@/components/widgets/LotteryWidget'
+import DealsWidget from '@/components/widgets/DealsWidget'
 
 interface SlovakFact { icon: string; title: string; value: string; detail: string }
 interface SlovakFactsData { staticFacts: SlovakFact[]; dynamicFacts: SlovakFact[]; generalStats: Record<string, number>; dayOfYear: number }
@@ -64,9 +69,19 @@ export default function DaySummaryWidget() {
   const [auroraOpen, setAuroraOpen] = useState(false)
   const [holidayOpen, setHolidayOpen] = useState(false)
   const [dayPopupOpen, setDayPopupOpen] = useState(false)
+  const [namedayMiniOpen, setNamedayMiniOpen] = useState(false)
+  const [horoscopeMiniOpen, setHoroscopeMiniOpen] = useState(false)
+  const [issMiniOpen, setIssMiniOpen] = useState(false)
+  const [launchesMiniOpen, setLaunchesMiniOpen] = useState(false)
+  const [speedtestMiniOpen, setSpeedtestMiniOpen] = useState(false)
+  const [mhdOpen, setMhdOpen] = useState(false)
+  const [trainOpen, setTrainOpen] = useState(false)
+  const [officeOpen, setOfficeOpen] = useState(false)
+  const [lotteryOpen, setLotteryOpen] = useState(false)
+  const [dealsOpen, setDealsOpen] = useState(false)
   const slovakFacts = useWidget<SlovakFactsData>('/api/slovakfacts', 60 * 1000)
 
-  const anyPopupOpen = showerOpen || auroraOpen || holidayOpen || dayPopupOpen
+  const anyPopupOpen = showerOpen || auroraOpen || holidayOpen || dayPopupOpen || namedayMiniOpen || horoscopeMiniOpen || issMiniOpen || launchesMiniOpen || speedtestMiniOpen || mhdOpen || trainOpen || officeOpen || lotteryOpen || dealsOpen
 
   const holiday = useMemo(() => now ? getHoliday(now) : null, [now])
   const nextHolidays = useMemo(() => now ? getNextHolidays(now, 6) : [], [now])
@@ -111,7 +126,11 @@ export default function DaySummaryWidget() {
           {/* Clock */}
           <div className="flex flex-col shrink-0">
             <span className="text-2xl font-mono font-bold text-white tabular-nums tracking-tight leading-none" suppressHydrationWarning>{timeStr}</span>
-            <button onClick={() => setDayPopupOpen(o => !o)} className="text-[10px] text-slate-400 capitalize mt-0.5 leading-none hover:text-amber-300 transition-colors text-left cursor-pointer" suppressHydrationWarning>{today}</button>
+            <button onClick={() => setDayPopupOpen(o => !o)} className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-500/8 border border-amber-500/15 hover:bg-amber-500/15 transition-all text-[10px] text-slate-300 hover:text-amber-300 capitalize cursor-pointer" suppressHydrationWarning>
+              <span>📅</span>
+              <span className="font-medium">{today}</span>
+              <span className="text-[8px] text-slate-500">▼</span>
+            </button>
           </div>
           <div className="hidden md:block w-px h-8 bg-white/8" />
 
@@ -160,53 +179,35 @@ export default function DaySummaryWidget() {
             </div>
           )}
 
-          {/* Day popup - Slovensko v číslach */}
+          {/* Day popup - Dnešný deň v číslach */}
           {dayPopupOpen && (
             <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setDayPopupOpen(false)}>
               <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
               <div className="relative w-full max-w-[420px] bg-[var(--bg-card)] border border-amber-500/20 rounded-2xl shadow-2xl p-4 space-y-3 max-h-[70vh] overflow-y-auto scrollbar-hide" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-amber-300">🇸🇰 Slovensko v číslach</span>
+                  <span className="text-sm font-bold text-amber-300">📅 Dnešný deň v číslach</span>
                   <button onClick={() => setDayPopupOpen(false)} className="text-slate-500 hover:text-white text-lg">✕</button>
                 </div>
                 {slovakFacts.loading && <p className="text-xs text-slate-500">Načítavam...</p>}
                 {slovakFacts.data && (
-                  <>
-                    <p className="text-[9px] text-amber-400/60 uppercase tracking-widest font-bold">Dnes na Slovensku</p>
-                    <div className="space-y-1">
-                      {slovakFacts.data.dynamicFacts.map((f, i) => (
-                        <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/[0.03]">
-                          <span className="text-base w-6 text-center">{f.icon}</span>
-                          <span className="text-[11px] text-slate-400 flex-1">{f.title}</span>
-                          <span className="text-[12px] font-bold text-white tabular-nums">{f.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="border-t border-white/5 pt-2">
-                      <p className="text-[9px] text-amber-400/60 uppercase tracking-widest font-bold mb-1">Zaujímavé fakty</p>
-                      <div className="space-y-1">
-                        {slovakFacts.data.staticFacts.map((f, i) => (
-                          <div key={i} className="px-2 py-1.5 rounded-lg hover:bg-white/[0.03]">
-                            <div className="flex items-center gap-2">
-                              <span className="text-base">{f.icon}</span>
-                              <span className="text-[11px] font-semibold text-slate-200">{f.title}</span>
-                              <span className="text-[11px] font-bold text-amber-300 ml-auto">{f.value}</span>
-                            </div>
-                            <p className="text-[9px] text-slate-500 mt-0.5 pl-8">{f.detail}</p>
-                          </div>
-                        ))}
+                  <div className="space-y-1">
+                    {slovakFacts.data.dynamicFacts.map((f, i) => (
+                      <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/[0.03]">
+                        <span className="text-base w-6 text-center">{f.icon}</span>
+                        <span className="text-[11px] text-slate-400 flex-1">{f.title}</span>
+                        <span className="text-[12px] font-bold text-white tabular-nums">{f.value}</span>
                       </div>
-                    </div>
-                  </>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>
           )}
 
           {/* Meniny (clickable mini widget) */}
-          <NamedayMini showLabel />
+          <NamedayMini showLabel onOpenChange={setNamedayMiniOpen} />
           {/* Horoscope (next to meniny) */}
-          <HoroscopeMini />
+          <HoroscopeMini onOpenChange={setHoroscopeMiniOpen} />
 
           <div className="hidden md:block w-px h-6 bg-white/5" />
 
@@ -215,8 +216,8 @@ export default function DaySummaryWidget() {
           {now && <Pill icon="📆" value={`${Math.ceil((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 604800000)}`} label="týždeň" />}
 
           {/* ISS & Launches (before online) */}
-          <ISSPassMini />
-          <LaunchesMini />
+          <ISSPassMini onOpenChange={setIssMiniOpen} />
+          <LaunchesMini onOpenChange={setLaunchesMiniOpen} />
 
           {/* Meteor shower / Aurora (clickable with popup) */}
           {astro?.nextShower && (
@@ -317,11 +318,11 @@ export default function DaySummaryWidget() {
 
           {/* Speedtest mini - far right */}
           <div className="ml-auto">
-            <SpeedtestMini />
+            <SpeedtestMini onOpenChange={setSpeedtestMiniOpen} />
           </div>
         </div>
 
-        {/* Row 2: Section quick-nav + uptime/live */}
+        {/* Row 2: Section quick-nav + panel icons */}
         <div className="flex flex-wrap items-center gap-0.5 pt-1.5 border-t border-white/5">
           {SECTIONS.map(s => (
             <button key={s.id} onClick={() => scrollTo(s.id)}
@@ -331,12 +332,94 @@ export default function DaySummaryWidget() {
               <span className="hidden lg:inline">{s.label}</span>
             </button>
           ))}
+
+          <div className="w-px h-4 bg-white/5 mx-1" />
+
+          {/* Panel icons: MHD, Train, Office, Lottery, Deals */}
+          <button onClick={() => setMhdOpen(o => !o)}
+            className={`flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-1 rounded-md transition-all border ${mhdOpen ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/20' : 'text-slate-500 hover:text-slate-200 hover:bg-white/5 border-transparent hover:border-white/10'}`}
+            title="MHD Odchody">
+            <span>🚌</span>
+            <span className="hidden lg:inline">MHD</span>
+          </button>
+          <button onClick={() => setTrainOpen(o => !o)}
+            className={`flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-1 rounded-md transition-all border ${trainOpen ? 'bg-blue-500/15 text-blue-300 border-blue-500/20' : 'text-slate-500 hover:text-slate-200 hover:bg-white/5 border-transparent hover:border-white/10'}`}
+            title="Meškanie vlakov">
+            <span>🚂</span>
+            <span className="hidden lg:inline">Vlaky</span>
+          </button>
+          <button onClick={() => setOfficeOpen(o => !o)}
+            className={`flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-1 rounded-md transition-all border ${officeOpen ? 'bg-orange-500/15 text-orange-300 border-orange-500/20' : 'text-slate-500 hover:text-slate-200 hover:bg-white/5 border-transparent hover:border-white/10'}`}
+            title="Čakacie doby">
+            <span>🏛️</span>
+            <span className="hidden lg:inline">Úrady</span>
+          </button>
+          <button onClick={() => setLotteryOpen(o => !o)}
+            className={`flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-1 rounded-md transition-all border ${lotteryOpen ? 'bg-yellow-500/15 text-yellow-300 border-yellow-500/20' : 'text-slate-500 hover:text-slate-200 hover:bg-white/5 border-transparent hover:border-white/10'}`}
+            title="Lotéria">
+            <span>🎰</span>
+            <span className="hidden lg:inline">Lotéria</span>
+          </button>
+          <button onClick={() => setDealsOpen(o => !o)}
+            className={`flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-1 rounded-md transition-all border ${dealsOpen ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/20' : 'text-slate-500 hover:text-slate-200 hover:bg-white/5 border-transparent hover:border-white/10'}`}
+            title="Zľavy dnes">
+            <span>🏷️</span>
+            <span className="hidden lg:inline">Zľavy</span>
+          </button>
+
           <div className="ml-auto flex items-center gap-2">
             <div className="hidden xl:flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 anim-pulse-dot" />
             </div>
           </div>
         </div>
+
+        {/* Panel popups */}
+        {mhdOpen && (
+          <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setMhdOpen(false)}>
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <div className="relative w-full max-w-[500px]" onClick={e => e.stopPropagation()}>
+              <button onClick={() => setMhdOpen(false)} className="absolute -top-2 -right-2 z-10 w-7 h-7 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-white border border-white/10 text-sm">✕</button>
+              <MHDWidget />
+            </div>
+          </div>
+        )}
+        {trainOpen && (
+          <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setTrainOpen(false)}>
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <div className="relative w-full max-w-[500px]" onClick={e => e.stopPropagation()}>
+              <button onClick={() => setTrainOpen(false)} className="absolute -top-2 -right-2 z-10 w-7 h-7 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-white border border-white/10 text-sm">✕</button>
+              <TrainDelaysWidget />
+            </div>
+          </div>
+        )}
+        {officeOpen && (
+          <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setOfficeOpen(false)}>
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <div className="relative w-full max-w-[500px]" onClick={e => e.stopPropagation()}>
+              <button onClick={() => setOfficeOpen(false)} className="absolute -top-2 -right-2 z-10 w-7 h-7 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-white border border-white/10 text-sm">✕</button>
+              <OfficeWaitWidget />
+            </div>
+          </div>
+        )}
+        {lotteryOpen && (
+          <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setLotteryOpen(false)}>
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <div className="relative w-full max-w-[500px]" onClick={e => e.stopPropagation()}>
+              <button onClick={() => setLotteryOpen(false)} className="absolute -top-2 -right-2 z-10 w-7 h-7 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-white border border-white/10 text-sm">✕</button>
+              <LotteryWidget />
+            </div>
+          </div>
+        )}
+        {dealsOpen && (
+          <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setDealsOpen(false)}>
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <div className="relative w-full max-w-[500px]" onClick={e => e.stopPropagation()}>
+              <button onClick={() => setDealsOpen(false)} className="absolute -top-2 -right-2 z-10 w-7 h-7 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-white border border-white/10 text-sm">✕</button>
+              <DealsWidget />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -20,17 +20,17 @@ interface PodcastData {
   timestamp: number
 }
 
-const SHOW_COLORS: Record<string, string> = {
-  'Denník N': '#6366f1',
-  'Startitup': '#10b981',
-  'Lužifčák': '#f59e0b',
-  'Recast': '#ec4899',
-  'Dobré ráno': '#f97316',
-  'Index': '#3b82f6',
-  'Forbes SK': '#8b5cf6',
-  'Pravda': '#ef4444',
-  'Tech.sme': '#06b6d4',
-  'Para podcast': '#14b8a6',
+const SHOW_STYLE: Record<string, { color: string; bg: string }> = {
+  'Denník N': { color: '#6366f1', bg: 'bg-indigo-500/10' },
+  'Startitup': { color: '#10b981', bg: 'bg-emerald-500/10' },
+  'Lužifčák': { color: '#f59e0b', bg: 'bg-amber-500/10' },
+  'Recast': { color: '#ec4899', bg: 'bg-pink-500/10' },
+  'Dobré ráno': { color: '#f97316', bg: 'bg-orange-500/10' },
+  'Index': { color: '#3b82f6', bg: 'bg-blue-500/10' },
+  'Forbes SK': { color: '#8b5cf6', bg: 'bg-violet-500/10' },
+  'Pravda': { color: '#ef4444', bg: 'bg-red-500/10' },
+  'Tech.sme': { color: '#06b6d4', bg: 'bg-cyan-500/10' },
+  'Para podcast': { color: '#14b8a6', bg: 'bg-teal-500/10' },
 }
 
 function relativeDate(dateStr: string): string {
@@ -45,10 +45,13 @@ function relativeDate(dateStr: string): string {
 export default function PodcastWidget() {
   const { lang } = useLang()
   const [playingUrl, setPlayingUrl] = useState<string | null>(null)
+  const [showFilter, setShowFilter] = useState<string>('all')
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const { data, loading, error, refetch } = useWidget<PodcastData>('/api/podcasts', 15 * 60 * 1000)
 
-  const podcasts = data?.podcasts ?? []
+  const allPodcasts = data?.podcasts ?? []
+  const shows = Array.from(new Set(allPodcasts.map(p => p.show))).sort()
+  const podcasts = showFilter === 'all' ? allPodcasts : allPodcasts.filter(p => p.show === showFilter)
 
   const togglePlay = (url: string) => {
     if (playingUrl === url) {
@@ -65,44 +68,79 @@ export default function PodcastWidget() {
   }
 
   return (
-    <WidgetCard accent="purple" title={lang === 'sk' ? 'Podcasty · SK' : 'Podcasts · SK'} icon="🎙️" onRefresh={refetch}>
+    <WidgetCard accent="purple" title={lang === 'sk' ? 'Podcasty · SK' : 'Podcasts · SK'} icon="🎙️" onRefresh={refetch}
+      badge={allPodcasts.length > 0 ? `${allPodcasts.length}` : undefined}>
       {loading && <SkeletonRows rows={6} />}
       {!loading && error && <p className="text-xs text-slate-500">Chyba</p>}
-      {!loading && podcasts.length === 0 && (
+      {!loading && allPodcasts.length === 0 && (
         <p className="text-xs text-slate-500 text-center py-4">Žiadne podcasty</p>
       )}
-      {!loading && podcasts.length > 0 && (
-        <div className="space-y-0.5 max-h-[380px] overflow-y-auto scrollbar-hide">
-          {podcasts.map((pod, i) => {
-            const showColor = SHOW_COLORS[pod.show] ?? '#64748b'
-            return (
-              <a key={i} href={pod.link} target="_blank" rel="noopener noreferrer"
-                className="flex items-start gap-2 rounded-lg p-1.5 hover:bg-white/[0.04] transition-all group">
-                {pod.audioUrl ? (
-                  <button
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); togglePlay(pod.audioUrl!) }}
-                    className={`text-base shrink-0 mt-0.5 w-7 h-7 flex items-center justify-center rounded-full transition-all ${
-                      playingUrl === pod.audioUrl ? 'bg-purple-500/30 text-purple-300' : 'bg-white/5 text-slate-400 hover:text-purple-300'
-                    }`}>
-                    {playingUrl === pod.audioUrl ? '⏸' : '▶️'}
-                  </button>
-                ) : (
-                  <span className="text-base shrink-0 mt-0.5">🎧</span>
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="text-[11px] text-slate-200 group-hover:text-white leading-snug line-clamp-2 font-medium">{pod.title}</p>
-                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <span className="text-[9px] font-semibold" style={{ color: showColor }}>{pod.show}</span>
-                    {pod.duration && <span className="text-[9px] text-slate-600">⏱ {pod.duration}</span>}
-                    <span className="text-[9px] text-slate-600">{relativeDate(pod.date)}</span>
+      {!loading && allPodcasts.length > 0 && (
+        <>
+          {/* Show filter */}
+          <div className="flex flex-wrap gap-1 mb-3">
+            <button onClick={() => setShowFilter('all')}
+              className={`text-[8px] px-2 py-0.5 rounded-full font-semibold transition-colors ${showFilter === 'all' ? 'bg-purple-500/20 text-purple-300' : 'text-slate-500 hover:text-slate-300'}`}>
+              Všetky ({allPodcasts.length})
+            </button>
+            {shows.map(s => {
+              const style = SHOW_STYLE[s]
+              return (
+                <button key={s} onClick={() => setShowFilter(s)}
+                  className={`text-[8px] px-2 py-0.5 rounded-full font-semibold transition-colors ${showFilter === s ? `${style?.bg ?? 'bg-white/10'} text-white` : 'text-slate-500 hover:text-slate-300'}`}
+                  style={showFilter === s && style ? { color: style.color } : undefined}>
+                  {s}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Episode list */}
+          <div className="space-y-1 max-h-[400px] overflow-y-auto scrollbar-hide">
+            {podcasts.map((pod, i) => {
+              const style = SHOW_STYLE[pod.show] ?? { color: '#64748b', bg: 'bg-slate-500/10' }
+              return (
+                <div key={i} className="rounded-xl p-2.5 border border-white/5 bg-white/[0.015] hover:bg-white/[0.04] transition-all group">
+                  <div className="flex items-start gap-2">
+                    {/* Play button or link icon */}
+                    {pod.audioUrl ? (
+                      <button
+                        onClick={() => togglePlay(pod.audioUrl!)}
+                        className={`w-8 h-8 flex items-center justify-center rounded-full shrink-0 transition-all ${
+                          playingUrl === pod.audioUrl ? 'bg-purple-500/30 text-purple-300 scale-110' : 'bg-white/5 text-slate-400 hover:text-purple-300 hover:bg-purple-500/15'
+                        }`}>
+                        {playingUrl === pod.audioUrl ? '⏸' : '▶'}
+                      </button>
+                    ) : (
+                      <div className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 shrink-0">
+                        <span className="text-sm">🎧</span>
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <a href={pod.link} target="_blank" rel="noopener noreferrer"
+                        className="text-[11px] text-slate-200 group-hover:text-white leading-snug line-clamp-2 font-medium hover:underline decoration-slate-500/40 underline-offset-2">
+                        {pod.title}
+                      </a>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ color: style.color, backgroundColor: style.color + '15' }}>
+                          {pod.show}
+                        </span>
+                        {pod.duration && <span className="text-[8px] text-slate-600">⏱ {pod.duration}</span>}
+                        <span className="text-[8px] text-slate-600">{relativeDate(pod.date)}</span>
+                        <a href={pod.link} target="_blank" rel="noopener noreferrer"
+                          className="text-[8px] text-purple-400/60 hover:text-purple-300 ml-auto">
+                          Otvoriť ↗
+                        </a>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </a>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+        </>
       )}
-      <p className="text-[10px] text-slate-600 mt-2">Denník N · Startitup · Lužifčák · Recast · Dobré ráno · Index + ďalšie</p>
+      <p className="text-[10px] text-slate-600 mt-2">Denník N · Startitup · Lužifčák · Recast · Dobré ráno + ďalšie</p>
     </WidgetCard>
   )
 }

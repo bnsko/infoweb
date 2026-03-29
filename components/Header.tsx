@@ -4,11 +4,17 @@ import { useState, useEffect } from 'react'
 import { getHoliday } from '@/lib/namedays'
 import { useTheme, THEMES } from '@/hooks/useTheme'
 import { useLang } from '@/hooks/useLang'
+import { useWidget } from '@/hooks/useWidget'
+
+interface SlovakFact { icon: string; title: string; value: string; detail: string }
+interface SlovakFactsData { staticFacts: SlovakFact[]; dynamicFacts: SlovakFact[]; generalStats: Record<string, number>; dayOfYear: number }
 
 export default function Header() {
   const [now, setNow] = useState<Date | null>(null)
   const { theme, setTheme } = useTheme()
   const { lang, setLang, t } = useLang()
+  const [skOpen, setSkOpen] = useState(false)
+  const slovakFacts = useWidget<SlovakFactsData>('/api/slovakfacts', 60 * 1000)
 
   useEffect(() => {
     setNow(new Date())
@@ -26,10 +32,12 @@ export default function Header() {
       <div className="max-w-[1680px] mx-auto px-4 py-3 flex items-center justify-between gap-4">
         {/* Logo */}
         <div className="flex items-center gap-3 shrink-0">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg shadow-lg"
-               style={{ background: 'var(--accent-dim)', border: '1px solid var(--border-card)' }}>
+          <button onClick={() => setSkOpen(o => !o)}
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-lg shadow-lg cursor-pointer hover:scale-110 transition-all"
+            style={{ background: 'var(--accent-dim)', border: '1px solid var(--border-card)' }}
+            title="Slovensko v číslach">
             🇸🇰
-          </div>
+          </button>
           <div>
             <h1 className="text-lg font-bold text-white leading-none tracking-tight">Slovakia Info</h1>
             <p className="text-[10px] text-slate-500 leading-none mt-0.5">{t('subtitle')}</p>
@@ -75,6 +83,34 @@ export default function Header() {
           </div>
         </div>
       </div>
+
+      {/* Slovensko v číslach popup */}
+      {skOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setSkOpen(false)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="relative w-full max-w-[420px] bg-[var(--bg-card)] border border-blue-500/20 rounded-2xl shadow-2xl p-4 space-y-3 max-h-[70vh] overflow-y-auto scrollbar-hide" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-bold text-blue-300">🇸🇰 Slovensko v číslach</span>
+              <button onClick={() => setSkOpen(false)} className="text-slate-500 hover:text-white text-lg">✕</button>
+            </div>
+            {slovakFacts.loading && <p className="text-xs text-slate-500">Načítavam...</p>}
+            {slovakFacts.data && (
+              <div className="space-y-1">
+                {slovakFacts.data.staticFacts.map((f, i) => (
+                  <div key={i} className="px-2 py-1.5 rounded-lg hover:bg-white/[0.03]">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">{f.icon}</span>
+                      <span className="text-[11px] font-semibold text-slate-200">{f.title}</span>
+                      <span className="text-[11px] font-bold text-blue-300 ml-auto">{f.value}</span>
+                    </div>
+                    <p className="text-[9px] text-slate-500 mt-0.5 pl-8">{f.detail}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   )
 }

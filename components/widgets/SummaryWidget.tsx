@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { useWidget } from '@/hooks/useWidget'
 import { useLang } from '@/hooks/useLang'
 import WidgetCard from '@/components/ui/WidgetCard'
@@ -23,31 +22,14 @@ interface EmergencyData { dispatches: Dispatch[]; counts: Record<string, number>
 interface LocalOutage { type: string; title: string; location: string; city: string; since: string; until: string; provider: string; note: string }
 interface LocalOutagesData { outages: LocalOutage[]; timestamp: number }
 
-type Tab = 'traffic' | 'health' | 'emergency' | 'outages'
-
-const TAB_CONFIG: { key: Tab; icon: string; sk: string; en: string }[] = [
-  { key: 'traffic', icon: '🚗', sk: 'Doprava', en: 'Traffic' },
-  { key: 'health', icon: '⚕️', sk: 'Výstrahy', en: 'Alerts' },
-  { key: 'emergency', icon: '🚨', sk: 'Zásahy', en: 'Emergency' },
-  { key: 'outages', icon: '⚡', sk: 'Výpadky', en: 'Outages' },
-]
-
 function formatTime(iso: string): string {
   if (!iso) return ''
   try { return new Date(iso).toLocaleString('sk-SK', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) }
   catch { return '' }
 }
 
-function getTrafficIcon(title: string): string {
-  if (title.includes('🚗')) return '🚗'
-  if (title.includes('🚦')) return '🚦'
-  if (title.includes('🚧')) return '🚧'
-  return '⚠️'
-}
-
 export default function SummaryWidget() {
   const { lang } = useLang()
-  const [tab, setTab] = useState<Tab>('traffic')
 
   const traffic = useWidget<TrafficData>('/api/traffic', 2 * 60 * 1000)
   const health = useWidget<HealthData>('/api/health', 30 * 60 * 1000)
@@ -57,154 +39,106 @@ export default function SummaryWidget() {
   const refetchAll = () => { traffic.refetch(); health.refetch(); emergency.refetch(); localOutages.refetch() }
 
   const trafficCount = traffic.data?.items?.length ?? 0
-  const healthCount = (health.data?.sk?.length ?? 0) + (health.data?.world?.length ?? 0)
-  const emergencyCount = emergency.data?.dispatches?.length ?? 0
-  const outagesCount = localOutages.data?.outages?.length ?? 0
-
-  const badges: Record<Tab, number> = { traffic: trafficCount, health: healthCount, emergency: emergencyCount, outages: outagesCount }
+  const healthAlerts = [...(health.data?.sk ?? []), ...(health.data?.world ?? [])]
+  const emergencyDispatches = emergency.data?.dispatches ?? []
+  const outagesList = localOutages.data?.outages ?? []
 
   return (
     <WidgetCard accent="rose" title={lang === 'sk' ? 'Súhrnný prehľad' : 'Summary'} icon="📋" onRefresh={refetchAll}>
-      {/* Tabs */}
-      <div className="flex gap-0.5 mb-3 bg-white/[0.03] rounded-lg p-0.5 border border-white/5">
-        {TAB_CONFIG.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)}
-            className={`flex-1 flex items-center justify-center gap-1 text-[10px] font-semibold py-1.5 rounded-md transition-all ${
-              tab === t.key ? 'bg-rose-500/15 text-rose-300' : 'text-slate-500 hover:text-slate-300'
-            }`}>
-            <span>{t.icon}</span>
-            <span className="hidden sm:inline">{lang === 'sk' ? t.sk : t.en}</span>
-            {badges[t.key] > 0 && <span className="text-[8px] opacity-60">({badges[t.key]})</span>}
-          </button>
-        ))}
-      </div>
-
-      {/* Traffic tab */}
-      {tab === 'traffic' && (
-        <>
-          {traffic.loading && <SkeletonRows rows={4} />}
-          {!traffic.loading && traffic.data && (
+      <div className="grid grid-cols-2 gap-2">
+        {/* Tile 1: Traffic */}
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-2.5 space-y-1">
+          <div className="flex items-center gap-1.5 mb-1">
+            <span className="text-sm">🚗</span>
+            <span className="text-[10px] font-bold text-rose-300">{lang === 'sk' ? 'Doprava' : 'Traffic'}</span>
+            {trafficCount > 0 && <span className="text-[8px] text-slate-500 ml-auto">({trafficCount})</span>}
+          </div>
+          {traffic.loading ? <SkeletonRows rows={2} /> : (
             <>
-              {traffic.data.stats && (
-                <div className="flex flex-wrap items-center gap-2 mb-2 px-1">
-                  <CongestionBadge level={traffic.data.stats.congestion} lang={lang} />
-                  <span className="text-[9px] text-slate-500">🚗 {traffic.data.stats.accidents} · 🚦 {traffic.data.stats.jams} · 🚧 {traffic.data.stats.closures}</span>
-                </div>
+              {traffic.data?.stats && (
+                <CongestionBadge level={traffic.data.stats.congestion} lang={lang} />
               )}
-              <div className="space-y-0.5 max-h-[280px] overflow-y-auto scrollbar-hide">
-                {traffic.data.items.length === 0 ? (
-                  <div className="text-center py-4"><span className="text-xl">✅</span><p className="text-[10px] text-slate-500 mt-1">Bez udalostí</p></div>
-                ) : traffic.data.items.map((item, i) => (
-                  <a key={i} href={item.link} target="_blank" rel="noopener noreferrer"
-                    className="flex items-start gap-2 rounded-lg p-1.5 widget-item-hover group">
-                    <span className="text-sm shrink-0 mt-0.5">{getTrafficIcon(item.title)}</span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[11px] text-slate-200 leading-snug line-clamp-2 group-hover:text-white">{item.title}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[9px] text-rose-400/70 font-medium">{item.source}</span>
-                        {item.pubDate && <span className="text-[9px] text-slate-600">{formatTime(item.pubDate)}</span>}
-                      </div>
-                    </div>
+              <div className="space-y-0.5 max-h-[120px] overflow-y-auto scrollbar-hide">
+                {(traffic.data?.items ?? []).length === 0 ? (
+                  <p className="text-[9px] text-emerald-400 text-center py-2">✅ Bez udalostí</p>
+                ) : (traffic.data?.items ?? []).slice(0, 4).map((item, i) => (
+                  <a key={i} href={item.link} target="_blank" rel="noopener noreferrer" className="block text-[9px] text-slate-400 hover:text-white line-clamp-1 transition-colors">
+                    ⚠️ {item.title}
                   </a>
                 ))}
               </div>
             </>
           )}
-        </>
-      )}
+        </div>
 
-      {/* Health Alerts tab */}
-      {tab === 'health' && (
-        <>
-          {health.loading && <SkeletonRows rows={4} />}
-          {!health.loading && health.data && (
-            <div className="space-y-0.5 max-h-[280px] overflow-y-auto scrollbar-hide">
-              {[...(health.data.sk ?? []), ...(health.data.world ?? [])].length === 0 ? (
-                <div className="text-center py-4"><span className="text-xl">✅</span><p className="text-[10px] text-slate-500 mt-1">Žiadne výstrahy</p></div>
-              ) : [...(health.data.sk ?? []), ...(health.data.world ?? [])].slice(0, 8).map((alert, i) => (
-                <a key={i} href={alert.link} target="_blank" rel="noopener noreferrer"
-                  className="flex items-start gap-2 rounded-lg p-1.5 widget-item-hover group">
-                  <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-bold shrink-0 mt-0.5 ${
-                    alert.severity === 'high' ? 'bg-red-500/15 text-red-300' :
-                    alert.severity === 'medium' ? 'bg-amber-500/15 text-amber-300' : 'bg-emerald-500/15 text-emerald-300'
-                  }`}>{alert.severity === 'high' ? '‼️' : alert.severity === 'medium' ? '⚠️' : 'ℹ️'}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] text-slate-200 leading-snug line-clamp-2 group-hover:text-white">{alert.title}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[9px] text-slate-500">{alert.source}</span>
-                      <span className={`text-[8px] px-1 rounded ${alert.region === 'sk' ? 'text-blue-400' : 'text-slate-500'}`}>
-                        {alert.region === 'sk' ? '🇸🇰' : '🌍'}
-                      </span>
-                    </div>
-                  </div>
+        {/* Tile 2: Health Alerts */}
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-2.5 space-y-1">
+          <div className="flex items-center gap-1.5 mb-1">
+            <span className="text-sm">⚕️</span>
+            <span className="text-[10px] font-bold text-amber-300">{lang === 'sk' ? 'Výstrahy' : 'Alerts'}</span>
+            {healthAlerts.length > 0 && <span className="text-[8px] text-slate-500 ml-auto">({healthAlerts.length})</span>}
+          </div>
+          {health.loading ? <SkeletonRows rows={2} /> : (
+            <div className="space-y-0.5 max-h-[120px] overflow-y-auto scrollbar-hide">
+              {healthAlerts.length === 0 ? (
+                <p className="text-[9px] text-emerald-400 text-center py-2">✅ Žiadne výstrahy</p>
+              ) : healthAlerts.slice(0, 4).map((alert, i) => (
+                <a key={i} href={alert.link} target="_blank" rel="noopener noreferrer" className="block text-[9px] text-slate-400 hover:text-white line-clamp-1 transition-colors">
+                  <span className={alert.severity === 'high' ? 'text-red-400' : alert.severity === 'medium' ? 'text-amber-400' : 'text-emerald-400'}>
+                    {alert.severity === 'high' ? '‼️' : alert.severity === 'medium' ? '⚠️' : 'ℹ️'}
+                  </span> {alert.title}
                 </a>
               ))}
             </div>
           )}
-        </>
-      )}
+        </div>
 
-      {/* Emergency tab */}
-      {tab === 'emergency' && (
-        <>
-          {emergency.loading && <SkeletonRows rows={4} />}
-          {!emergency.loading && emergency.data && (
-            <div className="space-y-0.5 max-h-[280px] overflow-y-auto scrollbar-hide">
-              {emergency.data.dispatches.length === 0 ? (
-                <div className="text-center py-4"><span className="text-xl">✅</span><p className="text-[10px] text-slate-500 mt-1">Žiadne zásahy</p></div>
-              ) : emergency.data.dispatches.map((d, i) => {
-                const typeMap = { ambulance: { icon: '🚑', color: 'text-red-400' }, fire: { icon: '🚒', color: 'text-orange-400' }, police: { icon: '🚔', color: 'text-blue-400' } }
-                const tm = typeMap[d.type] ?? { icon: '🚨', color: 'text-slate-400' }
+        {/* Tile 3: Emergency */}
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-2.5 space-y-1">
+          <div className="flex items-center gap-1.5 mb-1">
+            <span className="text-sm">🚨</span>
+            <span className="text-[10px] font-bold text-orange-300">{lang === 'sk' ? 'Zásahy' : 'Emergency'}</span>
+            {emergencyDispatches.length > 0 && <span className="text-[8px] text-slate-500 ml-auto">({emergencyDispatches.length})</span>}
+          </div>
+          {emergency.loading ? <SkeletonRows rows={2} /> : (
+            <div className="space-y-0.5 max-h-[120px] overflow-y-auto scrollbar-hide">
+              {emergencyDispatches.length === 0 ? (
+                <p className="text-[9px] text-emerald-400 text-center py-2">✅ Žiadne zásahy</p>
+              ) : emergencyDispatches.slice(0, 4).map((d, i) => {
+                const icon = d.type === 'ambulance' ? '🚑' : d.type === 'fire' ? '🚒' : '🚔'
                 return (
-                  <div key={i} className="flex items-start gap-2 rounded-lg p-1.5 widget-item-hover">
-                    <span className="text-sm shrink-0 mt-0.5">{tm.icon}</span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[11px] text-slate-200 leading-snug line-clamp-2">{d.event}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[9px] text-slate-500">📍 {d.location}</span>
-                        <span className="text-[9px] text-slate-600">{d.time}</span>
-                      </div>
-                    </div>
-                    <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-bold ${
-                      d.status === 'aktívny' ? 'bg-red-500/15 text-red-300' :
-                      d.status === 'na ceste' ? 'bg-yellow-500/15 text-yellow-300' : 'bg-green-500/15 text-green-300'
-                    }`}>{d.status}</span>
+                  <div key={i} className="text-[9px] text-slate-400 line-clamp-1">
+                    {icon} {d.event} <span className="text-slate-600">· {d.location}</span>
                   </div>
                 )
               })}
             </div>
           )}
-        </>
-      )}
+        </div>
 
-      {/* Local Outages tab */}
-      {tab === 'outages' && (
-        <>
-          {localOutages.loading && <SkeletonRows rows={3} />}
-          {!localOutages.loading && localOutages.data && (
-            <div className="space-y-0.5 max-h-[280px] overflow-y-auto scrollbar-hide">
-              {localOutages.data.outages.length === 0 ? (
-                <div className="text-center py-4"><span className="text-xl">✅</span><p className="text-[10px] text-emerald-400 mt-1">Žiadne výpadky</p></div>
-              ) : localOutages.data.outages.map((o, i) => {
-                const typeIcon = o.type === 'electricity' ? '⚡' : o.type === 'construction' ? '🚧' : '🔇'
+        {/* Tile 4: Outages */}
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-2.5 space-y-1">
+          <div className="flex items-center gap-1.5 mb-1">
+            <span className="text-sm">⚡</span>
+            <span className="text-[10px] font-bold text-cyan-300">{lang === 'sk' ? 'Výpadky' : 'Outages'}</span>
+            {outagesList.length > 0 && <span className="text-[8px] text-slate-500 ml-auto">({outagesList.length})</span>}
+          </div>
+          {localOutages.loading ? <SkeletonRows rows={2} /> : (
+            <div className="space-y-0.5 max-h-[120px] overflow-y-auto scrollbar-hide">
+              {outagesList.length === 0 ? (
+                <p className="text-[9px] text-emerald-400 text-center py-2">✅ Žiadne výpadky</p>
+              ) : outagesList.slice(0, 4).map((o, i) => {
+                const icon = o.type === 'electricity' ? '⚡' : o.type === 'construction' ? '🚧' : '🔇'
                 return (
-                  <div key={i} className="flex items-start gap-2 rounded-lg p-1.5 widget-item-hover">
-                    <span className="text-sm shrink-0 mt-0.5">{typeIcon}</span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[11px] text-slate-200 leading-snug line-clamp-2">{o.title}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[9px] text-slate-500">📍 {o.city}</span>
-                        {o.since && <span className="text-[9px] text-slate-600">{o.since} – {o.until}</span>}
-                      </div>
-                    </div>
+                  <div key={i} className="text-[9px] text-slate-400 line-clamp-1">
+                    {icon} {o.title} <span className="text-slate-600">· {o.city}</span>
                   </div>
                 )
               })}
             </div>
           )}
-        </>
-      )}
-
+        </div>
+      </div>
       <p className="text-[10px] text-slate-600 mt-2">Waze · RÚVZ · HaZZ · SSE/ZSE/VSE</p>
     </WidgetCard>
   )
@@ -217,7 +151,7 @@ function CongestionBadge({ level, lang }: { level: string; lang: string }) {
   }
   const info = map[level] ?? map.low
   return (
-    <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: info.color + '20', color: info.color }}>
+    <span className="flex items-center gap-1 text-[8px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: info.color + '20', color: info.color }}>
       <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: info.color }} />
       {info.label}
     </span>

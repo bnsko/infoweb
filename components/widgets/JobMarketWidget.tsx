@@ -26,10 +26,11 @@ export default function JobMarketWidget() {
   const jobs = useWidget<JobsData>(`/api/jobs?tab=${region}`, 30 * 60 * 1000)
 
   const refetchAll = () => { unemployment.refetch(); jobs.refetch() }
+  const jobsList = jobs.data?.topJobs ?? []
 
   return (
-    <WidgetCard accent="blue" title={lang === 'sk' ? 'Trh práce & Profesie' : 'Job Market'} icon="💼" onRefresh={refetchAll}>
-      {/* Tabs */}
+    <WidgetCard accent="blue" title={lang === 'sk' ? 'Trh práce & Profesie' : 'Job Market'} icon="💼" onRefresh={refetchAll}
+      badge={jobs.data?.totalNew ? `${jobs.data.totalNew} nových` : undefined}>
       <div className="flex gap-0.5 mb-3 bg-white/[0.03] rounded-lg p-0.5 border border-white/5">
         {([
           { key: 'jobs' as Tab, icon: '💼', label: 'Ponuky' },
@@ -45,7 +46,7 @@ export default function JobMarketWidget() {
         ))}
       </div>
 
-      {/* Jobs tab */}
+      {/* Jobs tab - concrete listings */}
       {tab === 'jobs' && (
         <>
           <div className="flex items-center gap-0.5 mb-2 bg-white/[0.03] rounded-lg p-0.5 border border-white/5">
@@ -57,25 +58,50 @@ export default function JobMarketWidget() {
             ))}
           </div>
           {jobs.loading && <SkeletonRows rows={5} />}
-          {!jobs.loading && jobs.data && (
-            <div className="space-y-0.5 max-h-[280px] overflow-y-auto scrollbar-hide">
-              {(jobs.data.topJobs ?? []).length === 0 ? (
-                <p className="text-[10px] text-slate-500 text-center py-4">Žiadne ponuky</p>
-              ) : (jobs.data.topJobs ?? []).map((job, i) => (
-                <a key={i} href={job.link} target="_blank" rel="noopener noreferrer"
-                  className="flex items-start gap-2 rounded-lg p-1.5 hover:bg-white/[0.04] transition-all group">
-                  <span className="text-[10px] text-slate-600 font-mono shrink-0 mt-0.5 w-4">{i + 1}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] text-slate-200 group-hover:text-white leading-snug line-clamp-1 font-medium">{job.title}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      {job.company && <span className="text-[9px] text-blue-400/80 font-medium">{job.company}</span>}
-                      {job.location && <span className="text-[9px] text-slate-600">📍 {job.location}</span>}
-                      {job.salary && <span className="text-[9px] text-emerald-400 font-semibold">{job.salary}</span>}
+          {!jobs.loading && jobsList.length === 0 && (
+            <p className="text-[10px] text-slate-500 text-center py-4">Žiadne ponuky</p>
+          )}
+          {!jobs.loading && jobsList.length > 0 && (
+            <>
+              {/* Categories summary */}
+              {jobs.data?.categories && jobs.data.categories.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {jobs.data.categories.slice(0, 6).map((c, i) => (
+                    <span key={i} className="text-[8px] px-1.5 py-0.5 rounded-full bg-white/5 text-slate-400">{c.name} ({c.count})</span>
+                  ))}
+                </div>
+              )}
+              <div className="space-y-1 max-h-[350px] overflow-y-auto scrollbar-hide">
+                {jobsList.map((job, i) => (
+                  <a key={i} href={job.link} target="_blank" rel="noopener noreferrer"
+                    className="block rounded-xl p-2.5 border border-white/5 bg-white/[0.015] hover:bg-white/[0.04] hover:border-blue-500/20 transition-all group">
+                    <div className="flex items-start gap-2">
+                      <span className="text-[10px] text-blue-400/60 font-mono shrink-0 mt-0.5 w-4">{i + 1}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[11px] text-slate-200 group-hover:text-white leading-snug font-medium line-clamp-2">{job.title}</p>
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          {job.company && (
+                            <span className="text-[9px] text-blue-400/80 font-semibold">{job.company}</span>
+                          )}
+                          {job.location && (
+                            <span className="text-[9px] text-slate-500">📍 {job.location}</span>
+                          )}
+                          <span className="text-[8px] text-slate-600">{job.source}</span>
+                        </div>
+                        {job.salary && (
+                          <div className="mt-1">
+                            <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                              💰 {job.salary}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-[8px] text-slate-600 shrink-0">↗</span>
                     </div>
-                  </div>
-                </a>
-              ))}
-            </div>
+                  </a>
+                ))}
+              </div>
+            </>
           )}
         </>
       )}
@@ -86,8 +112,15 @@ export default function JobMarketWidget() {
           {unemployment.loading && <SkeletonRows rows={5} />}
           {!unemployment.loading && unemployment.data && (
             <div className="space-y-1 max-h-[280px] overflow-y-auto scrollbar-hide">
-              <div className="text-[9px] text-rose-400/60 font-bold uppercase tracking-wider mb-2">
-                Priemer SR: <span className="text-rose-300">{unemployment.data.nationalAvgRate}%</span>
+              <div className="flex items-center gap-3 px-2 py-2 rounded-xl bg-rose-500/5 border border-rose-500/10 mb-2">
+                <div className="text-center">
+                  <p className="text-[16px] font-bold text-rose-300">{unemployment.data.nationalAvgRate}%</p>
+                  <p className="text-[8px] text-slate-500">priemer SR</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-[16px] font-bold text-blue-300">{unemployment.data.skAvgSalary?.toLocaleString()} €</p>
+                  <p className="text-[8px] text-slate-500">priem. mzda</p>
+                </div>
               </div>
               {unemployment.data.regions.map(r => (
                 <div key={r.region} className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-white/[0.03]">
