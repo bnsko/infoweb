@@ -38,19 +38,19 @@ export default function FlashNewsWidget() {
 
   return (
     <div
-      className="relative overflow-hidden rounded-xl border border-red-500/20 card-entrance"
-      style={{ background: 'linear-gradient(90deg, rgba(220,38,38,0.08) 0%, rgba(10,12,18,0.97) 12%, rgba(10,12,18,0.97) 88%, rgba(220,38,38,0.04) 100%)' }}
+      className="relative overflow-hidden rounded-lg card-entrance"
+      style={{ background: 'rgba(10,12,18,0.6)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-      <div className="flex items-center min-h-[42px]">
-        {/* FLASH label */}
-        <div className="flex items-center gap-2 shrink-0 px-4 z-10 bg-gradient-to-r from-red-950/90 to-red-950/0">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 shadow-lg shadow-red-500/50" />
+      <div className="flex items-center min-h-[30px]">
+        {/* Subtle FLASH dot + label */}
+        <div className="flex items-center gap-1.5 shrink-0 px-3 z-10">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-60" />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500" />
           </span>
-          <span className="text-[11px] font-black text-red-400 uppercase tracking-[0.2em]">Flash</span>
+          <span className="text-[9px] font-bold text-amber-500/70 uppercase tracking-widest">Správy</span>
         </div>
 
         {/* Scrolling ticker track */}
@@ -65,11 +65,11 @@ export default function FlashNewsWidget() {
                 href={item.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2.5 px-5 py-2 text-[12px] text-slate-200 hover:text-white font-medium transition-colors shrink-0 group"
+                className="inline-flex items-center gap-2 px-4 py-1 text-[11px] text-slate-400 hover:text-slate-200 transition-colors shrink-0 group"
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500/60 group-hover:bg-red-400 transition-colors shrink-0" />
-                <span className="group-hover:underline decoration-red-500/40 underline-offset-2">{item.title}</span>
-                <span className="text-[9px] text-slate-600 font-normal">{item.ago}</span>
+                <span className="w-1 h-1 rounded-full bg-slate-600 group-hover:bg-amber-400 transition-colors shrink-0" />
+                <span className="group-hover:underline decoration-slate-500/40 underline-offset-2">{item.title}</span>
+                <span className="text-[8px] text-slate-600 font-normal">{item.ago}</span>
               </a>
             ))}
           </div>

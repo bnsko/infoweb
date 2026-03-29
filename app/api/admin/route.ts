@@ -108,9 +108,9 @@ export async function GET(request: Request) {
       const vRes = await fetch(`${origin}/api/visitors?action=ping&sid=admin-poll`, { cache: 'no-store' })
       if (vRes.ok) {
         const v = await vRes.json()
-        visitorStore.totalPageViews = v.totalPageViews
-        visitorStore.uniqueVisitors = v.uniqueVisitors
-        visitorStore.activeSessions = v.activeNow
+        visitorStore.totalPageViews = v.lifetimeViews ?? v.totalPageViews ?? 0
+        visitorStore.uniqueVisitors = v.lifetimeUnique ?? v.uniqueVisitors ?? 0
+        visitorStore.activeSessions = v.activeNow ?? 0
       }
     } catch { /* fallback to cached */ }
 

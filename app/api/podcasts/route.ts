@@ -9,36 +9,58 @@ interface Podcast {
   audioUrl?: string
   date: string
   duration?: string
+  description?: string
 }
 
+// Only include feeds that serve actual podcast RSS with <enclosure> audio
 const PODCAST_FEEDS = [
-  { name: 'SME Podcasty', url: 'https://podcasty.sme.sk/rss/vse' },
-  { name: 'SME - Dobré ráno', url: 'https://podcasty.sme.sk/rss/dobre-rano' },
-  { name: 'SME - Svet', url: 'https://podcasty.sme.sk/rss/svet' },
-  { name: 'Denník N', url: 'https://dennikn.sk/podcast/feed/' },
-  { name: 'Startitup Podcast', url: 'https://feeds.acast.com/public/shows/startitup-podcast' },
-  { name: 'Index (SME)', url: 'https://podcasty.sme.sk/rss/index' },
-  { name: 'Forbes SK', url: 'https://anchor.fm/s/e4f80b38/podcast/rss' },
-  { name: 'Pravda', url: 'https://podcasty.pravda.sk/rss/' },
-  { name: 'RTVS', url: 'https://www.rtvs.sk/export/podcast.xml' },
-  { name: 'Aktuality.sk', url: 'https://www.aktuality.sk/rss/podcasty/' },
-  { name: 'Podcast.sk', url: 'https://podcast.sk/feed/' },
+  { name: 'Dobré ráno', url: 'https://podcasty.sme.sk/rss/dobre-rano', category: 'news' },
+  { name: 'Index', url: 'https://podcasty.sme.sk/rss/index', category: 'economy' },
+  { name: 'SME Svet', url: 'https://podcasty.sme.sk/rss/svet', category: 'world' },
+  { name: 'Denník N', url: 'https://dennikn.sk/podcast/feed/', category: 'news' },
+  { name: 'Startitup', url: 'https://feeds.acast.com/public/shows/startitup-podcast', category: 'interview' },
+  { name: 'Forbes SK', url: 'https://anchor.fm/s/e4f80b38/podcast/rss', category: 'business' },
+  { name: 'Aktuality.sk', url: 'https://www.aktuality.sk/rss/podcasty/', category: 'news' },
+  { name: 'RTVS', url: 'https://www.rtvs.sk/export/podcast.xml', category: 'public' },
+  { name: 'Pravda', url: 'https://podcasty.pravda.sk/rss/', category: 'news' },
 ]
 
-async function fetchPodcastFeed(feed: { name: string; url: string }): Promise<Podcast[]> {
+function cleanTitle(raw: string): string {
+  return raw
+    .replace(/<!\[CDATA\[|\]\]>/g, '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .trim()
+}
+
+function formatDuration(raw: string): string {
+  if (!raw) return ''
+  // Could be "HH:MM:SS", "MM:SS", or seconds
+  if (raw.includes(':')) return raw
+  const sec = parseInt(raw)
+  if (isNaN(sec)) return raw
+  const min = Math.floor(sec / 60)
+  return min > 0 ? `${min} min` : `${sec}s`
+}
+
+async function fetchPodcastFeed(feed: { name: string; url: string; category: string }): Promise<Podcast[]> {
   try {
     const res = await fetch(feed.url, {
       cache: 'no-store',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+        'User-Agent': 'Mozilla/5.0 (compatible; InfoSK/1.0)',
         Accept: 'application/rss+xml, application/xml, text/xml, */*',
       },
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(8000),
     })
     if (!res.ok) return []
     const xml = await res.text()
 
-    const items = xml.split(/<item[ >]/).slice(1, 15)
+    const items = xml.split(/<item[ >]/).slice(1, 12)
     const podcasts: Podcast[] = []
 
     for (const item of items) {
@@ -48,19 +70,29 @@ async function fetchPodcastFeed(feed: { name: string; url: string }): Promise<Po
       const enclosureMatch = item.match(/<enclosure[^>]*url="([^"]*)"/)
       const dateMatch = item.match(/<pubDate[^>]*>([\s\S]*?)<\/pubDate>/)
       const durMatch = item.match(/<itunes:duration[^>]*>([\s\S]*?)<\/itunes:duration>/)
+      const descMatch = item.match(/<description[^>]*>([\s\S]*?)<\/description>/)
 
-      const title = titleMatch?.[1]?.replace(/<!\[CDATA\[|\]\]>/g, '').trim() ?? ''
-      const rawLink = cdataLinkMatch?.[1]?.trim() || linkMatch?.[1]?.replace(/<!\[CDATA\[|\]\]>/g, '').trim() || enclosureMatch?.[1]?.trim() || ''
-      if (title) {
-        podcasts.push({
-          title,
-          show: feed.name,
-          link: rawLink,
-          audioUrl: enclosureMatch?.[1]?.trim(),
-          date: dateMatch?.[1]?.trim() ?? '',
-          duration: durMatch?.[1]?.trim(),
-        })
-      }
+      const title = cleanTitle(titleMatch?.[1] ?? '')
+      const rawLink = cdataLinkMatch?.[1]?.trim() || cleanTitle(linkMatch?.[1] ?? '') || enclosureMatch?.[1]?.trim() || ''
+
+      // Only accept items that have either an audio enclosure OR come from known podcast-only feeds
+      const hasAudio = !!enclosureMatch?.[1]
+      if (!title || title.length < 5) continue
+
+      // Skip non-podcast content (plain text articles without audio from non-podcast feeds)
+      if (!hasAudio && feed.category === 'news' && !item.includes('itunes:')) continue
+
+      const desc = cleanTitle(descMatch?.[1] ?? '').slice(0, 120)
+
+      podcasts.push({
+        title,
+        show: feed.name,
+        link: rawLink,
+        audioUrl: enclosureMatch?.[1]?.trim(),
+        date: dateMatch?.[1]?.trim() ?? '',
+        duration: formatDuration(durMatch?.[1]?.replace(/<!\[CDATA\[|\]\]>/g, '').trim() ?? ''),
+        description: desc || undefined,
+      })
     }
     return podcasts
   } catch {
@@ -75,6 +107,15 @@ export async function GET() {
   for (const r of results) {
     if (r.status === 'fulfilled') allPodcasts.push(...r.value)
   }
+
+  // Deduplicate by title
+  const seen = new Set<string>()
+  allPodcasts = allPodcasts.filter(p => {
+    const key = p.title.toLowerCase().slice(0, 60)
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
 
   // Sort by date descending
   allPodcasts.sort((a, b) => {
@@ -103,25 +144,21 @@ export async function GET() {
     return t >= weekStart && t < yesterdayStart
   })
 
-  // Fallback: if no podcasts fetched, provide curated links
   if (allPodcasts.length === 0) {
     allPodcasts = [
-      { title: 'Dobré ráno – denný podcast', show: 'SME - Dobré ráno', link: 'https://podcasty.sme.sk/c/dobre-rano', date: new Date().toISOString(), audioUrl: undefined, duration: '~20 min' },
-      { title: 'Denník N Podcast', show: 'Denník N', link: 'https://dennikn.sk/podcast/', date: new Date().toISOString(), audioUrl: undefined, duration: '~30 min' },
-      { title: 'Startitup Podcast – rozhovory', show: 'Startitup Podcast', link: 'https://www.startitup.sk/podcast/', date: new Date().toISOString(), audioUrl: undefined, duration: '~60 min' },
-      { title: 'Forbes Slovensko Podcast', show: 'Forbes SK', link: 'https://www.forbes.sk/podcast/', date: new Date().toISOString(), audioUrl: undefined, duration: '~45 min' },
-      { title: 'Aktuality.sk Audio', show: 'Aktuality.sk', link: 'https://www.aktuality.sk/podcast/', date: new Date().toISOString(), audioUrl: undefined, duration: '~15 min' },
-      { title: 'Index – Ekonomický podcast SME', show: 'Index (SME)', link: 'https://podcasty.sme.sk/c/index', date: new Date().toISOString(), audioUrl: undefined, duration: '~25 min' },
-      { title: 'Pravda Podcast', show: 'Pravda', link: 'https://podcasty.pravda.sk', date: new Date().toISOString(), audioUrl: undefined, duration: '~20 min' },
-      { title: 'RTVS Správy', show: 'RTVS', link: 'https://www.rtvs.sk/radio/archiv', date: new Date().toISOString(), audioUrl: undefined, duration: '~10 min' },
+      { title: 'Dobré ráno – denný podcast', show: 'Dobré ráno', link: 'https://podcasty.sme.sk/c/dobre-rano', date: new Date().toISOString(), duration: '~20 min' },
+      { title: 'Denník N Podcast', show: 'Denník N', link: 'https://dennikn.sk/podcast/', date: new Date().toISOString(), duration: '~30 min' },
+      { title: 'Startitup – rozhovory', show: 'Startitup', link: 'https://www.startitup.sk/podcast/', date: new Date().toISOString(), duration: '~60 min' },
+      { title: 'Forbes Slovensko Podcast', show: 'Forbes SK', link: 'https://www.forbes.sk/podcast/', date: new Date().toISOString(), duration: '~45 min' },
+      { title: 'Index – Ekonomický podcast', show: 'Index', link: 'https://podcasty.sme.sk/c/index', date: new Date().toISOString(), duration: '~25 min' },
     ]
   }
 
   return NextResponse.json({
-    today: today.slice(0, 10),
-    yesterday: yesterday.slice(0, 10),
-    week: week.slice(0, 15),
-    all: allPodcasts.slice(0, 15),
+    today: today.slice(0, 12),
+    yesterday: yesterday.slice(0, 12),
+    week: week.slice(0, 20),
+    all: allPodcasts.slice(0, 20),
     timestamp: Date.now(),
   })
 }

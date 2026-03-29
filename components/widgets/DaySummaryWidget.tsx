@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useWidget } from '@/hooks/useWidget'
 import type { StatsData } from '@/lib/types'
 import { useLang } from '@/hooks/useLang'
@@ -10,7 +10,7 @@ import { ISSPassMini } from '@/components/widgets/SpaceEnvWidget'
 import { LaunchesMini } from '@/components/widgets/LaunchesWidget'
 
 interface VisitorData {
-  lifetimeViews: number; lifetimeUnique: number; activeNow: number; todayPageViews: number; uptimeMs: number; lastHourViews?: number
+  lifetimeViews: number; lifetimeUnique: number; activeNow: number; todayPageViews: number; todayUnique?: number
 }
 
 interface AstronomyData {
@@ -54,7 +54,6 @@ export default function DaySummaryWidget() {
 
   const [now, setNow] = useState<Date | null>(null)
   const [visitors, setVisitors] = useState<VisitorData | null>(null)
-  const [uptime, setUptime] = useState('00:00:00')
 
   useEffect(() => {
     setNow(new Date())
@@ -62,33 +61,24 @@ export default function DaySummaryWidget() {
     return () => clearInterval(iv)
   }, [])
 
-  const updateUptime = useCallback((v: VisitorData) => {
-    const elapsed = Math.floor(v.uptimeMs / 1000)
-    const d = Math.floor(elapsed / 86400)
-    const h = Math.floor((elapsed % 86400) / 3600).toString().padStart(2, '0')
-    const m = Math.floor((elapsed % 3600) / 60).toString().padStart(2, '0')
-    const s = (elapsed % 60).toString().padStart(2, '0')
-    setUptime(d > 0 ? `${d}d ${h}:${m}:${s}` : `${h}:${m}:${s}`)
-  }, [])
-
   useEffect(() => {
     const sid = getSessionId()
     const doVisit = () => {
       fetch(`/api/visitors?action=visit&sid=${sid}`)
         .then(r => r.json())
-        .then((v: VisitorData) => { setVisitors(v); updateUptime(v) })
+        .then((v: VisitorData) => setVisitors(v))
         .catch(() => {})
     }
     const doPing = () => {
       fetch(`/api/visitors?action=ping&sid=${sid}`)
         .then(r => r.json())
-        .then((v: VisitorData) => { setVisitors(v); updateUptime(v) })
+        .then((v: VisitorData) => setVisitors(v))
         .catch(() => {})
     }
     doVisit()
     const ping = setInterval(doPing, 60 * 1000)
     return () => clearInterval(ping)
-  }, [updateUptime])
+  }, [])
 
   const timeStr = now ? now.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--:--:--'
   const today = now ? now.toLocaleDateString('sk-SK', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''
@@ -96,7 +86,7 @@ export default function DaySummaryWidget() {
   const astro = astronomy.data
 
   return (
-    <div className="widget-card !py-3 !px-4 border-violet-500/15 relative overflow-hidden card-entrance">
+    <div className="widget-card !py-3 !px-4 border-violet-500/15 relative card-entrance">
       <div className="absolute inset-0 bg-gradient-to-br from-violet-600/5 via-indigo-600/3 to-transparent pointer-events-none" />
       <div className="relative space-y-2">
         {/* Row 1: Clock + Meniny + Horoskop + ISS/Launches + Stats + Fact */}
@@ -109,7 +99,7 @@ export default function DaySummaryWidget() {
           <div className="hidden md:block w-px h-8 bg-white/8" />
 
           {/* Meniny (clickable mini widget) */}
-          <NamedayMini />
+          <NamedayMini showLabel />
           {/* Horoscope (next to meniny) */}
           <HoroscopeMini />
 
@@ -147,10 +137,11 @@ export default function DaySummaryWidget() {
 
           <div className="hidden md:block w-px h-6 bg-white/5" />
 
-          {/* Online / sources / visits */}
-          <Pill icon="👥" value={visitors ? String(visitors.activeNow) : '...'} label="online" valueColor="text-yellow-400" />
+          {/* Sources / Online / visits */}
           <Pill icon="🔄" value={`${SOURCES}`} label="zdrojov" valueColor="text-emerald-400" />
+          <Pill icon="👥" value={visitors ? String(visitors.activeNow) : '...'} label="online" valueColor="text-yellow-400" />
           <Pill icon="📊" value={visitors ? String(visitors.todayPageViews) : '...'} label="dnes" valueColor="text-orange-300" />
+          <Pill icon="👤" value={visitors ? String(visitors.todayUnique ?? 0) : '...'} label="unikát" valueColor="text-cyan-300" />
           <Pill icon="🏆" value={visitors ? String(visitors.lifetimeViews) : '...'} label="celkom" valueColor="text-purple-300" />
 
           {/* Fact - subtle, far right */}
@@ -175,15 +166,13 @@ export default function DaySummaryWidget() {
             </button>
           ))}
           <div className="ml-auto flex items-center gap-2">
-            {stats.data?.timestamp && (
-              <div className="hidden xl:flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400 anim-pulse-dot" />
-                <span className="text-[10px] text-green-400 font-medium">
-                  Live · {new Date(stats.data.timestamp).toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' })}
-                </span>
-              </div>
-            )}
-            <Pill icon="⏱️" value={uptime} label="uptime" mono />
+            <div className="hidden xl:flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 anim-pulse-dot" />
+              <span className="text-[10px] text-green-400 font-medium" suppressHydrationWarning>
+                Live · {now ? now.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--:--:--'}
+              </span>
+            </div>
+            <Pill icon="⏱️" value={visitors ? String(visitors.lifetimeUnique) : '...'} label="unikát celkom" />
           </div>
         </div>
       </div>

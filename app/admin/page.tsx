@@ -64,7 +64,7 @@ export default function AdminPage() {
         })
         .then((data: AdminStats) => {
           setStats(data)
-          setConfig(data.config ?? null)
+          setConfig(data.config ? { ...data.config, enabledWidgets: data.config.enabledWidgets ?? [] } : null)
           setAuthenticated(true)
         })
         .catch(() => {
@@ -88,7 +88,7 @@ export default function AdminPage() {
       }
       const data: AdminStats = await res.json()
       setStats(data)
-      setConfig(data.config ?? null)
+      setConfig(data.config ? { ...data.config, enabledWidgets: data.config.enabledWidgets ?? [] } : null)
     } catch { /* ignore */ }
   }, [code])
 
@@ -100,7 +100,7 @@ export default function AdminPage() {
       if (res.ok) {
         const data: AdminStats = await res.json()
         setStats(data)
-        setConfig(data.config ?? null)
+        setConfig(data.config ? { ...data.config, enabledWidgets: data.config.enabledWidgets ?? [] } : null)
         setAuthenticated(true)
         localStorage.setItem('admin-code', code)
       } else {
@@ -261,7 +261,7 @@ export default function AdminPage() {
                 </div>
                 <div className="bg-white/3 rounded-xl p-3">
                   <div className="text-[10px] text-slate-500">Widgety</div>
-                  <div className="font-semibold text-white">{config?.enabledWidgets.length ?? 0}</div>
+                  <div className="font-semibold text-white">{config?.enabledWidgets?.length ?? 0}</div>
                 </div>
                 <div className="bg-white/3 rounded-xl p-3">
                   <div className="text-[10px] text-slate-500">Status</div>

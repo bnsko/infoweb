@@ -1,70 +1,23 @@
 import { NextResponse } from 'next/server'
 import { createHash } from 'crypto'
-import { readFileSync, writeFileSync, mkdirSync } from 'fs'
-import { dirname } from 'path'
+import { Redis } from '@upstash/redis'
 
 export const dynamic = 'force-dynamic'
 
-const SESSION_TIMEOUT = 2 * 60 * 1000
-// File-based persistence: survives Lambda warm restarts on Vercel
-const PERSIST_FILE = process.env.VISITORS_PERSIST_FILE ?? '/tmp/slovakia-visitors.json'
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL!,
+  token: process.env.KV_REST_API_TOKEN!,
+})
 
-interface PersistedData {
-  lifetimeViews: number
-  lifetimeUnique: number
-  uniqueHashes: string[]
-  todayDate: string
-  todayViews: number
-}
-
-function loadPersisted(): PersistedData {
-  try {
-    const raw = readFileSync(PERSIST_FILE, 'utf-8')
-    return JSON.parse(raw) as PersistedData
-  } catch {
-    return { lifetimeViews: 0, lifetimeUnique: 0, uniqueHashes: [], todayDate: '', todayViews: 0 }
-  }
-}
-
-function savePersisted() {
-  try {
-    mkdirSync(dirname(PERSIST_FILE), { recursive: true })
-    writeFileSync(PERSIST_FILE, JSON.stringify({
-      lifetimeViews: store.lifetimeViews,
-      lifetimeUnique: store.lifetimeUnique,
-      // Cap at 20k hashes to limit file size
-      uniqueHashes: Array.from(store.uniqueHashes).slice(-20000),
-      todayDate: store.todayDate,
-      todayViews: store.todayViews,
-    } as PersistedData))
-  } catch { /* ignore if /tmp unavailable */ }
-}
-
-// Load once at module init (warm start reuses this)
-const _p = loadPersisted()
-const store = {
-  lifetimeViews: _p.lifetimeViews,
-  lifetimeUnique: _p.lifetimeUnique,
-  uniqueHashes: new Set<string>(_p.uniqueHashes),
-  todayDate: _p.todayDate,
-  todayViews: _p.todayViews,
-  // Sessions are always in-memory only (not persisted)
-  sessions: new Map<string, number>(),
-  // Hourly views tracking
-  hourlyViews: [] as number[],
-  currentHour: new Date().getHours(),
-}
+const SESSION_TTL = 120 // 2 minutes in seconds
+const DAY_TTL = 86400 + 3600 // 25h to handle timezone edge
 
 function hashIP(ip: string): string {
   return createHash('sha256').update(ip + 'slovakia-info-2026').digest('hex').slice(0, 16)
 }
 
-function cleanExpiredSessions() {
-  const entries = Array.from(store.sessions.entries())
-  const now = Date.now()
-  for (let i = 0; i < entries.length; i++) {
-    if (now - entries[i][1] > SESSION_TIMEOUT) store.sessions.delete(entries[i][0])
-  }
+function todayKey(): string {
+  return new Date().toISOString().slice(0, 10) // "2026-03-29"
 }
 
 export async function GET(request: Request) {
@@ -75,53 +28,77 @@ export async function GET(request: Request) {
   const forwarded = request.headers.get('x-forwarded-for')
   const ip = forwarded?.split(',')[0]?.trim() ?? '127.0.0.1'
   const hashedIP = hashIP(ip)
+  const today = todayKey()
 
-  // Reset daily counter at midnight
-  const today = new Date().toISOString().slice(0, 10)
-  if (store.todayDate !== today) {
-    store.todayDate = today
-    store.todayViews = 0
-  }
+  try {
+    if (action === 'visit') {
+      // Increment total page views
+      await redis.incr('visitors:total_views')
 
-  cleanExpiredSessions()
+      // Increment today page views
+      const todayViewsKey = `visitors:daily:${today}`
+      const pipeline = redis.pipeline()
+      pipeline.incr(todayViewsKey)
+      pipeline.expire(todayViewsKey, DAY_TTL)
 
-  let needsSave = false
-  const nowHour = new Date().getHours()
-  if (nowHour !== store.currentHour) {
-    store.currentHour = nowHour
-    store.hourlyViews = []
-  }
-  if (action === 'visit') {
-    store.lifetimeViews++
-    store.todayViews++
-    store.hourlyViews.push(Date.now())
-    if (!store.uniqueHashes.has(hashedIP)) {
-      store.uniqueHashes.add(hashedIP)
-      store.lifetimeUnique++
+      // Track unique visitor (lifetime)
+      pipeline.sadd('visitors:unique_ips', hashedIP)
+
+      // Track today unique
+      const todayUniqueKey = `visitors:daily_unique:${today}`
+      pipeline.sadd(todayUniqueKey, hashedIP)
+      pipeline.expire(todayUniqueKey, DAY_TTL)
+
+      // Track active session (TTL-based)
+      if (sid) {
+        pipeline.set(`visitors:session:${sid}`, '1', { ex: SESSION_TTL })
+      }
+
+      await pipeline.exec()
+    } else if (action === 'ping' && sid) {
+      // Refresh session TTL
+      await redis.set(`visitors:session:${sid}`, '1', { ex: SESSION_TTL })
     }
-    if (sid) store.sessions.set(sid, Date.now())
-    needsSave = true
-  } else if (action === 'ping' && sid) {
-    store.sessions.set(sid, Date.now())
-    if (!store.uniqueHashes.has(hashedIP)) {
-      store.uniqueHashes.add(hashedIP)
-      store.lifetimeUnique++
-      needsSave = true
-    }
+
+    // Gather all stats
+    const pipeline = redis.pipeline()
+    pipeline.get('visitors:total_views')                    // 0
+    pipeline.scard('visitors:unique_ips')                   // 1
+    pipeline.get(`visitors:daily:${today}`)                 // 2
+    pipeline.scard(`visitors:daily_unique:${today}`)        // 3
+
+    const results = await pipeline.exec()
+
+    const totalViews = Number(results[0]) || 0
+    const totalUnique = Number(results[1]) || 0
+    const todayViews = Number(results[2]) || 0
+    const todayUnique = Number(results[3]) || 0
+
+    // Count active sessions by scanning session keys
+    let activeNow = 0
+    let cursor = 0
+    do {
+      const [nextCursor, keys] = await redis.scan(cursor, { match: 'visitors:session:*', count: 100 })
+      cursor = Number(nextCursor)
+      activeNow += keys.length
+    } while (cursor !== 0)
+
+    return NextResponse.json({
+      lifetimeViews: totalViews,
+      lifetimeUnique: totalUnique,
+      activeNow,
+      todayPageViews: todayViews,
+      todayUnique,
+    })
+  } catch (err) {
+    console.error('Redis visitors error:', err)
+    return NextResponse.json({
+      lifetimeViews: 0,
+      lifetimeUnique: 0,
+      activeNow: 0,
+      todayPageViews: 0,
+      todayUnique: 0,
+      error: 'Redis connection failed',
+    })
   }
-
-  if (needsSave) savePersisted()
-
-  const oneHourAgo = Date.now() - 3600000
-  const lastHourViews = store.hourlyViews.filter(t => t > oneHourAgo).length
-
-  const deployTime = parseInt(process.env.NEXT_PUBLIC_BUILD_TIME ?? '0', 10)
-  return NextResponse.json({
-    lifetimeViews: store.lifetimeViews,
-    lifetimeUnique: store.lifetimeUnique,
-    activeNow: store.sessions.size,
-    todayPageViews: store.todayViews,
-    uptimeMs: deployTime ? Date.now() - deployTime : 0,
-    lastHourViews,
-  })
 }

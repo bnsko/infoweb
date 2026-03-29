@@ -78,7 +78,7 @@ function HoroscopeMini() {
         <span className="hidden sm:inline">{current?.name}</span>
       </button>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4 bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)}>
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 px-4 bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)}>
           <div className="w-full max-w-sm max-h-[80vh] overflow-y-auto bg-slate-900 border border-indigo-500/20 rounded-2xl p-4 shadow-2xl backdrop-blur-xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-indigo-300">{current?.emoji} {lang === 'sk' ? 'Horoskop' : 'Horoscope'}</h3>
@@ -156,7 +156,7 @@ function FactMini() {
         <span className="hidden sm:inline">{lang === 'sk' ? 'Fakt' : 'Fact'}</span>
       </button>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)}>
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-20 px-4 bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)}>
           <div className="w-full max-w-sm bg-slate-900 border border-emerald-500/20 rounded-2xl p-4 shadow-2xl backdrop-blur-xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-emerald-300">{data.fact.emoji} {lang === 'sk' ? 'Denný fakt' : 'Daily Fact'}</h3>

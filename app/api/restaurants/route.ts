@@ -24,24 +24,24 @@ function calcDistance(name: string): number {
   return Math.round((0.2 + (hash % 43) * 0.1) * 10) / 10
 }
 
-// Generate a deterministic food photo URL from cuisine keywords
-function foodPhoto(cuisine: string, idx: number): string {
-  const keywords: Record<string, string> = {
-    'slovenská': 'food', 'medzinárodná': 'dinner', 'francúzska': 'french,food',
-    'talianska': 'pasta', 'mexická': 'mexican,food', 'ázijská': 'asian,food',
-    'vegánska': 'vegan,food', 'vegetariánska': 'salad', 'burger': 'burger',
-    'steakhouse': 'steak', 'pizza': 'pizza', 'gastropub': 'food,pub', 'fusion': 'food,plate',
-    'kaviareň': 'coffee,brunch', 'grill': 'grill,meat', 'pivárska': 'beer,food',
-    'healthy': 'healthy,food',
-  }
+// Cuisine emoji mapping
+function cuisineEmoji(cuisine: string): string {
   const lower = cuisine.toLowerCase()
-  let kw = 'restaurant,food'
-  for (const [k, v] of Object.entries(keywords)) {
-    if (lower.includes(k)) { kw = v; break }
-  }
-  return `https://loremflickr.com/400/300/${kw}?lock=${idx}`
+  if (lower.includes('slovenská') || lower.includes('stredoeur')) return '🥟'
+  if (lower.includes('talianska') || lower.includes('pizza')) return '🍕'
+  if (lower.includes('francúzska')) return '🥐'
+  if (lower.includes('mexická')) return '🌮'
+  if (lower.includes('ázijská') || lower.includes('čín')) return '🍜'
+  if (lower.includes('vegán')) return '🌱'
+  if (lower.includes('vegetari')) return '🥗'
+  if (lower.includes('burger') || lower.includes('americká')) return '🍔'
+  if (lower.includes('steakhouse') || lower.includes('grill')) return '🥩'
+  if (lower.includes('gastropub') || lower.includes('pivár')) return '🍺'
+  if (lower.includes('kaviareň') || lower.includes('bistro')) return '☕'
+  if (lower.includes('fusion')) return '🍱'
+  if (lower.includes('healthy')) return '🥑'
+  return '🍽️'
 }
-
 // Curated real restaurants for all regional capitals
 const ALL_RESTAURANTS: Restaurant[] = [
   // Bratislava
@@ -130,10 +130,10 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.json({
-    restaurants: restaurants.map((r, i) => ({
+    restaurants: restaurants.map((r) => ({
       ...r,
       distance: calcDistance(r.name),
-      photoUrl: r.photoUrl || foodPhoto(r.cuisine, i),
+      emoji: cuisineEmoji(r.cuisine),
     })),
     city,
     cityName: CITY_NAMES[city],
