@@ -42,7 +42,6 @@ import SpeedtestWidget from '@/components/widgets/SpeedtestWidget'
 import OfficeWaitWidget from '@/components/widgets/OfficeWaitWidget'
 import InflationWidget from '@/components/widgets/InflationWidget'
 import SportSuggestionsWidget from '@/components/widgets/SportSuggestionsWidget'
-import DailyQuoteWidget from '@/components/widgets/DailyQuoteWidget'
 import MHDWidget from '@/components/widgets/MHDWidget'
 import SettingsPanel from '@/components/SettingsPanel'
 import { useLang } from '@/hooks/useLang'
@@ -76,8 +75,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* Denný citát & Fakt */}
-        {isWidgetVisible('extras') && <DailyQuoteWidget />}
+        {/* Denný citát & Fakt - now rendered as mini widgets in DaySummary */}
 
         {/* Správy (full width) */}
         {isWidgetVisible('news') && (
@@ -93,14 +91,16 @@ export default function Home() {
             <SectionLabel label={lang === 'sk' ? '🇸🇰 Slovensko' : '🇸🇰 Slovakia'} />
 
             {/* Health alerts */}
-            <HealthAlertsWidget />
 
-            {/* Transport & Flights */}
+            {/* Transport & Flights + Health under */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
               <TrafficWidget />
               <FlightsWidget />
               <MHDWidget />
               <OfficeWaitWidget />
+            </div>
+            <div className="mt-3">
+              <HealthAlertsWidget />
             </div>
 
             {/* Events, Jobs, Sport suggestions */}

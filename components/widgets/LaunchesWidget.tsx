@@ -102,7 +102,7 @@ export default function LaunchesWidget() {
               ? t('launches.justLaunched')
               : formatDistanceToNow(netDate, { addSuffix: true, locale: loc })
             const formatted = format(netDate, 'd. MMM yyyy HH:mm', { locale: loc })
-            const primaryUrl = launch.webcastUrl ?? launch.infoUrl ?? launch.launchLibraryUrl
+            const primaryUrl = launch.infoUrl ?? launch.webcastUrl ?? launch.launchLibraryUrl
 
             return (
               <div key={launch.id} className={`rounded-xl p-3 border ${i === 0 ? 'bg-purple-500/10 border-purple-500/20' : 'bg-white/3 border-white/5'}`}>

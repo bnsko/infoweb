@@ -4,14 +4,14 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 
 export interface UserPreferences {
   hiddenWidgets: string[]
-  theme: 'dark' | 'midnight' | 'ocean'
+  theme: 'carbon' | 'obsidian' | 'titanium' | 'graphite'
   compactMode: boolean
   refreshRate: 'fast' | 'normal' | 'slow'
 }
 
 const DEFAULT_PREFS: UserPreferences = {
   hiddenWidgets: [],
-  theme: 'dark',
+  theme: 'carbon',
   compactMode: false,
   refreshRate: 'normal',
 }

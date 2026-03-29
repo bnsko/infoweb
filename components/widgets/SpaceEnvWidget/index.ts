@@ -1,1 +1,1 @@
-export { default } from './SpaceEnvWidget'
+export { default, ISSPassMini } from './SpaceEnvWidget'

@@ -173,7 +173,8 @@ function MoonSkyPopup({ onClose }: { onClose: () => void }) {
   ]
 
   return (
-    <div ref={popupRef} className="absolute right-0 top-full mt-2 z-50 w-[360px] bg-slate-900/98 border border-yellow-500/20 rounded-2xl p-4 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-200">
+    <div ref={popupRef} className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={onClose}>
+      <div className="w-full max-w-[380px] max-h-[80vh] overflow-y-auto bg-slate-900/98 border border-yellow-500/20 rounded-2xl p-4 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-200" onClick={e => e.stopPropagation()}>
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-bold text-yellow-300">🌙 Mesiac & Obloha</h3>
         <button onClick={onClose} className="text-slate-500 hover:text-white text-lg leading-none">✕</button>
@@ -291,6 +292,7 @@ function MoonSkyPopup({ onClose }: { onClose: () => void }) {
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }
@@ -330,6 +332,7 @@ export default function StatsWidget() {
   const closeMoon = useCallback(() => setMoonOpen(false), [])
 
   const cityTemps = data?.cityTemps ?? []
+  const cityAQI = data?.cityAQI ?? []
   const sorted = [...cityTemps].sort((a, b) => b.temp - a.temp)
   const hottest = sorted[0]
   const coldest = sorted[sorted.length - 1]
@@ -415,7 +418,7 @@ export default function StatsWidget() {
                   )}
                   {/* City name + current weather icon */}
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-2xl">{wmo.icon}</span>
+                    <span className={`text-2xl ${c.weatherCode >= 61 && c.weatherCode <= 67 ? 'anim-bounce' : c.weatherCode >= 95 ? 'anim-pulse-dot' : c.weatherCode >= 80 ? 'anim-sway' : ''}`}>{wmo.icon}</span>
                     <div>
                       <div className="text-[12px] font-bold text-white">{c.name}</div>
                       <div className="text-[9px] text-slate-500">{wmo.label}</div>
@@ -443,6 +446,16 @@ export default function StatsWidget() {
                         <span className="text-slate-500">🌧️ Zrážky</span>
                         <span className="text-slate-300 text-right">{c.precipitation} mm</span>
                       </>}
+                      {(() => {
+                        const aqiData = cityAQI.find(a => a.key === c.key)
+                        if (!aqiData || aqiData.aqi <= 0) return null
+                        const aqiColor = aqiData.aqi <= 20 ? 'text-green-400' : aqiData.aqi <= 40 ? 'text-yellow-400' : aqiData.aqi <= 60 ? 'text-orange-400' : 'text-red-400'
+                        const aqiLabel = aqiData.aqi <= 20 ? 'Výborná' : aqiData.aqi <= 40 ? 'Dobrá' : aqiData.aqi <= 60 ? 'Stredná' : aqiData.aqi <= 80 ? 'Zlá' : 'Veľmi zlá'
+                        return <>
+                          <span className="text-slate-500">🌬️ Vzduch</span>
+                          <span className={`text-right font-semibold ${aqiColor}`}>{aqiData.aqi} · {aqiLabel}</span>
+                        </>
+                      })()}
                     </div>
                   )}
                   {/* Tomorrow */}

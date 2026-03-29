@@ -105,9 +105,10 @@ export default function SpeedtestWidget() {
         <span className={`text-slate-600 text-[8px] transition-transform ${open ? 'rotate-180' : ''}`}>▼</span>
       </button>
 
-      {/* Expandable panel */}
+      {/* Expandable panel - fixed overlay */}
       {open && (
-        <div className="absolute top-full left-0 mt-1 z-40 w-80 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-3">
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setOpen(false)}>
+        <div className="w-full max-w-xs bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-3" onClick={e => e.stopPropagation()}>
           {/* Run test button */}
           <div className="text-center mb-3">
             <button
@@ -149,6 +150,7 @@ export default function SpeedtestWidget() {
               </div>
             </div>
           )}
+        </div>
         </div>
       )}
     </div>

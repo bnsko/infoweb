@@ -7,7 +7,7 @@ const LAMIN = 47.7, LOMIN = 16.8, LAMAX = 49.6, LOMAX = 22.6
 
 // Estimate realistic flight count based on time of day
 // Slovakia typically has 30-80 aircraft overhead during busy hours
-function estimateFlights(): { flights: Flight[], count: number, estimated: boolean } {
+function estimateFlights(): { flights: (Flight & { origin?: string; destination?: string })[], count: number, estimated: boolean } {
   const now = new Date()
   const hour = now.getUTCHours()
   // Rough pattern: peak 8-20 UTC, quiet at night
@@ -15,19 +15,43 @@ function estimateFlights(): { flights: Flight[], count: number, estimated: boole
   // Add some variance
   const count = baseCount + Math.floor(Math.random() * 10) - 5
 
-  const airlines = ['OK-', 'OM-', 'HA-', 'SP-', 'OE-', 'D-A', 'G-', 'EI-', 'F-', 'LZ-']
-  const flights: Flight[] = Array.from({ length: Math.min(count, 20) }, (_, i) => {
-    const prefix = airlines[i % airlines.length]
+  const ROUTES = [
+    { prefix: 'OM-', country: 'Slovakia', origin: 'BTS', destination: 'LHR' },
+    { prefix: 'OK-', country: 'Czech Republic', origin: 'PRG', destination: 'FCO' },
+    { prefix: 'HA-', country: 'Hungary', origin: 'BUD', destination: 'CDG' },
+    { prefix: 'SP-', country: 'Poland', origin: 'WAW', destination: 'BCN' },
+    { prefix: 'OE-', country: 'Austria', origin: 'VIE', destination: 'IST' },
+    { prefix: 'D-A', country: 'Germany', origin: 'FRA', destination: 'DXB' },
+    { prefix: 'G-', country: 'United Kingdom', origin: 'LHR', destination: 'BTS' },
+    { prefix: 'EI-', country: 'Ireland', origin: 'DUB', destination: 'VIE' },
+    { prefix: 'F-', country: 'France', origin: 'CDG', destination: 'BUD' },
+    { prefix: 'LZ-', country: 'Bulgaria', origin: 'SOF', destination: 'FRA' },
+    { prefix: 'OM-', country: 'Slovakia', origin: 'KSC', destination: 'AMS' },
+    { prefix: 'OK-', country: 'Czech Republic', origin: 'PRG', destination: 'ATH' },
+    { prefix: 'HA-', country: 'Hungary', origin: 'BUD', destination: 'LHR' },
+    { prefix: 'SP-', country: 'Poland', origin: 'KRK', destination: 'MXP' },
+    { prefix: 'OE-', country: 'Austria', origin: 'VIE', destination: 'JFK' },
+    { prefix: 'D-A', country: 'Germany', origin: 'MUC', destination: 'WAW' },
+    { prefix: 'TC-', country: 'Turkey', origin: 'IST', destination: 'PRG' },
+    { prefix: 'SX-', country: 'Greece', origin: 'ATH', destination: 'VIE' },
+    { prefix: 'OM-', country: 'Slovakia', origin: 'BTS', destination: 'AYT' },
+    { prefix: 'EI-', country: 'Ireland', origin: 'STN', destination: 'KSC' },
+  ]
+
+  const flights = Array.from({ length: Math.min(count, 20) }, (_, i) => {
+    const route = ROUTES[i % ROUTES.length]
     return {
       icao24: `fake${i.toString(16).padStart(4, '0')}`,
-      callsign: `${prefix}${String(1000 + i + Math.floor(Math.random() * 8000))}`,
-      origin_country: ['Slovakia', 'Czech Republic', 'Hungary', 'Poland', 'Austria', 'Germany'][i % 6],
+      callsign: `${route.prefix}${String(1000 + i + Math.floor(Math.random() * 8000))}`,
+      origin_country: route.country,
       longitude: LOMIN + Math.random() * (LOMAX - LOMIN),
       latitude: LAMIN + Math.random() * (LAMAX - LAMIN),
       altitude: 8000 + Math.random() * 4000,
       velocity: 600 + Math.floor(Math.random() * 300),
       true_track: Math.random() * 360,
       on_ground: false,
+      origin: route.origin,
+      destination: route.destination,
     }
   })
 
