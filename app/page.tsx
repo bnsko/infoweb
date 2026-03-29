@@ -92,15 +92,17 @@ export default function Home() {
 
             {/* Health alerts */}
 
-            {/* Transport & Flights + Health under */}
+            {/* Transport & Flights + Health */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
               <TrafficWidget />
               <FlightsWidget />
               <MHDWidget />
               <OfficeWaitWidget />
             </div>
-            <div className="mt-3">
-              <HealthAlertsWidget />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-3">
+              <div className="lg:col-span-4">
+                <HealthAlertsWidget />
+              </div>
             </div>
 
             {/* Events, Jobs, Sport suggestions */}

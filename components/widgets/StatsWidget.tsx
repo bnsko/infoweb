@@ -164,8 +164,8 @@ function MoonSkyPopup({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     function handleClick(e: MouseEvent) { if (popupRef.current && !popupRef.current.contains(e.target as Node)) onClose() }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
+    const timer = setTimeout(() => document.addEventListener('mousedown', handleClick), 10)
+    return () => { clearTimeout(timer); document.removeEventListener('mousedown', handleClick) }
   }, [onClose])
 
   const TABS: { key: MoonTab; label: string }[] = [
@@ -173,8 +173,8 @@ function MoonSkyPopup({ onClose }: { onClose: () => void }) {
   ]
 
   return (
-    <div ref={popupRef} className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={onClose}>
-      <div className="w-full max-w-[380px] max-h-[80vh] overflow-y-auto bg-slate-900/98 border border-yellow-500/20 rounded-2xl p-4 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-200" onClick={e => e.stopPropagation()}>
+    <div ref={popupRef} className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
+      <div className="w-full max-w-[380px] max-h-[80vh] overflow-y-auto bg-slate-900 border border-yellow-500/20 rounded-2xl p-4 shadow-2xl backdrop-blur-xl" onClick={e => e.stopPropagation()}>
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-bold text-yellow-300">🌙 Mesiac & Obloha</h3>
         <button onClick={onClose} className="text-slate-500 hover:text-white text-lg leading-none">✕</button>
