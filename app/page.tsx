@@ -37,6 +37,9 @@ import JobsWidget from '@/components/widgets/JobsWidget'
 import DealsWidget from '@/components/widgets/DealsWidget'
 import PodcastWidget from '@/components/widgets/PodcastWidget'
 import SpeedtestWidget from '@/components/widgets/SpeedtestWidget'
+import SlovakHistoryWidget from '@/components/widgets/SlovakHistoryWidget'
+import YearsAgoWidget from '@/components/widgets/YearsAgoWidget'
+import HistoryNumbersWidget from '@/components/widgets/HistoryNumbersWidget'
 import OfficeWaitWidget from '@/components/widgets/OfficeWaitWidget'
 import InflationWidget from '@/components/widgets/InflationWidget'
 import SportSuggestionsWidget from '@/components/widgets/SportSuggestionsWidget'
@@ -55,13 +58,11 @@ export default function Home() {
 
       <main className="max-w-[1680px] mx-auto px-4 pt-4 pb-10 space-y-6">
 
-        {/* Day summary + quick nav + speedtest */}
-        {isWidgetVisible('daysummary') && (
-          <div className="flex flex-col sm:flex-row gap-3 items-start">
-            <div className="flex-1 w-full"><DaySummaryWidget /></div>
-            <SpeedtestWidget />
-          </div>
-        )}
+        {/* Day summary */}
+        {isWidgetVisible('daysummary') && <DaySummaryWidget />}
+
+        {/* Internet Speed Test */}
+        {isWidgetVisible('speedtest') && <SpeedtestWidget />}
 
         {/* Flash News - breaking news ticker */}
         {isWidgetVisible('flashnews') && <FlashNewsWidget />}
@@ -200,7 +201,14 @@ export default function Home() {
         {isWidgetVisible('history') && (
           <div id="sec-history">
             <SectionLabel label={t('sec.history')} />
-            <OnThisDayWidget />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <OnThisDayWidget />
+              <YearsAgoWidget />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <SlovakHistoryWidget />
+              <HistoryNumbersWidget />
+            </div>
           </div>
         )}
 

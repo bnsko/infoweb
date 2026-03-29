@@ -14,7 +14,7 @@ function getDayOfYear(d: Date): number {
 }
 
 /* ── Mini expandable from main panel ── */
-export function NamedayMini() {
+export function NamedayMini({ showLabel }: { showLabel?: boolean }) {
   const [open, setOpen] = useState(false)
   const now = useMemo(() => new Date(), [])
   const { t, lang } = useLang()
@@ -39,12 +39,12 @@ export function NamedayMini() {
     <>
       <button onClick={() => setOpen(!open)}
         className="flex items-center gap-1 px-2 py-1 rounded-lg bg-yellow-500/8 border border-yellow-500/15 hover:bg-yellow-500/15 transition-all text-[10px] shrink-0">
-        <span>📅</span>
+        {showLabel && <span className="text-slate-400">{lang === 'sk' ? 'Dnes má meniny' : 'Name day'}</span>}
         <span className="text-yellow-300 font-bold">{today}</span>
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setOpen(false)}>
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setOpen(false)}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
           <div className="relative w-full max-w-[360px] bg-[var(--bg-card)] border border-yellow-500/20 rounded-2xl shadow-2xl p-4 space-y-3 max-h-[80vh] overflow-y-auto"
                onClick={e => e.stopPropagation()}>

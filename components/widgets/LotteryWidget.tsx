@@ -23,8 +23,10 @@ interface LotteryData {
 const GAME_COLORS: Record<string, { bg: string; border: string; text: string; ball: string }> = {
   'Loto': { bg: 'from-yellow-500/10', border: 'border-yellow-500/20', text: 'text-yellow-400', ball: '#fbbf24' },
   'Eurojackpot': { bg: 'from-indigo-500/10', border: 'border-indigo-500/20', text: 'text-indigo-400', ball: '#818cf8' },
+  'Euromilióny': { bg: 'from-sky-500/10', border: 'border-sky-500/20', text: 'text-sky-400', ball: '#38bdf8' },
   'Šanca': { bg: 'from-emerald-500/10', border: 'border-emerald-500/20', text: 'text-emerald-400', ball: '#34d399' },
   'Keno': { bg: 'from-pink-500/10', border: 'border-pink-500/20', text: 'text-pink-400', ball: '#f472b6' },
+  'Šťastných': { bg: 'from-orange-500/10', border: 'border-orange-500/20', text: 'text-orange-400', ball: '#fb923c' },
 }
 
 function getStyle(game: string) {
@@ -38,8 +40,7 @@ export default function LotteryWidget() {
   const { lang } = useLang()
   const { data, loading, error, refetch } = useWidget<LotteryData>('/api/lottery', 5 * 60 * 1000)
 
-  // Only show first 3 games
-  const results = (data?.results ?? []).slice(0, 3)
+  const results = (data?.results ?? []).slice(0, 6)
 
   return (
     <WidgetCard
@@ -78,23 +79,26 @@ export default function LotteryWidget() {
                 </div>
 
                 {result.drawn && result.numbers.length > 0 ? (
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {result.numbers.map((num, j) => (
-                      <span
-                        key={j}
-                        className="w-8 h-8 flex items-center justify-center rounded-full text-xs font-bold text-white shadow-lg"
-                        style={{ background: `linear-gradient(135deg, ${style.ball}, ${style.ball}88)`, boxShadow: `0 2px 8px ${style.ball}40` }}
-                      >
-                        {num}
-                      </span>
-                    ))}
+                  <div className="flex flex-wrap items-center gap-1">
+                    {result.numbers.map((num, j) => {
+                      const isMany = result.numbers.length > 7
+                      return (
+                        <span
+                          key={j}
+                          className={`${isMany ? 'w-6 h-6 text-[9px]' : 'w-7 h-7 text-[11px]'} flex items-center justify-center rounded-full font-bold text-white shadow-lg`}
+                          style={{ background: `linear-gradient(135deg, ${style.ball}, ${style.ball}88)`, boxShadow: `0 2px 6px ${style.ball}40` }}
+                        >
+                          {num}
+                        </span>
+                      )
+                    })}
                     {result.bonus && result.bonus.length > 0 && (
                       <>
-                        <span className="text-slate-600 mx-1">+</span>
+                        <span className="text-slate-600 mx-0.5">+</span>
                         {result.bonus.map((num, j) => (
                           <span
                             key={`b${j}`}
-                            className="w-8 h-8 flex items-center justify-center rounded-full text-xs font-bold border-2 text-slate-300"
+                            className="w-6 h-6 flex items-center justify-center rounded-full text-[9px] font-bold border-2 text-slate-300"
                             style={{ borderColor: style.ball }}
                           >
                             {num}

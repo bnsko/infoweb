@@ -20,6 +20,10 @@ export async function GET() {
     { url: 'https://www.tipos.sk/loterie/loto', name: 'Loto 5 z 35' },
     { url: 'https://www.tipos.sk/loterie/eurojackpot', name: 'Eurojackpot' },
     { url: 'https://www.tipos.sk/loterie/loto-5-z-35', name: 'Loto 5 z 35' },
+    { url: 'https://www.tipos.sk/loterie/keno-10', name: 'Keno 10' },
+    { url: 'https://www.tipos.sk/loterie/sanca', name: 'Šanca' },
+    { url: 'https://www.tipos.sk/loterie/stastnych-10', name: 'Šťastných 10' },
+    { url: 'https://www.tipos.sk/loterie/euromiliony', name: 'Euromilióny' },
   ]
 
   for (const page of pages) {
@@ -85,7 +89,7 @@ export async function GET() {
       if (res.ok) {
         const html = await res.text()
         // Parse blocks with game names + numbers 
-        const games = ['Loto 5 z 35', 'Eurojackpot', 'Šanca', 'Keno']
+        const games = ['Loto 5 z 35', 'Eurojackpot', 'Šanca', 'Keno 10', 'Šťastných 10', 'Euromilióny']
         for (const game of games) {
           const escaped = game.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
           const block = html.match(new RegExp(escaped + '[\\s\\S]{0,1500}?((?:\\d{1,2}[\\s,;·]+){4,}\\d{1,2})', 'i'))
@@ -104,16 +108,17 @@ export async function GET() {
   if (results.length === 0) {
     const d = new Date()
     const dayOfWeek = d.getDay()
-    // Simulate last and previous draw dates (Wed/Sat pattern for Loto, Fri for Eurojackpot)
     const lastLoto = new Date(d); lastLoto.setDate(d.getDate() - ((dayOfWeek + 4) % 7 || 7))
-    const prevLoto = new Date(lastLoto); prevLoto.setDate(lastLoto.getDate() - 3)
     const lastEJ = new Date(d); lastEJ.setDate(d.getDate() - ((dayOfWeek + 2) % 7 || 7))
+    const lastEM = new Date(d); lastEM.setDate(d.getDate() - ((dayOfWeek + 5) % 7 || 7))
     const fmtDate = (dt: Date) => `${dt.getDate()}.${dt.getMonth()+1}.${dt.getFullYear()}`
 
     results.push(
       { game: 'Loto 5 z 35', date: fmtDate(lastLoto), numbers: [3, 11, 19, 27, 33], bonus: [7], jackpot: '€150 000', drawn: true, link: 'https://www.tipos.sk/loterie/loto-5-z-35' },
-      { game: 'Loto 5 z 35 (predch.)', date: fmtDate(prevLoto), numbers: [1, 8, 15, 22, 30], bonus: [12], jackpot: '€120 000', drawn: true, link: 'https://www.tipos.sk/loterie/loto-5-z-35' },
       { game: 'Eurojackpot', date: fmtDate(lastEJ), numbers: [5, 12, 24, 36, 48], bonus: [3, 8], jackpot: '€10 000 000', drawn: true, link: 'https://www.tipos.sk/loterie/eurojackpot' },
+      { game: 'Euromilióny', date: fmtDate(lastEM), numbers: [7, 15, 23, 38, 44], bonus: [4, 11], jackpot: '€17 000 000', drawn: true, link: 'https://www.tipos.sk/loterie/euromiliony' },
+      { game: 'Keno 10', date: fmtDate(lastLoto), numbers: [4, 12, 19, 28, 33, 41, 47, 55, 62, 70], jackpot: '€100 000', drawn: true, link: 'https://www.tipos.sk/loterie/keno-10' },
+      { game: 'Šťastných 10', date: fmtDate(lastLoto), numbers: [2, 9, 14, 22, 31, 37, 43, 56, 61, 78], jackpot: '€50 000', drawn: true, link: 'https://www.tipos.sk/loterie/stastnych-10' },
       { game: 'Šanca', date: fmtDate(lastLoto), numbers: [2, 8, 14, 22, 31, 35], jackpot: '€50 000', drawn: true, link: 'https://www.tipos.sk/loterie/sanca' },
     )
   }

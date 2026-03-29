@@ -173,7 +173,7 @@ function MoonSkyPopup({ onClose }: { onClose: () => void }) {
   ]
 
   return (
-    <div ref={popupRef} className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
+    <div ref={popupRef} className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
       <div className="w-full max-w-[380px] max-h-[80vh] overflow-y-auto bg-slate-900 border border-yellow-500/20 rounded-2xl p-4 shadow-2xl backdrop-blur-xl" onClick={e => e.stopPropagation()}>
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-bold text-yellow-300">🌙 Mesiac & Obloha</h3>
@@ -354,6 +354,14 @@ export default function StatsWidget() {
               <span>{moon.illumination}%</span>
             </button>
           )}
+          {/* Sunrise/Sunset single info */}
+          {cityTemps[0]?.sunrise && (
+            <span className="flex items-center gap-1 text-[10px] text-amber-400/80 font-mono tabular-nums">
+              🌅 {new Date(cityTemps[0].sunrise).toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' })}
+              <span className="text-slate-600 mx-0.5">·</span>
+              🌇 {cityTemps[0].sunset ? new Date(cityTemps[0].sunset).toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }) : '–'}
+            </span>
+          )}
           {/* Settings trigger */}
           <button onClick={() => setShowPrefs(p => !p)}
             className={`px-1.5 py-1 rounded-lg text-[11px] transition-all border ${
@@ -425,9 +433,9 @@ export default function StatsWidget() {
                     </div>
                   </div>
                   {/* Temperature */}
-                  <div className="flex items-baseline gap-1 mb-1.5">
-                    <span className="text-3xl font-bold tabular-nums" style={{ color: tempColor }}>{c.temp}°</span>
-                    <span className="text-[10px] text-slate-500">pocit {c.feelsLike}°</span>
+                  <div className="flex items-baseline gap-1 mb-1">
+                    <span className="text-2xl font-bold tabular-nums" style={{ color: tempColor }}>{c.temp}°</span>
+                    <span className="text-[9px] text-slate-500">pocit {c.feelsLike}°</span>
                   </div>
                   {/* Min/Max bar */}
                   <div className="mb-2">
@@ -436,10 +444,6 @@ export default function StatsWidget() {
                   {/* Details grid */}
                   {sections.details && (
                     <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[9px]">
-                      <span className="text-slate-500">🌅 Východ</span>
-                      <span className="text-amber-400 text-right font-semibold">{c.sunrise ? new Date(c.sunrise).toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }) : '–'}</span>
-                      <span className="text-slate-500">🌇 Západ</span>
-                      <span className="text-orange-400 text-right font-semibold">{c.sunset ? new Date(c.sunset).toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' }) : '–'}</span>
                       <span className="text-slate-500">💨 Vietor</span>
                       <span className="text-slate-300 text-right">{c.windSpeed} km/h {windDirStr(c.windDir)}</span>
                       <span className="text-slate-500">🌡️ Tlak</span>
@@ -456,8 +460,8 @@ export default function StatsWidget() {
                         const aqiColor = aqiData.aqi <= 20 ? 'text-green-400' : aqiData.aqi <= 40 ? 'text-yellow-400' : aqiData.aqi <= 60 ? 'text-orange-400' : 'text-red-400'
                         const aqiLabel = aqiData.aqi <= 20 ? 'Výborná' : aqiData.aqi <= 40 ? 'Dobrá' : aqiData.aqi <= 60 ? 'Stredná' : aqiData.aqi <= 80 ? 'Zlá' : 'Veľmi zlá'
                         return <>
-                          <span className="text-slate-500">🌬️ Vzduch</span>
-                          <span className={`text-right font-semibold ${aqiColor}`}>{aqiData.aqi} · {aqiLabel}</span>
+                          <span className="text-slate-500">🌬️ Čistota ovzdušia</span>
+                          <span className={`text-right font-semibold ${aqiColor}`}>AQI {aqiData.aqi} · {aqiLabel}</span>
                         </>
                       })()}
                     </div>

@@ -76,18 +76,78 @@ export async function GET() {
     if (r.status === 'fulfilled') allItems.push(...r.value)
   }
 
-  // Sort by timestamp descending, take top 5
-  allItems.sort((a, b) => b.timestamp - a.timestamp)
-  const top = allItems.slice(0, 12).map(item => ({
-    ...item,
-    ago: relativeAgo(item.timestamp),
-  }))
+  // Filter: only last 15 minutes
+  const fifteenMinAgo = Date.now() - 15 * 60 * 1000
+  let recentItems = allItems.filter(i => i.timestamp >= fifteenMinAgo)
+  // If nothing in 15 min, take last 60 min as fallback
+  if (recentItems.length === 0) {
+    const hourAgo = Date.now() - 60 * 60 * 1000
+    recentItems = allItems.filter(i => i.timestamp >= hourAgo)
+  }
 
-  // Generate a simple extractive summary of the day's top stories
-  const summaryItems = allItems.slice(0, 5).map(item => item.title)
+  // Sort by timestamp descending
+  recentItems.sort((a, b) => b.timestamp - a.timestamp)
+
+  // Translate non-SK titles to Slovak (simple keyword-based translation for common EN headlines)
+  const translated = recentItems.slice(0, 12).map(item => {
+    let title = item.title
+    // If source is English (BBC, NYTimes), do basic translation
+    if (item.source === 'BBC World' || item.source === 'NYTimes') {
+      title = translateHeadline(title)
+    }
+    return { ...item, title, ago: relativeAgo(item.timestamp) }
+  })
+
+  const summaryItems = translated.slice(0, 5).map(item => item.title)
   const summary = summaryItems.length > 0
     ? `🔑 ${summaryItems.join(' · ')}`
     : ''
 
-  return NextResponse.json({ items: top, summary, timestamp: Date.now() })
+  return NextResponse.json({ items: translated, summary, timestamp: Date.now() })
+}
+
+// Simple keyword-based EN→SK headline translation
+function translateHeadline(title: string): string {
+  const replacements: [RegExp, string][] = [
+    [/\bbreaking\b/gi, 'Aktuálne'],
+    [/\bwar\b/gi, 'vojna'],
+    [/\bpeace\b/gi, 'mier'],
+    [/\bpresident\b/gi, 'prezident'],
+    [/\belection(s)?\b/gi, 'voľby'],
+    [/\bgovernment\b/gi, 'vláda'],
+    [/\bpolice\b/gi, 'polícia'],
+    [/\battack(s)?\b/gi, 'útok'],
+    [/\bdead\b/gi, 'mŕtvych'],
+    [/\bkilled\b/gi, 'zabitých'],
+    [/\bearth ?quake\b/gi, 'zemetrasenie'],
+    [/\bflood(s|ing)?\b/gi, 'záplavy'],
+    [/\bfire\b/gi, 'požiar'],
+    [/\bstorm\b/gi, 'búrka'],
+    [/\bclimate\b/gi, 'klíma'],
+    [/\beconomy\b/gi, 'ekonomika'],
+    [/\bmarket(s)?\b/gi, 'trhy'],
+    [/\bstock(s)?\b/gi, 'akcie'],
+    [/\btrade\b/gi, 'obchod'],
+    [/\bsays?\b/gi, 'hovorí'],
+    [/\breport(s)?\b/gi, 'správy'],
+    [/\bnew\b/gi, 'nový'],
+    [/\bworld\b/gi, 'svet'],
+    [/\bcountry\b/gi, 'krajina'],
+    [/\bleader(s)?\b/gi, 'lídri'],
+    [/\bcrisis\b/gi, 'kríza'],
+    [/\bhealth\b/gi, 'zdravie'],
+    [/\bCovid\b/gi, 'Covid'],
+    [/\bvirus\b/gi, 'vírus'],
+    [/\bsecurity\b/gi, 'bezpečnosť'],
+    [/\bEurope\b/gi, 'Európa'],
+    [/\bRussia\b/gi, 'Rusko'],
+    [/\bUkraine\b/gi, 'Ukrajina'],
+    [/\bChina\b/gi, 'Čína'],
+    [/\bUS\b/g, 'USA'],
+  ]
+  let result = title
+  for (const [pattern, replacement] of replacements) {
+    result = result.replace(pattern, replacement)
+  }
+  return result
 }

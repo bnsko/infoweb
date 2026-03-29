@@ -9,7 +9,7 @@ import SkeletonRows from '@/components/ui/SkeletonRows'
 interface Restaurant {
   name: string; cuisine: string; rating: number; priceRange: string
   location: string; description: string; url: string; city: string
-  tags?: string[]; distance?: number; photoUrl?: string
+  tags?: string[]; distance?: number; emoji?: string
 }
 
 interface Data { restaurants: Restaurant[]; city: string; cityName: string }
@@ -176,43 +176,31 @@ export default function RestaurantsWidget() {
       </div>
       {loading && <SkeletonRows rows={6} />}
       {!loading && data && sortedRestaurants.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[420px] overflow-y-auto scrollbar-hide">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[420px] overflow-y-auto scrollbar-hide">
           {sortedRestaurants.map((r, i) => (
             <a
               key={i}
               href={r.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-xl border border-white/5 hover:border-orange-500/20 bg-white/[0.02] hover:bg-white/[0.04] transition-all group overflow-hidden"
+              className="flex items-start gap-2.5 rounded-xl border border-white/5 hover:border-orange-500/20 bg-white/[0.02] hover:bg-white/[0.04] transition-all group p-2.5"
             >
-              {/* Food image */}
-              {r.photoUrl && (
-                <div className="relative h-28 overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={r.photoUrl} alt={r.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  <div className="absolute bottom-1.5 left-2 flex items-center gap-1.5">
-                    <span className="text-[10px] font-black text-amber-400 bg-black/50 backdrop-blur-sm px-1.5 py-0.5 rounded">
-                      ★ {r.rating}
-                    </span>
-                    <span className="text-[10px] font-bold text-white/80 bg-black/50 backdrop-blur-sm px-1.5 py-0.5 rounded">
-                      {r.priceRange}
-                    </span>
-                  </div>
-                  {r.tags?.includes('vegan') && (
-                    <span className="absolute top-1.5 right-2 text-[9px] bg-green-500/80 backdrop-blur-sm text-white px-1.5 py-0.5 rounded-full font-bold">🌱 Vegan</span>
-                  )}
+              {/* Emoji avatar */}
+              <div className="w-10 h-10 rounded-lg bg-orange-500/10 border border-orange-500/15 flex items-center justify-center text-xl shrink-0">
+                {r.emoji ?? '🍽️'}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <p className="text-[11px] text-slate-200 group-hover:text-white font-bold truncate">{r.name}</p>
+                  {r.tags?.includes('vegan') && <span className="text-[8px] bg-green-500/20 text-green-400 px-1 rounded font-bold">🌱</span>}
                 </div>
-              )}
-              {/* Info */}
-              <div className="p-2.5">
-                <p className="text-[12px] text-slate-200 group-hover:text-white font-bold line-clamp-1">{r.name}</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">{r.cuisine} · {r.location}</p>
-                <p className="text-[10px] text-slate-600 line-clamp-1 mt-0.5">{r.description}</p>
-                {r.distance != null && (
-                  <p className="text-[9px] text-slate-600 mt-1">📍 {r.distance} km od centra</p>
-                )}
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-[10px] text-amber-400 font-bold">★ {r.rating}</span>
+                  <span className="text-[9px] text-slate-600">{r.priceRange}</span>
+                  <span className="text-[9px] text-slate-600">·</span>
+                  <span className="text-[9px] text-slate-500">{r.cuisine}</span>
+                </div>
+                <p className="text-[9px] text-slate-600 truncate mt-0.5">{r.location}{r.distance != null ? ` · ${r.distance} km` : ''}</p>
               </div>
             </a>
           ))}
