@@ -1,44 +1,45 @@
 'use client'
 import { useState } from 'react'
 import WidgetCard from '@/components/ui/WidgetCard'
+import { useLang } from '@/hooks/useLang'
 
 const EU_MIX = [
-  { source: 'Obnovitelne', pct: 44, color: '#22c55e', emoji: '\ud83c\udf3f', sub: 'Vietor, Slnko, Voda' },
-  { source: 'Jadrova', pct: 23, color: '#3b82f6', emoji: '\u269b\ufe0f', sub: 'Nizke emisie CO2' },
-  { source: 'Plyn', pct: 18, color: '#f97316', emoji: '\ud83d\udd25', sub: 'Zemny plyn' },
-  { source: 'Uhlie', pct: 12, color: '#78716c', emoji: '\u2b1b', sub: 'Hnede + cierne uhlie' },
-  { source: 'Ostatne', pct: 3, color: '#a855f7', emoji: '\ud83e\uddea', sub: 'Biomasa, Ropa' },
+  { source: 'Obnoviteľné', pct: 44, color: '#22c55e', emoji: '🌿', sub: 'Vietor, Slnko, Voda' },
+  { source: 'Jadrová', pct: 23, color: '#3b82f6', emoji: '⚛️', sub: 'Nízke emisie CO₂' },
+  { source: 'Plyn', pct: 18, color: '#f97316', emoji: '🔥', sub: 'Zemný plyn' },
+  { source: 'Uhlie', pct: 12, color: '#78716c', emoji: '⬛', sub: 'Hnedé + čierne uhlie' },
+  { source: 'Ostatné', pct: 3, color: '#a855f7', emoji: '🧪', sub: 'Biomasa, Ropa' },
 ]
 
 const SK_MIX = [
-  { source: 'Jadrova', pct: 55, color: '#3b82f6', emoji: '\u269b\ufe0f' },
-  { source: 'Obnovitelne', pct: 24, color: '#22c55e', emoji: '\ud83c\udf3f' },
-  { source: 'Plyn', pct: 12, color: '#f97316', emoji: '\ud83d\udd25' },
-  { source: 'Uhlie', pct: 6, color: '#78716c', emoji: '\u2b1b' },
-  { source: 'Ostatne', pct: 3, color: '#a855f7', emoji: '\ud83e\uddea' },
+  { source: 'Jadrová', pct: 55, color: '#3b82f6', emoji: '⚛️' },
+  { source: 'Obnoviteľné', pct: 24, color: '#22c55e', emoji: '🌿' },
+  { source: 'Plyn', pct: 12, color: '#f97316', emoji: '🔥' },
+  { source: 'Uhlie', pct: 6, color: '#78716c', emoji: '⬛' },
+  { source: 'Ostatné', pct: 3, color: '#a855f7', emoji: '🧪' },
 ]
 
 const COUNTRY_PRICES = [
-  { country: 'Nemecko', flag: '\ud83c\udde9\ud83c\uddea', price: 92, carbon: 310, renewable: 52 },
-  { country: 'Francuzsko', flag: '\ud83c\uddeb\ud83c\uddf7', price: 67, carbon: 58, renewable: 28 },
-  { country: 'Spanielsko', flag: '\ud83c\uddea\ud83c\uddf8', price: 55, carbon: 155, renewable: 50 },
-  { country: 'Taliansko', flag: '\ud83c\uddee\ud83c\uddf9', price: 110, carbon: 290, renewable: 42 },
-  { country: 'Polsko', flag: '\ud83c\uddf5\ud83c\uddf1', price: 78, carbon: 650, renewable: 22 },
-  { country: 'Slovensko', flag: '\ud83c\uddf8\ud83c\uddf0', price: 65, carbon: 120, renewable: 24 },
-  { country: 'Cesko', flag: '\ud83c\udde8\ud83c\uddff', price: 72, carbon: 480, renewable: 17 },
-  { country: 'Rakusko', flag: '\ud83c\udde6\ud83c\uddf9', price: 80, carbon: 140, renewable: 78 },
-  { country: 'Dansko', flag: '\ud83c\udde9\ud83c\uddf0', price: 88, carbon: 95, renewable: 84 },
-  { country: 'Holandsko', flag: '\ud83c\uddf3\ud83c\uddf1', price: 95, carbon: 340, renewable: 33 },
+  { country: 'Nemecko', flag: '🇩🇪', price: 92, carbon: 310, renewable: 52 },
+  { country: 'Francúzsko', flag: '🇫🇷', price: 67, carbon: 58, renewable: 28 },
+  { country: 'Španielsko', flag: '🇪🇸', price: 55, carbon: 155, renewable: 50 },
+  { country: 'Taliansko', flag: '🇮🇹', price: 110, carbon: 290, renewable: 42 },
+  { country: 'Poľsko', flag: '🇵🇱', price: 78, carbon: 650, renewable: 22 },
+  { country: 'Slovensko', flag: '🇸🇰', price: 65, carbon: 120, renewable: 24 },
+  { country: 'Česko', flag: '🇨🇿', price: 72, carbon: 480, renewable: 17 },
+  { country: 'Rakúsko', flag: '🇦🇹', price: 80, carbon: 140, renewable: 78 },
+  { country: 'Dánsko', flag: '🇩🇰', price: 88, carbon: 95, renewable: 84 },
+  { country: 'Holandsko', flag: '🇳🇱', price: 95, carbon: 340, renewable: 33 },
 ]
 
 const SK_STATS = [
-  { label: 'Mochovce 1-4', value: '2\u00d7440 + 2\u00d7471 MW', emoji: '\u269b\ufe0f' },
-  { label: 'Bohunice V2', value: '2\u00d7505 MW', emoji: '\u269b\ufe0f' },
-  { label: 'Gabcikovo', value: '720 MW', emoji: '\ud83c\udf0a' },
-  { label: 'Spotreba SR', value: '~29 TWh/rok', emoji: '\u26a1' },
-  { label: 'Spotr. domacnost', value: '~3 200 kWh/rok', emoji: '\ud83c\udfe0' },
-  { label: 'Cena domacnost', value: '~0.18 \u20ac/kWh', emoji: '\ud83d\udcb0' },
-  { label: 'Carbon credit EU', value: '~68 \u20ac/tCO\u2082', emoji: '\ud83c\udfed' },
+  { label: 'Mochovce 1-4', value: '2×440 + 2×471 MW', emoji: '⚛️' },
+  { label: 'Bohunice V2', value: '2×505 MW', emoji: '⚛️' },
+  { label: 'Gabčíkovo', value: '720 MW', emoji: '🌊' },
+  { label: 'Spotreba SR', value: '~29 TWh/rok', emoji: '⚡' },
+  { label: 'Spotr. domácností', value: '~3 200 kWh/rok', emoji: '🏠' },
+  { label: 'Cena domácností', value: '~0.18 €/kWh', emoji: '💰' },
+  { label: 'Carbon credit EÚ', value: '~68 €/tCO₂', emoji: '🏭' },
 ]
 
 const SOURCES = [
@@ -46,7 +47,7 @@ const SOURCES = [
   { name: 'Ember Climate', url: 'https://ember-climate.org/data/' },
   { name: 'IEA', url: 'https://www.iea.org/data-and-statistics' },
   { name: 'SEPS', url: 'https://www.sepsas.sk/' },
-  { name: 'URSO', url: 'https://www.urso.gov.sk/' },
+  { name: 'ÚRSO', url: 'https://www.urso.gov.sk/' },
 ]
 
 const EU_AVG_PRICE = Math.round(COUNTRY_PRICES.reduce((s, c) => s + c.price, 0) / COUNTRY_PRICES.length)
@@ -80,26 +81,27 @@ function DonutChart({ segments, center }: { segments: { pct: number; color: stri
 }
 
 export default function EnergyWidget() {
+  const { lang } = useLang()
   const [tab, setTab] = useState<Tab>('mix')
 
   const TABS: { key: Tab; icon: string; label: string }[] = [
-    { key: 'mix', icon: '\ud83c\udf3f', label: 'Mix' },
-    { key: 'prices', icon: '\ud83d\udcb0', label: 'Ceny' },
-    { key: 'co2', icon: '\ud83d\udca8', label: 'CO\u2082' },
-    { key: 'sk', icon: '\ud83c\uddf8\ud83c\uddf0', label: 'Slovensko' },
+    { key: 'mix', icon: '🌿', label: lang === 'sk' ? 'Mix' : 'Mix' },
+    { key: 'prices', icon: '💰', label: lang === 'sk' ? 'Ceny' : 'Prices' },
+    { key: 'co2', icon: '🌍', label: 'CO₂' },
+    { key: 'sk', icon: '🇸🇰', label: lang === 'sk' ? 'Slovensko' : 'Slovakia' },
   ]
 
   return (
-    <WidgetCard accent="green" title="\u26a1 Energia EU & SK" icon="" onRefresh={() => {}}>
+    <WidgetCard accent="green" title={lang === 'sk' ? 'Energia EÚ & Slovensko' : 'Energy EU & Slovakia'} icon="⚡" onRefresh={() => {}}>
       <div className="flex gap-1.5 flex-wrap mb-3">
         <span className="bg-green-500/10 text-green-400 border border-green-500/20 rounded-full px-2 py-0.5 text-[9px] font-semibold">
-          {EU_MIX[0].pct}% obnovitelne EU
+          {EU_MIX[0].pct}% {lang === 'sk' ? 'obnoviteľné EÚ' : 'renewable EU'}
         </span>
         <span className="bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded-full px-2 py-0.5 text-[9px] font-semibold">
-          {EU_AVG_PRICE} \u20ac/MWh priemer
+          {EU_AVG_PRICE} €/MWh {lang === 'sk' ? 'priemer' : 'average'}
         </span>
         <span className="bg-slate-500/10 text-slate-300 border border-slate-500/20 rounded-full px-2 py-0.5 text-[9px] font-semibold">
-          {EU_AVG_CARBON} g CO\u2082/kWh
+          {EU_AVG_CARBON} g CO₂/kWh
         </span>
       </div>
 
@@ -117,7 +119,7 @@ export default function EnergyWidget() {
 
       {tab === 'mix' && (
         <div>
-          <p className="text-[10px] text-slate-500 mb-2 font-semibold">Energeticky mix EU 2024</p>
+          <p className="text-[10px] text-slate-500 mb-2 font-semibold">{lang === 'sk' ? 'Energetický mix EÚ 2024' : 'EU Energy Mix 2024'}</p>
           <div className="flex gap-3 items-center mb-3">
             <DonutChart segments={EU_MIX} center={`${EU_MIX[0].pct}%`} />
             <div className="flex-1 space-y-1">
@@ -132,15 +134,20 @@ export default function EnergyWidget() {
             </div>
           </div>
           <div className="bg-blue-500/8 border border-blue-500/15 rounded-xl p-2.5">
-            <p className="text-[10px] text-blue-300 font-semibold mb-1">{'\u269b\ufe0f'} Jadrova energia - trend</p>
-            <p className="text-[9px] text-slate-400">14 krajin EU prevadzkuje jadrove elektrarne. Francuzsko (56 reaktorov) a Slovensko (5 reaktorov) maju najvacsi podiel jadra v mixe.</p>
+            <p className="text-[10px] text-blue-300 font-semibold mb-1">⚛️ {lang === 'sk' ? 'Jadrová energia — trend' : 'Nuclear energy — trend'}</p>
+            <p className="text-[9px] text-slate-400">{lang === 'sk' ? '14 krajín EÚ prevádzkuje jadrové elektrárne. Francúzsko (56 reaktorov) a Slovensko (5 reaktorov) majú najväčší podiel jadra v mixe.' : '14 EU countries operate nuclear plants. France (56 reactors) and Slovakia (5 reactors) have the highest nuclear share.'}</p>
+          </div>
+          {/* Carbon footprint info */}
+          <div className="bg-emerald-500/8 border border-emerald-500/15 rounded-xl p-2.5 mt-2">
+            <p className="text-[10px] text-emerald-300 font-semibold mb-1">🌍 {lang === 'sk' ? 'Uhlíková stopa' : 'Carbon Footprint'}</p>
+            <p className="text-[9px] text-slate-400">{lang === 'sk' ? 'Priemerná EÚ domácnosť produkuje ~2.5 t CO₂/rok z elektriny. Slovensko vďaka jadru len ~1.1 t CO₂/rok — tretie najnižšie v EÚ.' : 'Average EU household produces ~2.5 t CO₂/yr from electricity. Slovakia thanks to nuclear only ~1.1 t CO₂/yr — 3rd lowest in EU.'}</p>
           </div>
         </div>
       )}
 
       {tab === 'prices' && (
         <div className="space-y-1.5 max-h-[340px] overflow-y-auto scrollbar-hide">
-          <p className="text-[10px] text-slate-500 mb-1">Velkoobchodna cena elektriny \u20ac/MWh</p>
+          <p className="text-[10px] text-slate-500 mb-1">{lang === 'sk' ? 'Veľkoobchodná cena elektriny €/MWh' : 'Wholesale electricity price €/MWh'}</p>
           {[...COUNTRY_PRICES].sort((a, b) => a.price - b.price).map(c => {
             const bar = Math.round((c.price / 120) * 100)
             return (
@@ -154,13 +161,13 @@ export default function EnergyWidget() {
               </div>
             )
           })}
-          <p className="text-[8px] text-slate-600 text-center mt-2">Zdroj: ENTSO-E Transparency</p>
+          <p className="text-[8px] text-slate-600 text-center mt-2">{lang === 'sk' ? 'Zdroj' : 'Source'}: <a href="https://transparency.entsoe.eu/" target="_blank" rel="noopener noreferrer" className="hover:text-green-400 transition-colors">ENTSO-E Transparency ↗</a></p>
         </div>
       )}
 
       {tab === 'co2' && (
         <div className="space-y-1.5 max-h-[340px] overflow-y-auto scrollbar-hide">
-          <p className="text-[10px] text-slate-500 mb-1">Uhlikova intenzita g CO\u2082/kWh</p>
+          <p className="text-[10px] text-slate-500 mb-1">{lang === 'sk' ? 'Uhlíková intenzita g CO₂/kWh' : 'Carbon intensity g CO₂/kWh'}</p>
           {[...COUNTRY_PRICES].sort((a, b) => a.carbon - b.carbon).map(c => {
             const bar = Math.round((c.carbon / 700) * 100)
             const color = c.carbon < 150 ? '#22c55e' : c.carbon < 350 ? '#eab308' : '#ef4444'
@@ -176,11 +183,11 @@ export default function EnergyWidget() {
             )
           })}
           <div className="flex gap-3 text-[8px] text-slate-600 justify-center mt-2">
-            <span>{'\ud83d\udfe2'} &lt;150 nizke</span>
-            <span>{'\ud83d\udfe1'} 150-350 stredne</span>
-            <span>{'\ud83d\udd34'} &gt;350 vysoke</span>
+            <span>🟢 &lt;150 {lang === 'sk' ? 'nízke' : 'low'}</span>
+            <span>🟡 150-350 {lang === 'sk' ? 'stredné' : 'medium'}</span>
+            <span>🔴 &gt;350 {lang === 'sk' ? 'vysoké' : 'high'}</span>
           </div>
-          <p className="text-[8px] text-slate-600 text-center">Zdroj: Ember Climate</p>
+          <p className="text-[8px] text-slate-600 text-center">{lang === 'sk' ? 'Zdroj' : 'Source'}: <a href="https://ember-climate.org/data/" target="_blank" rel="noopener noreferrer" className="hover:text-green-400 transition-colors">Ember Climate ↗</a></p>
         </div>
       )}
 
@@ -208,13 +215,27 @@ export default function EnergyWidget() {
               </div>
             ))}
           </div>
+          {/* Carbon footprint SK detail */}
+          <div className="bg-green-500/8 border border-green-500/15 rounded-xl p-2.5">
+            <p className="text-[10px] text-green-300 font-semibold mb-1">🌱 {lang === 'sk' ? 'Uhlíková stopa SR' : 'Slovakia Carbon Footprint'}</p>
+            <div className="grid grid-cols-2 gap-2 text-[9px]">
+              <div className="bg-white/[0.03] rounded-lg p-1.5 text-center">
+                <div className="text-green-400 font-bold">120 g</div>
+                <div className="text-slate-500">CO₂/kWh</div>
+              </div>
+              <div className="bg-white/[0.03] rounded-lg p-1.5 text-center">
+                <div className="text-green-400 font-bold">~1.1 t</div>
+                <div className="text-slate-500">CO₂/dom./rok</div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
       <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-3 pt-2 border-t border-white/5">
         {SOURCES.map(s => (
           <a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer" className="text-[8px] text-slate-600 hover:text-green-400 transition-colors">
-            {s.name} {'\u2197'}
+            {s.name} ↗
           </a>
         ))}
       </div>

@@ -1,1 +1,1 @@
-export { default } from './LaunchesWidget'
+export { default, LaunchesMini } from './LaunchesWidget'

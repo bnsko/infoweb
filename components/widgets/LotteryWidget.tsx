@@ -38,7 +38,7 @@ function getStyle(game: string) {
 export default function LotteryWidget() {
   const { lang } = useLang()
   const [expandedGame, setExpandedGame] = useState<string | null>(null)
-  const { data, loading, error, refetch } = useWidget<LotteryData>('/api/lottery', 30 * 60 * 1000)
+  const { data, loading, error, refetch } = useWidget<LotteryData>('/api/lottery', 5 * 60 * 1000)
 
   return (
     <WidgetCard
@@ -72,11 +72,12 @@ export default function LotteryWidget() {
                         💰 {result.jackpot}
                       </span>
                     )}
-                    {result.link && (
-                      <a href={result.link} target="_blank" rel="noopener noreferrer"
-                         onClick={e => e.stopPropagation()}
-                         className="text-[9px] text-slate-500 hover:text-slate-300 transition-colors">↗</a>
-                    )}
+                    <a href={result.link || `https://www.tipos.sk/${result.game.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`}
+                       target="_blank" rel="noopener noreferrer"
+                       onClick={e => e.stopPropagation()}
+                       className={`text-[9px] px-1.5 py-0.5 rounded-md border ${style.border} ${style.text} hover:opacity-80 transition-opacity`}>
+                      tipos.sk ↗
+                    </a>
                   </div>
                 </div>
 
@@ -117,7 +118,15 @@ export default function LotteryWidget() {
           })}
         </div>
       )}
-      <p className="text-[10px] text-slate-600 mt-2">tipos.sk · {lang === 'sk' ? 'obnova 30 min' : 'refresh 30 min'}</p>
+      <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-white/5">
+        <div className="flex gap-2">
+          <a href="https://www.tipos.sk/vysledky-zirebovani" target="_blank" rel="noopener noreferrer"
+             className="text-[9px] text-slate-500 hover:text-yellow-400 transition-colors">📊 {lang === 'sk' ? 'Výsledky' : 'Results'} ↗</a>
+          <a href="https://www.tipos.sk" target="_blank" rel="noopener noreferrer"
+             className="text-[9px] text-slate-500 hover:text-yellow-400 transition-colors">🎰 Tipos.sk ↗</a>
+        </div>
+        <span className="text-[9px] text-slate-600">{lang === 'sk' ? 'obnova 5 min' : 'refresh 5 min'}</span>
+      </div>
     </WidgetCard>
   )
 }

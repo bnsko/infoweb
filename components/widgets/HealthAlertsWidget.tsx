@@ -54,41 +54,39 @@ export default function HealthAlertsWidget() {
       onRefresh={refetch}
     >
       {/* Region toggle */}
-      <div className="flex items-center gap-1 mb-3">
+      <div className="flex items-center gap-1 mb-2">
         <button onClick={() => setRegion('sk')}
-          className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-all ${region === 'sk' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'text-slate-500 hover:text-slate-300 hover:bg-white/4'}`}>
-          🇸🇰 Slovensko
+          className={`text-[9px] font-semibold px-2 py-0.5 rounded-lg transition-all ${region === 'sk' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'text-slate-500 hover:text-slate-300 hover:bg-white/4'}`}>
+          🇸🇰 SK
         </button>
         <button onClick={() => setRegion('world')}
-          className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-all ${region === 'world' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'text-slate-500 hover:text-slate-300 hover:bg-white/4'}`}>
+          className={`text-[9px] font-semibold px-2 py-0.5 rounded-lg transition-all ${region === 'world' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'text-slate-500 hover:text-slate-300 hover:bg-white/4'}`}>
           🌍 Svet
         </button>
       </div>
 
-      {loading && <SkeletonRows rows={4} />}
+      {loading && <SkeletonRows rows={2} />}
       {!loading && error && <p className="text-xs text-slate-500">{lang === 'sk' ? 'Chyba' : 'Error'}</p>}
       {!loading && data && alerts.length === 0 && (
-        <div className="text-center py-6">
-          <span className="text-2xl block mb-1">✅</span>
-          <p className="text-xs text-slate-500">{lang === 'sk' ? 'Žiadne aktívne varovania' : 'No active alerts'}</p>
+        <div className="text-center py-3">
+          <span className="text-lg block mb-0.5">✅</span>
+          <p className="text-[10px] text-slate-500">{lang === 'sk' ? 'Žiadne aktívne varovania' : 'No active alerts'}</p>
         </div>
       )}
       {!loading && data && alerts.length > 0 && (
-        <div className="space-y-1.5 max-h-[380px] overflow-y-auto scrollbar-hide">
-          {alerts.map((alert, i) => {
+        <div className="space-y-1 max-h-[200px] overflow-y-auto scrollbar-hide">
+          {alerts.slice(0, 4).map((alert, i) => {
             const sev = SEV_STYLES[alert.severity]
             return (
               <a key={i} href={alert.link} target="_blank" rel="noopener noreferrer"
-                className={`block rounded-xl p-2.5 border ${sev.border} ${sev.bg} hover:scale-[1.01] transition-all`}>
-                <div className="flex items-start gap-2">
-                  <span className="text-sm shrink-0">{sev.icon}</span>
+                className={`block rounded-lg p-2 border ${sev.border} ${sev.bg} hover:scale-[1.01] transition-all`}>
+                <div className="flex items-start gap-1.5">
+                  <span className="text-xs shrink-0">{sev.icon}</span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[11px] text-slate-200 leading-snug line-clamp-2 font-medium">{alert.title}</p>
-                    {alert.description && <p className="text-[9px] text-slate-500 mt-0.5 line-clamp-1">{alert.description}</p>}
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-semibold ${sev.badge}`}>{alert.category}</span>
-                      <span className="text-[9px] text-slate-600">{alert.source}</span>
-                      <span className="text-[9px] text-slate-600">{timeAgo(alert.date)}</span>
+                    <p className="text-[10px] text-slate-200 leading-snug line-clamp-1 font-medium">{alert.title}</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className={`text-[8px] px-1 py-0.5 rounded font-semibold ${sev.badge}`}>{alert.category}</span>
+                      <span className="text-[8px] text-slate-600">{alert.source} · {timeAgo(alert.date)}</span>
                     </div>
                   </div>
                 </div>
@@ -97,7 +95,7 @@ export default function HealthAlertsWidget() {
           })}
         </div>
       )}
-      <p className="text-[10px] text-slate-600 mt-2">WHO · ECDC · ÚVZSR · ProMED</p>
+      <p className="text-[9px] text-slate-600 mt-1.5">WHO · ECDC · ÚVZSR</p>
     </WidgetCard>
   )
 }

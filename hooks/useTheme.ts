@@ -2,23 +2,25 @@
 
 import { useState, useEffect, useCallback } from 'react'
 
-export type Theme = 'klasik' | 'bratislava' | 'tatry'
+export type Theme = 'carbon' | 'obsidian' | 'titanium' | 'graphite'
 
 export const THEMES: { key: Theme; label: string; labelEn: string; color: string }[] = [
-  { key: 'klasik', label: 'Klasik', labelEn: 'Classic', color: '#c4956a' },
-  { key: 'bratislava', label: 'Bratislava', labelEn: 'Bratislava', color: '#5b8fd8' },
-  { key: 'tatry', label: 'Tatry', labelEn: 'Tatras', color: '#6aaa5c' },
+  { key: 'carbon', label: 'Carbon', labelEn: 'Carbon', color: '#1a1a1a' },
+  { key: 'obsidian', label: 'Obsidian', labelEn: 'Obsidian', color: '#38bdf8' },
+  { key: 'titanium', label: 'Titanium', labelEn: 'Titanium', color: '#d4a044' },
+  { key: 'graphite', label: 'Graphite', labelEn: 'Graphite', color: '#8b5cf6' },
 ]
 
+const VALID_THEMES = new Set<string>(['carbon', 'obsidian', 'titanium', 'graphite'])
+
 export function useTheme(): { theme: Theme; setTheme: (t: Theme) => void; isDark: boolean } {
-  const [theme, setThemeState] = useState<Theme>('klasik')
+  const [theme, setThemeState] = useState<Theme>('carbon')
 
   useEffect(() => {
-    const stored = (localStorage.getItem('infoweb-theme') as Theme) ?? 'klasik'
-    if (['klasik', 'bratislava', 'tatry'].includes(stored)) {
-      setThemeState(stored)
-      document.documentElement.setAttribute('data-theme', stored)
-    }
+    const stored = localStorage.getItem('infoweb-theme') ?? 'carbon'
+    const valid = VALID_THEMES.has(stored) ? (stored as Theme) : 'carbon'
+    setThemeState(valid)
+    document.documentElement.setAttribute('data-theme', valid)
   }, [])
 
   const setTheme = useCallback((next: Theme) => {

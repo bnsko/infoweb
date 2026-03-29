@@ -4,6 +4,10 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useWidget } from '@/hooks/useWidget'
 import type { StatsData } from '@/lib/types'
 import { useLang } from '@/hooks/useLang'
+import { QuoteMini, HoroscopeMini, RandomFact } from '@/components/widgets/DailyQuoteWidget'
+import { NamedayMini } from '@/components/widgets/NamedayWidget'
+import { ISSPassMini } from '@/components/widgets/SpaceEnvWidget'
+import { LaunchesMini } from '@/components/widgets/LaunchesWidget'
 
 interface VisitorData {
   lifetimeViews: number; lifetimeUnique: number; activeNow: number; todayPageViews: number; uptimeMs: number; lastHourViews?: number
@@ -132,9 +136,6 @@ export default function DaySummaryWidget() {
             </div>
           )}
 
-          {/* Last hour visitors */}
-          <Pill icon="⏰" value={visitors?.lastHourViews != null ? String(visitors.lastHourViews) : '...'} label="za hodinu" valueColor="text-cyan-400" />
-
           {/* Day of year */}
           <Pill icon="📅" value={stats.loading ? '...' : `${stats.data?.dayOfYear ?? '?'}/${stats.data?.daysInYear ?? 365}`} label="deň roka" />
           {/* Sources */}
@@ -146,8 +147,13 @@ export default function DaySummaryWidget() {
           {/* Uptime */}
           <Pill icon="⏱️" value={uptime} label="uptime" mono />
 
-          {/* Planets tonight */}
-          <div className="ml-auto flex items-center gap-3">
+          {/* Planets tonight + mini widgets */}
+          <div className="ml-auto flex items-center gap-2">
+            <NamedayMini />
+            <QuoteMini />
+            <HoroscopeMini />
+            <ISSPassMini />
+            <LaunchesMini />
             {astro?.planets && (
               <div className="hidden xl:flex items-center gap-1.5 min-w-0 max-w-xs">
                 <span className="text-[9px] text-slate-600">🔭</span>
@@ -164,6 +170,9 @@ export default function DaySummaryWidget() {
             )}
           </div>
         </div>
+
+        {/* Row 1.5: Random fact */}
+        <RandomFact />
 
         {/* Row 2: Section quick-nav */}
         <div className="flex flex-wrap items-center gap-0.5 pt-1.5 border-t border-white/5">

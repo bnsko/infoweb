@@ -57,14 +57,14 @@ export default function AdminPage() {
     if (savedCode) {
       setCode(savedCode)
       // Verify the saved code is still valid
-      fetch(`/api/admin?code=${savedCode}&action=stats`)
+      fetch(`/api/admin?code=${encodeURIComponent(savedCode)}&action=stats`)
         .then(r => {
           if (r.ok) return r.json()
           throw new Error('Invalid')
         })
         .then((data: AdminStats) => {
           setStats(data)
-          setConfig(data.config)
+          setConfig(data.config ?? null)
           setAuthenticated(true)
         })
         .catch(() => {
@@ -77,32 +77,35 @@ export default function AdminPage() {
   }, [])
 
   const fetchStats = useCallback(async () => {
-    const res = await fetch(`/api/admin?code=${code}&action=stats`)
-    if (!res.ok) {
-      // If auth fails, log out
-      if (res.status === 401 || res.status === 403) {
-        setAuthenticated(false)
-        localStorage.removeItem('admin-code')
+    try {
+      const res = await fetch(`/api/admin?code=${encodeURIComponent(code)}&action=stats`)
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          setAuthenticated(false)
+          localStorage.removeItem('admin-code')
+        }
+        return
       }
-      return
-    }
-    const data: AdminStats = await res.json()
-    setStats(data)
-    setConfig(data.config)
+      const data: AdminStats = await res.json()
+      setStats(data)
+      setConfig(data.config ?? null)
+    } catch { /* ignore */ }
   }, [code])
 
   const handleLogin = async () => {
     setLoading(true)
+    setMessage('')
     try {
-      const res = await fetch(`/api/admin?code=${code}&action=stats`)
+      const res = await fetch(`/api/admin?code=${encodeURIComponent(code)}&action=stats`)
       if (res.ok) {
         const data: AdminStats = await res.json()
         setStats(data)
-        setConfig(data.config)
+        setConfig(data.config ?? null)
         setAuthenticated(true)
         localStorage.setItem('admin-code', code)
       } else {
-        setMessage('❌ Neplatný kód')
+        const err = await res.json().catch(() => null)
+        setMessage(err?.error ?? '❌ Neplatný kód')
       }
     } catch {
       setMessage('❌ Chyba pripojenia')

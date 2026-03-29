@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { usePrefs } from '@/hooks/usePrefs'
 import { useLang } from '@/hooks/useLang'
+import { useTheme, THEMES } from '@/hooks/useTheme'
 
 const WIDGET_LIST = [
   { id: 'daysummary', label: '📅 Prehľad dňa', labelEn: '📅 Day Summary' },
@@ -23,6 +24,7 @@ export default function SettingsPanel() {
   const [open, setOpen] = useState(false)
   const { prefs, setPrefs, toggleWidget, isWidgetVisible, resetPrefs } = usePrefs()
   const { lang, setLang } = useLang()
+  const { theme, setTheme } = useTheme()
 
   if (!open) {
     return (
@@ -76,17 +78,13 @@ export default function SettingsPanel() {
           <div className="text-[11px] text-slate-500 uppercase tracking-wide font-semibold mb-2">
             {lang === 'sk' ? 'Téma' : 'Theme'}
           </div>
-          <div className="flex gap-2">
-            {[
-              { key: 'dark' as const, label: '🌙 Dark', color: '#0f172a' },
-              { key: 'midnight' as const, label: '🌌 Midnight', color: '#020617' },
-              { key: 'ocean' as const, label: '🌊 Ocean', color: '#0c1929' },
-            ].map(t => (
+          <div className="flex flex-wrap gap-2">
+            {THEMES.map(t => (
               <button
                 key={t.key}
-                onClick={() => setPrefs({ ...prefs, theme: t.key })}
+                onClick={() => setTheme(t.key)}
                 className={`text-xs px-3 py-2 rounded-lg border transition-all flex items-center gap-2 ${
-                  prefs.theme === t.key
+                  theme === t.key
                     ? 'bg-violet-500/20 border-violet-500/30 text-violet-300'
                     : 'border-white/8 text-slate-500 hover:text-slate-300 hover:bg-white/5'
                 }`}

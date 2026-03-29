@@ -163,25 +163,43 @@ export default function FuelPricesWidget() {
       {/* Price history chart tab */}
       {!loading && tab === 'chart' && data?.history && (
         <div>
-          <p className="text-[10px] text-slate-500 mb-2">{lang === 'sk' ? 'Benzín 95 — posledných 12 mesiacov' : 'Petrol 95 — last 12 months'}</p>
+          <p className="text-[10px] text-slate-500 mb-2">{lang === 'sk' ? 'Benzín 95 — posledných 12 mesiacov (€/l)' : 'Petrol 95 — last 12 months (€/l)'}</p>
           <div className="relative h-[180px] bg-white/[0.02] rounded-xl border border-white/5 p-3">
-            <svg viewBox="0 0 300 120" className="w-full h-full" preserveAspectRatio="none">
+            <svg viewBox="0 0 320 130" className="w-full h-full" preserveAspectRatio="none">
               {(() => {
                 const pts = data.history
                 const minP = Math.min(...pts.map(p => p.price)) - 0.02
                 const maxP = Math.max(...pts.map(p => p.price)) + 0.02
-                const toX = (i: number) => (i / (pts.length - 1)) * 290 + 5
+                const toX = (i: number) => (i / (pts.length - 1)) * 270 + 35
                 const toY = (p: number) => 110 - ((p - minP) / (maxP - minP)) * 100
                 const linePath = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${toX(i)} ${toY(p.price)}`).join(' ')
                 const areaPath = linePath + ` L ${toX(pts.length - 1)} 115 L ${toX(0)} 115 Z`
+                // Y-axis labels (5 ticks)
+                const ySteps = 4
+                const yLabels = Array.from({ length: ySteps + 1 }, (_, i) => {
+                  const price = minP + ((maxP - minP) * i) / ySteps
+                  return { price, y: toY(price) }
+                })
                 return (
                   <>
                     <defs><linearGradient id="fg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f97316" stopOpacity="0.3" /><stop offset="100%" stopColor="#f97316" stopOpacity="0" /></linearGradient></defs>
+                    {/* Y-axis grid lines and labels */}
+                    {yLabels.map((yl, i) => (
+                      <g key={i}>
+                        <line x1="35" y1={yl.y} x2="305" y2={yl.y} stroke="white" strokeOpacity="0.06" strokeWidth="0.5" />
+                        <text x="30" y={yl.y + 3} textAnchor="end" fill="#64748b" fontSize="7" fontFamily="monospace">{yl.price.toFixed(2)}</text>
+                      </g>
+                    ))}
                     <path d={areaPath} fill="url(#fg)" />
                     <path d={linePath} fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     {pts.map((p, i) => (
-                      <circle key={i} cx={toX(i)} cy={toY(p.price)} r="3" fill="#f97316" stroke="#1e1e2e" strokeWidth="1.5" />
+                      <g key={i}>
+                        <circle cx={toX(i)} cy={toY(p.price)} r="3" fill="#f97316" stroke="#1e1e2e" strokeWidth="1.5" />
+                        <text x={toX(i)} y={toY(p.price) - 6} textAnchor="middle" fill="#94a3b8" fontSize="6" fontFamily="monospace">{p.price.toFixed(2)}</text>
+                      </g>
                     ))}
+                    {/* Y-axis label */}
+                    <text x="4" y="60" fill="#64748b" fontSize="6" transform="rotate(-90, 8, 60)" textAnchor="middle">€/liter</text>
                   </>
                 )
               })()}

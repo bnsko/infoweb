@@ -1,1 +1,1 @@
-export { default } from './NamedayWidget'
+export { default, NamedayMini } from './NamedayWidget'

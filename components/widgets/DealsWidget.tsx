@@ -62,7 +62,7 @@ export default function DealsWidget() {
           ))}
         </div>
       )}
-      <p className="text-[10px] text-slate-600 mt-2">Alza · Heureka · {lang === 'sk' ? 'obnova 15 min' : 'refresh 15 min'}</p>
+      <p className="text-[10px] text-slate-600 mt-2">Alza · Heureka · AI odporúčania · {lang === 'sk' ? 'obnova 15 min' : 'refresh 15 min'}</p>
     </WidgetCard>
   )
 }
