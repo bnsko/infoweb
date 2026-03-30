@@ -17,7 +17,6 @@ import TrainDelaysWidget from '@/components/widgets/TrainDelaysWidget'
 import OfficeWaitWidget from '@/components/widgets/OfficeWaitWidget'
 import LotteryWidget from '@/components/widgets/LotteryWidget'
 import DealsWidget from '@/components/widgets/DealsWidget'
-import FlightsWidget from '@/components/widgets/FlightsWidget'
 
 interface SlovakFact { icon: string; title: string; value: string; detail: string }
 interface SlovakFactsData { staticFacts: SlovakFact[]; dynamicFacts: SlovakFact[]; generalStats: Record<string, number>; dayOfYear: number }
@@ -48,29 +47,6 @@ function scrollTo(id: string) {
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
-const WORK_FREE: Record<string, string> = {
-  '01-01': 'Deň vzniku SR',
-  '01-06': 'Traja králi',
-  '03-28': 'Veľký piatok',
-  '03-31': 'Veľkonočný pondelok',
-  '05-01': 'Sviatok práce',
-  '05-08': 'Deň víťazstva',
-  '07-05': 'Sviatok sv. Cyrila a Metoda',
-  '08-29': 'SNP',
-  '09-01': 'Deň Ústavy SR',
-  '09-15': 'Sedembolestná Panna Mária',
-  '11-01': 'Sviatok všetkých svätých',
-  '11-17': 'Deň boja za slobodu',
-  '12-24': 'Štedrý deň',
-  '12-25': 'Prvý sviatok vianočný',
-  '12-26': 'Druhý sviatok vianočný',
-}
-
-function isWorkFree(d: Date): boolean {
-  const key = `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-  return key in WORK_FREE || d.getDay() === 0 || d.getDay() === 6
-}
-
 function getSessionId(): string {
   if (typeof window === 'undefined') return ''
   let sid = sessionStorage.getItem('infosk-sid')
@@ -91,8 +67,6 @@ export default function DaySummaryWidget() {
   const [visitors, setVisitors] = useState<VisitorData | null>(null)
   const [showerOpen, setShowerOpen] = useState(false)
   const [auroraOpen, setAuroraOpen] = useState(false)
-  const [spaceOpen, setSpaceOpen] = useState(false)
-  const [flightsOpen, setFlightsOpen] = useState(false)
   const [holidayOpen, setHolidayOpen] = useState(false)
   const [dayPopupOpen, setDayPopupOpen] = useState(false)
   const [namedayMiniOpen, setNamedayMiniOpen] = useState(false)
@@ -107,7 +81,7 @@ export default function DaySummaryWidget() {
   const [dealsOpen, setDealsOpen] = useState(false)
   const slovakFacts = useWidget<SlovakFactsData>('/api/slovakfacts', 60 * 1000)
 
-  const anyPopupOpen = showerOpen || auroraOpen || spaceOpen || flightsOpen || holidayOpen || dayPopupOpen || namedayMiniOpen || horoscopeMiniOpen || issMiniOpen || launchesMiniOpen || speedtestMiniOpen || mhdOpen || trainOpen || officeOpen || lotteryOpen || dealsOpen
+  const anyPopupOpen = showerOpen || auroraOpen || holidayOpen || dayPopupOpen || namedayMiniOpen || horoscopeMiniOpen || issMiniOpen || launchesMiniOpen || speedtestMiniOpen || mhdOpen || trainOpen || officeOpen || lotteryOpen || dealsOpen
 
   const holiday = useMemo(() => now ? getHoliday(now) : null, [now])
   const nextHolidays = useMemo(() => now ? getNextHolidays(now, 6) : [], [now])
@@ -152,27 +126,11 @@ export default function DaySummaryWidget() {
           {/* Clock */}
           <div className="flex flex-col shrink-0">
             <span className="text-2xl font-mono font-bold text-white tabular-nums tracking-tight leading-none" suppressHydrationWarning>{timeStr}</span>
-            <button onClick={() => setDayPopupOpen(o => !o)} className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-gradient-to-r from-amber-500/8 to-orange-500/8 border border-amber-500/15 hover:bg-amber-500/15 transition-all text-[10px] text-slate-300 hover:text-amber-300 capitalize cursor-pointer" suppressHydrationWarning>
+            <button onClick={() => setDayPopupOpen(o => !o)} className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-500/8 border border-amber-500/15 hover:bg-amber-500/15 transition-all text-[10px] text-slate-300 hover:text-amber-300 capitalize cursor-pointer" suppressHydrationWarning>
               <span>📅</span>
               <span className="font-medium">{today}</span>
-              {now && isWorkFree(now) && <span className="text-[8px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded-full">🏠 voľno</span>}
               <span className="text-[8px] text-slate-500">▼</span>
             </button>
-            {/* Year progress bar */}
-            {now && (() => {
-              const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000)
-              const daysInYear = new Date(now.getFullYear(), 1, 29).getDate() === 29 ? 366 : 365
-              const yearPct = Math.round((dayOfYear / daysInYear) * 1000) / 10
-              const weekNum = Math.ceil((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 604800000)
-              return (
-                <div className="mt-0.5">
-                  <div className="w-full bg-white/5 rounded-full h-[3px]">
-                    <div className="bg-gradient-to-r from-amber-500 to-orange-500 h-[3px] rounded-full transition-all" style={{ width: `${yearPct}%` }} />
-                  </div>
-                  <div className="text-[8px] text-slate-600 mt-0.5 text-center font-mono tabular-nums">{yearPct}% · W{weekNum} · D{dayOfYear}</div>
-                </div>
-              )
-            })()}
           </div>
           <div className="hidden md:block w-px h-8 bg-white/8" />
 
@@ -194,7 +152,7 @@ export default function DaySummaryWidget() {
               <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
               <div className="relative w-full max-w-[360px] bg-[var(--bg-card)] border border-emerald-500/20 rounded-2xl shadow-2xl p-4 space-y-3" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-emerald-300">🗓️ Sviatky a dni pracovného pokoja</span>
+                  <span className="text-sm font-bold text-emerald-300">🗓️ Nadchádzajúce sviatky</span>
                   <button onClick={() => setHolidayOpen(false)} className="text-slate-500 hover:text-white text-lg">✕</button>
                 </div>
                 {holiday && (
@@ -202,26 +160,20 @@ export default function DaySummaryWidget() {
                     <span className="text-lg">🎉</span>
                     <div>
                       <span className="text-sm font-bold text-rose-300">Dnes: {holiday}</span>
-                      {now && isWorkFree(now) && <span className="ml-2 text-[8px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded-full">🏠 voľno</span>}
                     </div>
                   </div>
                 )}
                 <div className="space-y-1">
-                  {nextHolidays.slice(0, 5).map((h, i) => {
-                    const hKey = `${String(h.date.getMonth() + 1).padStart(2, '0')}-${String(h.date.getDate()).padStart(2, '0')}`
-                    const wf = hKey in WORK_FREE
-                    return (
-                      <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.03] hover:bg-white/[0.05] transition-colors">
-                        <span className="text-sm">{wf ? '🏠' : '🗓️'}</span>
-                        <div className="flex-1">
-                          <span className="text-[11px] font-semibold text-slate-200">{h.name}</span>
-                          {wf && <span className="ml-1.5 text-[8px] bg-emerald-500/20 text-emerald-300 px-1 py-0.5 rounded-full">voľno</span>}
-                          <span className="text-[10px] text-slate-500 ml-2">{format(h.date, 'd. MMMM yyyy', { locale: loc })}</span>
-                        </div>
-                        <span className="text-[10px] text-emerald-400 font-bold">za {h.daysUntil}d</span>
+                  {nextHolidays.slice(0, 5).map((h, i) => (
+                    <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.03] hover:bg-white/[0.05] transition-colors">
+                      <span className="text-sm">🗓️</span>
+                      <div className="flex-1">
+                        <span className="text-[11px] font-semibold text-slate-200">{h.name}</span>
+                        <span className="text-[10px] text-slate-500 ml-2">{format(h.date, 'd. MMMM yyyy', { locale: loc })}</span>
                       </div>
-                    )
-                  })}
+                      <span className="text-[10px] text-emerald-400 font-bold">za {h.daysUntil}d</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -231,40 +183,23 @@ export default function DaySummaryWidget() {
           {dayPopupOpen && (
             <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setDayPopupOpen(false)}>
               <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-              <div className="relative w-full max-w-[480px] bg-[var(--bg-card)] border border-amber-500/20 rounded-2xl shadow-2xl p-4 space-y-3 max-h-[70vh] overflow-y-auto scrollbar-hide" onClick={e => e.stopPropagation()}>
+              <div className="relative w-full max-w-[420px] bg-[var(--bg-card)] border border-amber-500/20 rounded-2xl shadow-2xl p-4 space-y-3 max-h-[70vh] overflow-y-auto scrollbar-hide" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-amber-300">📅 Živé štatistiky od 00:00 do 23:59</span>
+                  <span className="text-sm font-bold text-amber-300">📅 Dnešný deň v číslach</span>
                   <button onClick={() => setDayPopupOpen(false)} className="text-slate-500 hover:text-white text-lg">✕</button>
                 </div>
                 {slovakFacts.loading && <p className="text-xs text-slate-500">Načítavam...</p>}
                 {slovakFacts.data && (
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
                     {slovakFacts.data.dynamicFacts.map((f, i) => (
-                      <div key={i} className="bg-white/[0.03] border border-white/5 rounded-xl p-2.5">
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <span className="text-base">{f.icon}</span>
-                          <span className="text-[9px] text-slate-500">{f.title}</span>
-                        </div>
-                        <div className="text-[13px] font-bold text-white tabular-nums font-mono">{f.value}</div>
+                      <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/[0.03]">
+                        <span className="text-base w-6 text-center">{f.icon}</span>
+                        <span className="text-[11px] text-slate-400 flex-1">{f.title}</span>
+                        <span className="text-[12px] font-bold text-white tabular-nums">{f.value}</span>
                       </div>
                     ))}
                   </div>
                 )}
-                {now && (() => {
-                  const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000)
-                  const daysInYear = new Date(now.getFullYear(), 1, 29).getDate() === 29 ? 366 : 365
-                  const yearPct = Math.round((dayOfYear / daysInYear) * 1000) / 10
-                  return (
-                    <div className="border-t border-white/5 pt-3">
-                      <div className="flex justify-between text-[10px] text-slate-500 mb-1">
-                        <span>Rok {now.getFullYear()}</span><span>{yearPct}%</span>
-                      </div>
-                      <div className="w-full bg-white/5 rounded-full h-2">
-                        <div className="bg-gradient-to-r from-amber-500 to-orange-500 h-2 rounded-full" style={{ width: `${yearPct}%` }} />
-                      </div>
-                    </div>
-                  )
-                })()}
               </div>
             </div>
           )}
@@ -276,83 +211,95 @@ export default function DaySummaryWidget() {
 
           <div className="hidden md:block w-px h-6 bg-white/5" />
 
-          {/* ISS & Launches & Flights */}
+          {/* Day + week of year */}
+          <Pill icon="📅" value={stats.loading ? '...' : `${stats.data?.dayOfYear ?? '?'}/${stats.data?.daysInYear ?? 365}`} label="deň roka" />
+          {now && <Pill icon="📆" value={`${Math.ceil((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 604800000)}`} label="týždeň" />}
+
+          {/* ISS & Launches (before online) */}
           <ISSPassMini onOpenChange={setIssMiniOpen} />
           <LaunchesMini onOpenChange={setLaunchesMiniOpen} />
-          <button onClick={() => setFlightsOpen(o => !o)}
-            className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold transition-all border shrink-0 ${
-              flightsOpen ? 'bg-sky-500/15 border-sky-500/25 text-sky-300' : 'bg-white/[0.02] border-white/5 text-slate-400 hover:text-sky-300 hover:border-sky-500/20'
-            }`}>
-            <span>✈️</span><span className="hidden sm:inline">Lety</span>
-          </button>
 
-          {/* Merged Space button (Meteor + Aurora + Moon + Planets) */}
-          <button onClick={() => setSpaceOpen(o => !o)}
-            className={`hidden md:flex items-center gap-1.5 shrink-0 px-2 py-1 rounded-lg border transition-all ${
-              spaceOpen ? 'bg-purple-500/15 border-purple-500/25 text-purple-300' : 'bg-white/[0.02] border-white/5 text-slate-400 hover:text-purple-300 hover:border-purple-500/20'
-            }`}>
-            <span className="text-sm">🌌</span>
-            <span className="text-[10px] font-bold">Vesmír</span>
-          </button>
-
-          {/* Space popup (merged: meteor shower + aurora + moon + planets) */}
-          {spaceOpen && (
-            <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setSpaceOpen(false)}>
-              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-              <div className="relative w-full max-w-[420px] bg-[var(--bg-card)] border border-purple-500/20 rounded-2xl shadow-2xl p-4 space-y-3 max-h-[80vh] overflow-y-auto scrollbar-hide" onClick={e => e.stopPropagation()}>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-purple-300">🌌 Vesmír</span>
-                  <button onClick={() => setSpaceOpen(false)} className="text-slate-500 hover:text-white text-lg">✕</button>
-                </div>
-                {/* Meteor shower */}
-                {astro?.nextShower && (
-                  <div className={`rounded-xl p-3 space-y-2 border ${astro.nextShower.active ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-white/[0.03] border-white/5'}`}>
+          {/* Meteor shower / Aurora (clickable with popup) */}
+          {astro?.nextShower && (
+            <>
+              <button onClick={() => setShowerOpen(o => !o)}
+                className={`hidden md:flex items-center gap-1.5 shrink-0 px-2 py-1 rounded-lg border transition-all ${
+                  astro.nextShower.active ? 'bg-yellow-500/10 border-yellow-500/20 hover:bg-yellow-500/15' : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04]'
+                }`}>
+                <span className="text-sm">☄️</span>
+                <span className={`text-[10px] font-bold ${astro.nextShower.active ? 'text-yellow-300' : 'text-slate-300'}`}>{astro.nextShower.name}</span>
+                <span className="text-[9px] text-slate-500">{astro.nextShower.active ? '🔥' : `${astro.nextShower.daysUntil}d`}</span>
+              </button>
+              {showerOpen && (
+                <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setShowerOpen(false)}>
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                  <div className="relative w-full max-w-[360px] bg-[var(--bg-card)] border border-yellow-500/20 rounded-2xl shadow-2xl p-4 space-y-3" onClick={e => e.stopPropagation()}>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-bold text-yellow-300">☄️ {astro.nextShower.name}</span>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${astro.nextShower.active ? 'bg-green-500/20 text-green-300' : 'bg-slate-500/20 text-slate-400'}`}>
-                        {astro.nextShower.active ? '🔥 Aktívny' : `Za ${astro.nextShower.daysUntil} dní`}
-                      </span>
+                      <span className="text-sm font-bold text-yellow-300">☄️ Meteorický roj</span>
+                      <button onClick={() => setShowerOpen(false)} className="text-slate-500 hover:text-white text-lg">✕</button>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-[10px]">
-                      <div><span className="text-slate-500">ZHR:</span> <span className="text-yellow-300 font-bold">{astro.nextShower.zhr}/h</span></div>
-                      <div><span className="text-slate-500">Pôvod:</span> <span className="text-slate-300">{astro.nextShower.parent}</span></div>
-                    </div>
-                  </div>
-                )}
-                {/* Aurora */}
-                {astro?.aurora && (
-                  <div className={`rounded-xl p-3 space-y-2 border ${astro.aurora.visibleFromSK ? 'bg-green-500/10 border-green-500/20' : 'bg-white/[0.03] border-white/5'}`}>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-bold text-green-300">🌌 Polárna žiara · Kp{astro.aurora.kpIndex}</span>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${astro.aurora.visibleFromSK ? 'bg-green-500/20 text-green-300' : 'bg-orange-500/20 text-orange-300'}`}>
-                        {astro.aurora.visibleFromSK ? '✅ Viditeľná zo SK' : '❌ Nie zo SK'}
-                      </span>
-                    </div>
-                    <div className="text-[10px] text-slate-400">Šanca: {astro.aurora.chance}</div>
-                  </div>
-                )}
-                {/* Moon conditions */}
-                {astro?.moonConditions && (
-                  <div className="bg-white/[0.03] border border-white/5 rounded-xl p-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl">{astro.moonConditions.illumination > 80 ? '🌕' : astro.moonConditions.illumination > 50 ? '🌔' : astro.moonConditions.illumination > 20 ? '🌓' : '🌑'}</span>
-                      <div>
-                        <div className="text-[10px] text-slate-500">Mesiac: <span className="text-white font-bold">{astro.moonConditions.illumination}%</span> osvetlenie</div>
-                        <div className="text-[10px] text-slate-500">{astro.moonConditions.goodForViewing ? '✅ Dobré podmienky' : '❌ Slabé podmienky'}</div>
+                    <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-base font-bold text-yellow-300">{astro.nextShower.name}</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${astro.nextShower.active ? 'bg-green-500/20 text-green-300' : 'bg-slate-500/20 text-slate-400'}`}>
+                          {astro.nextShower.active ? '🔥 Aktívny' : `Za ${astro.nextShower.daysUntil} dní`}
+                        </span>
                       </div>
+                      <div className="grid grid-cols-2 gap-2 text-[10px]">
+                        <div><span className="text-slate-500">ZHR:</span> <span className="text-yellow-300 font-bold">{astro.nextShower.zhr} meteoritov/h</span></div>
+                        <div><span className="text-slate-500">Pôvod:</span> <span className="text-slate-300">{astro.nextShower.parent}</span></div>
+                      </div>
+                      <p className="text-[10px] text-slate-400 leading-relaxed">
+                        {astro.nextShower.active
+                          ? 'Meteorický roj je práve aktívny! Najlepšie pozorovanie po polnoci za tmavej oblohy, ďaleko od svetelného znečistenia.'
+                          : `Ďalší meteorický roj "${astro.nextShower.name}" bude aktívny za ${astro.nextShower.daysUntil} dní. Očakávaná intenzita je ${astro.nextShower.zhr} meteoritov za hodinu.`}
+                      </p>
                     </div>
                   </div>
-                )}
-                {/* Visible planets */}
-                {astro?.planets && astro.planets.planets.length > 0 && (
-                  <div className="bg-white/[0.03] border border-white/5 rounded-xl p-3">
-                    <div className="text-[10px] text-slate-500 mb-1">🪐 Viditeľné planéty</div>
-                    <div className="text-[11px] text-white font-semibold">{astro.planets.planets.join(', ')}</div>
-                    <div className="text-[9px] text-slate-500 mt-0.5">{astro.planets.note}</div>
+                </div>
+              )}
+            </>
+          )}
+          {astro?.aurora && astro.aurora.kpIndex >= 3 && (
+            <>
+              <button onClick={() => setAuroraOpen(o => !o)}
+                className={`hidden md:flex items-center gap-1.5 shrink-0 px-2 py-1 rounded-lg border transition-all ${
+                  astro.aurora.visibleFromSK ? 'bg-green-500/10 border-green-500/20 hover:bg-green-500/15' : 'bg-purple-500/8 border-purple-500/15 hover:bg-purple-500/12'
+                }`}>
+                <span className="text-sm">🌌</span>
+                <span className={`text-[10px] font-bold ${astro.aurora.visibleFromSK ? 'text-green-300' : 'text-purple-300'}`}>
+                  Aurora Kp{astro.aurora.kpIndex}
+                </span>
+              </button>
+              {auroraOpen && (
+                <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setAuroraOpen(false)}>
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                  <div className="relative w-full max-w-[360px] bg-[var(--bg-card)] border border-green-500/20 rounded-2xl shadow-2xl p-4 space-y-3" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold text-green-300">🌌 Polárna žiara</span>
+                      <button onClick={() => setAuroraOpen(false)} className="text-slate-500 hover:text-white text-lg">✕</button>
+                    </div>
+                    <div className={`rounded-xl p-3 space-y-2 border ${astro.aurora.visibleFromSK ? 'bg-green-500/10 border-green-500/20' : 'bg-purple-500/10 border-purple-500/20'}`}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-base font-bold text-white">Kp Index: {astro.aurora.kpIndex}</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${astro.aurora.visibleFromSK ? 'bg-green-500/20 text-green-300' : 'bg-orange-500/20 text-orange-300'}`}>
+                          {astro.aurora.visibleFromSK ? '✅ Viditeľná zo SK' : '❌ Nie zo SK'}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-[10px]">
+                        <div><span className="text-slate-500">Šanca:</span> <span className="text-green-300 font-bold">{astro.aurora.chance}</span></div>
+                        <div><span className="text-slate-500">Viditeľnosť:</span> <span className="text-slate-300">{astro.aurora.visibleFromSK ? 'Áno, na severe SK' : 'Len severnejšie šírky'}</span></div>
+                      </div>
+                      <p className="text-[10px] text-slate-400 leading-relaxed">
+                        {astro.aurora.visibleFromSK
+                          ? 'Polárna žiara by mohla byť viditeľná aj zo Slovenska! Pozrite sa na sever po zotmení, ideálne z tmavého miesta bez svetelného znečistenia.'
+                          : `Kp index ${astro.aurora.kpIndex} naznačuje zvýšenú geomagnetickú aktivitu. Z nášho pozorovacieho bodu (48°N) však aurora pravdepodobne nebude viditeľná. Kp 7+ je potrebný pre viditeľnosť zo SK.`}
+                      </p>
+                    </div>
                   </div>
-                )}
-              </div>
-            </div>
+                </div>
+              )}
+            </>
           )}
 
           <div className="hidden md:block w-px h-6 bg-white/5" />
@@ -367,6 +314,7 @@ export default function DaySummaryWidget() {
             <span className="text-[9px] text-slate-600">online</span>
           </div>
           <Pill icon="" value={visitors ? String(visitors.todayPageViews) : '...'} label="dnes" valueColor="text-orange-300" />
+          <Pill icon="" value={visitors ? String(visitors.lifetimeViews) : '...'} label="celkom" valueColor="text-purple-300" />
 
           {/* Speedtest mini - far right */}
           <div className="ml-auto">
@@ -469,15 +417,6 @@ export default function DaySummaryWidget() {
             <div className="relative w-full max-w-[500px]" onClick={e => e.stopPropagation()}>
               <button onClick={() => setDealsOpen(false)} className="absolute -top-2 -right-2 z-10 w-7 h-7 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-white border border-white/10 text-sm">✕</button>
               <DealsWidget />
-            </div>
-          </div>
-        )}
-        {flightsOpen && (
-          <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setFlightsOpen(false)}>
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-            <div className="relative w-full max-w-[500px]" onClick={e => e.stopPropagation()}>
-              <button onClick={() => setFlightsOpen(false)} className="absolute -top-2 -right-2 z-10 w-7 h-7 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-white border border-white/10 text-sm">✕</button>
-              <FlightsWidget />
             </div>
           </div>
         )}
