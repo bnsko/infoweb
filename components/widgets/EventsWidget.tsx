@@ -73,17 +73,26 @@ export default function EventsWidget() {
   const [nearbyMode, setNearbyMode] = useState(false)
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [geoError, setGeoError] = useState(false)
+  const [geoLoading, setGeoLoading] = useState(false)
 
   const requestLocation = useCallback(() => {
     if (userCoords) { setNearbyMode(true); return }
     if (!navigator.geolocation) { setGeoError(true); return }
+    setGeoLoading(true)
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
         setNearbyMode(true)
         setGeoError(false)
+        setGeoLoading(false)
       },
-      () => setGeoError(true),
+      () => {
+        setGeoError(true)
+        setGeoLoading(false)
+        // Fallback: use Bratislava coordinates
+        setUserCoords({ lat: 48.1486, lng: 17.1077 })
+        setNearbyMode(true)
+      },
       { enableHighAccuracy: false, timeout: 10000 }
     )
   }, [userCoords])
@@ -131,8 +140,13 @@ export default function EventsWidget() {
       </div>
 
       {geoError && nearbyMode && (
-        <div className="text-[10px] text-red-400 mb-2 text-center">
-          {lang === 'sk' ? '⚠️ Nepodarilo sa získať polohu' : '⚠️ Could not get location'}
+        <div className="text-[10px] text-amber-400 mb-2 text-center">
+          {lang === 'sk' ? '📍 Poloha nedostupná – zobrazujem podujatia z Bratislavy a okolia' : '📍 Location unavailable – showing events from Bratislava area'}
+        </div>
+      )}
+      {geoLoading && (
+        <div className="text-[10px] text-slate-400 mb-2 text-center animate-pulse">
+          {lang === 'sk' ? '📍 Získavam polohu...' : '📍 Getting location...'}
         </div>
       )}
 

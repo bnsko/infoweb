@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import WidgetCard from '@/components/ui/WidgetCard'
 import { useLang } from '@/hooks/useLang'
 
@@ -240,5 +240,34 @@ export default function EnergyWidget() {
         ))}
       </div>
     </WidgetCard>
+  )
+}
+
+/* ── Mini energy button for main panel ── */
+export function EnergyMini(props: { onOpenChange?: (open: boolean) => void }) {
+  const { onOpenChange } = props
+  const [open, setOpen] = useState(false)
+  useEffect(() => { onOpenChange?.(open) }, [open, onOpenChange])
+
+  return (
+    <>
+      <button onClick={() => setOpen(o => !o)}
+        className={`flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-1 rounded-md transition-all border ${
+          open ? 'bg-green-500/15 text-green-300 border-green-500/20' : 'text-slate-500 hover:text-slate-200 hover:bg-white/5 border-transparent hover:border-white/10'
+        }`}
+        title="Energia EÚ & SK">
+        <span>⚡</span>
+        <span className="hidden lg:inline">Energia</span>
+      </button>
+      {open && (
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setOpen(false)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="relative w-full max-w-[500px]" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setOpen(false)} className="absolute -top-2 -right-2 z-10 w-7 h-7 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-white border border-white/10 text-sm">✕</button>
+            <EnergyWidget />
+          </div>
+        </div>
+      )}
+    </>
   )
 }

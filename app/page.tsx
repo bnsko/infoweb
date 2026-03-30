@@ -27,7 +27,7 @@ import FinanceNewsWidget from '@/components/widgets/FinanceNewsWidget'
 import DaySummaryWidget from '@/components/widgets/DaySummaryWidget'
 import GitHubTrendingWidget from '@/components/widgets/GitHubTrendingWidget'
 import FearGreedWidget from '@/components/widgets/FearGreedWidget'
-import EnergyWidget from '@/components/widgets/EnergyWidget'
+// EnergyWidget moved to DaySummary panel
 import InvestmentWidget from '@/components/widgets/InvestmentWidget'
 import FlashNewsWidget from '@/components/widgets/FlashNewsWidget'
 // LotteryWidget & DealsWidget moved to DaySummary panel
@@ -41,10 +41,10 @@ import InflationWidget from '@/components/widgets/InflationWidget'
 import SportSuggestionsWidget from '@/components/widgets/SportSuggestionsWidget'
 // MHDWidget moved to DaySummary panel
 // ToolOfTheDayWidget removed
-import WebcamsWidget from '@/components/widgets/WebcamsWidget'
+// WebcamsWidget deleted
 // TrainDelaysWidget moved to DaySummary panel
 // OutagesWidget moved to SummaryWidget
-import HighwayCamsWidget from '@/components/widgets/HighwayCamsWidget'
+// HighwayCamsWidget deleted
 import MortgagesWidget from '@/components/widgets/MortgagesWidget'
 import TrendingSearchesWidget from '@/components/widgets/TrendingSearchesWidget'
 import StreamingWidget from '@/components/widgets/StreamingWidget'
@@ -54,6 +54,7 @@ import SummaryWidget from '@/components/widgets/SummaryWidget'
 import HealthWidget from '@/components/widgets/HealthWidget'
 import JobMarketWidget from '@/components/widgets/JobMarketWidget'
 import SettingsPanel from '@/components/SettingsPanel'
+import { SpeedtestMini } from '@/components/widgets/SpeedtestWidget'
 import { useLang } from '@/hooks/useLang'
 import { usePrefs } from '@/hooks/usePrefs'
 
@@ -77,10 +78,8 @@ export default function Home() {
         {isWidgetVisible('stats') && (
           <div id="sec-weather" className="space-y-4">
             <StatsWidget />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <SummaryWidget />
-              <HealthWidget />
-            </div>
+            <SummaryWidget />
+            <HealthWidget />
           </div>
         )}
 
@@ -111,12 +110,6 @@ export default function Home() {
               <GroceriesWidget />
             </div>
 
-            {/* Highway cams + Webcams */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <HighwayCamsWidget />
-              <WebcamsWidget />
-            </div>
-
             {/* Sports */}
             <div className="mt-4">
               <SportsWidget />
@@ -139,7 +132,6 @@ export default function Home() {
               <InvestmentWidget />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <EnergyWidget />
               <MortgagesWidget />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -224,6 +216,9 @@ export default function Home() {
       </main>
 
       <footer className="border-t border-white/5 py-6 text-center text-xs text-slate-600">
+        <div className="flex items-center justify-center gap-4 mb-2">
+          <SpeedtestMini />
+        </div>
         <p>
           Slovakia Info © {new Date().getFullYear()} · Dáta: OpenMeteo · ECB · CoinGecko · Steam · ESPN · SME · Aktuality · TASR · Pravda · BBC · Reuters · Reddit · Waze · OpenSky · Launch Library 2 · Wikimedia · CNBC · AP + ďalšie
         </p>

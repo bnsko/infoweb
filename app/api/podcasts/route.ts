@@ -19,6 +19,11 @@ const PODCAST_FEEDS = [
   { name: 'Startitup', url: 'https://feeds.acast.com/public/shows/startitup-podcast' },
   { name: 'Pravda', url: 'https://feeds.acast.com/public/shows/podcasty-pravda' },
   { name: 'Aktuality', url: 'https://feeds.acast.com/public/shows/aktuality-podcast' },
+  { name: 'Lužifčák', url: 'https://anchor.fm/s/3db5fbb4/podcast/rss' },
+  { name: 'Recast', url: 'https://feeds.simplecast.com/l2i9YnTd' },
+  { name: 'Jirka Král', url: 'https://anchor.fm/s/1f6c39e8/podcast/rss' },
+  { name: 'Para podcast', url: 'https://feeds.acast.com/public/shows/para-podcast' },
+  { name: 'Forbes SK', url: 'https://feeds.acast.com/public/shows/forbes-podcast-slovensko' },
 ]
 
 // Fallback data when all feeds fail
@@ -102,7 +107,7 @@ export async function GET() {
     return db - da
   })
 
-  // Return last 10 (with fallback if all feeds fail)
-  const podcasts = all.length > 0 ? all.slice(0, 10) : FALLBACK_PODCASTS
+  // Return last 30 (with fallback if all feeds fail)
+  const podcasts = all.length > 0 ? all.slice(0, 30) : FALLBACK_PODCASTS
   return NextResponse.json({ podcasts, timestamp: Date.now() })
 }

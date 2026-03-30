@@ -8,7 +8,7 @@ import { HoroscopeMini } from '@/components/widgets/DailyQuoteWidget'
 import { NamedayMini } from '@/components/widgets/NamedayWidget'
 import { ISSPassMini } from '@/components/widgets/SpaceEnvWidget'
 import { LaunchesMini } from '@/components/widgets/LaunchesWidget/LaunchesWidget'
-import { SpeedtestMini } from '@/components/widgets/SpeedtestWidget'
+// SpeedtestMini moved to footer
 import { getHoliday, getNextHolidays } from '@/lib/namedays'
 import { format } from 'date-fns'
 import { sk, enUS } from 'date-fns/locale'
@@ -19,6 +19,7 @@ import LotteryWidget from '@/components/widgets/LotteryWidget'
 import DealsWidget from '@/components/widgets/DealsWidget'
 import FlightsWidget from '@/components/widgets/FlightsWidget'
 import { EnvironmentMini } from '@/components/widgets/EnvironmentWidget'
+import { EnergyMini } from '@/components/widgets/EnergyWidget/EnergyWidget'
 
 interface SlovakFact { icon: string; title: string; value: string; detail: string }
 interface SlovakFactsData { staticFacts: SlovakFact[]; dynamicFacts: SlovakFact[]; generalStats: Record<string, number>; dayOfYear: number }
@@ -134,16 +135,17 @@ export default function DaySummaryWidget() {
   const [horoscopeMiniOpen, setHoroscopeMiniOpen] = useState(false)
   const [issMiniOpen, setIssMiniOpen] = useState(false)
   const [launchesMiniOpen, setLaunchesMiniOpen] = useState(false)
-  const [speedtestMiniOpen, setSpeedtestMiniOpen] = useState(false)
   const [mhdOpen, setMhdOpen] = useState(false)
   const [trainOpen, setTrainOpen] = useState(false)
   const [officeOpen, setOfficeOpen] = useState(false)
   const [lotteryOpen, setLotteryOpen] = useState(false)
   const [dealsOpen, setDealsOpen] = useState(false)
   const [envMiniOpen, setEnvMiniOpen] = useState(false)
+  const [energyMiniOpen, setEnergyMiniOpen] = useState(false)
+  const [weatherCityKey, setWeatherCityKey] = useState<string | null>(null)
   const slovakFacts = useWidget<SlovakFactsData>('/api/slovakfacts', 60 * 1000)
 
-  const anyPopupOpen = showerOpen || auroraOpen || spaceOpen || flightsOpen || holidayOpen || dayPopupOpen || namedayMiniOpen || horoscopeMiniOpen || issMiniOpen || launchesMiniOpen || speedtestMiniOpen || mhdOpen || trainOpen || officeOpen || lotteryOpen || dealsOpen || envMiniOpen
+  const anyPopupOpen = showerOpen || auroraOpen || spaceOpen || flightsOpen || holidayOpen || dayPopupOpen || namedayMiniOpen || horoscopeMiniOpen || issMiniOpen || launchesMiniOpen || mhdOpen || trainOpen || officeOpen || lotteryOpen || dealsOpen || envMiniOpen || energyMiniOpen || !!weatherCityKey
 
   const holiday = useMemo(() => now ? getHoliday(now) : null, [now])
   const nextHolidays = useMemo(() => now ? getNextHolidays(now, 6) : [], [now])
@@ -188,11 +190,10 @@ export default function DaySummaryWidget() {
           {/* Clock */}
           <div className="flex flex-col shrink-0">
             <span className="text-2xl font-mono font-bold text-white tabular-nums tracking-tight leading-none" suppressHydrationWarning>{timeStr}</span>
-            <button onClick={() => setDayPopupOpen(o => !o)} className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-gradient-to-r from-amber-500/8 to-orange-500/8 border border-amber-500/15 hover:bg-amber-500/15 transition-all text-[10px] text-slate-300 hover:text-amber-300 capitalize cursor-pointer" suppressHydrationWarning>
-              <span>📅</span>
+            <button onClick={() => setDayPopupOpen(o => !o)} className="flex items-center gap-1 mt-0.5 text-[10px] text-slate-400 hover:text-amber-300 transition-colors capitalize cursor-pointer" suppressHydrationWarning>
               <span className="font-medium">{today}</span>
               {now && isWorkFree(now) && <span className="text-[8px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded-full">🏠 voľno</span>}
-              <span className="text-[8px] text-slate-500">▼</span>
+              <span className="text-[8px] text-slate-600">▼</span>
             </button>
             {/* Day progress bar */}
             {now && (() => {
@@ -277,14 +278,29 @@ export default function DaySummaryWidget() {
           )}
 
           {/* Day popup - Dnešný deň v číslach */}
-          {dayPopupOpen && (
+          {dayPopupOpen && now && (
             <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setDayPopupOpen(false)}>
               <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
               <div className="relative w-full max-w-[480px] bg-[var(--bg-card)] border border-amber-500/20 rounded-2xl shadow-2xl p-4 space-y-3 max-h-[70vh] overflow-y-auto scrollbar-hide" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-amber-300">📅 Živé štatistiky od 00:00 do 23:59</span>
+                  <span className="text-sm font-bold text-amber-300">📅 {now.toLocaleDateString('sk-SK', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
                   <button onClick={() => setDayPopupOpen(false)} className="text-slate-500 hover:text-white text-lg">✕</button>
                 </div>
+                {(() => {
+                  const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000)
+                  const daysInYear = new Date(now.getFullYear(), 1, 29).getDate() === 29 ? 366 : 365
+                  const yearPct = Math.round((dayOfYear / daysInYear) * 1000) / 10
+                  const weekNum = Math.ceil(((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 86400000 + new Date(now.getFullYear(), 0, 1).getDay()) / 7)
+                  return (
+                    <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/[0.02] border border-white/5 text-[10px] text-slate-400">
+                      <span>📆 W{weekNum}</span>
+                      <span>·</span>
+                      <span>Deň {dayOfYear}/{daysInYear}</span>
+                      <span>·</span>
+                      <span className="text-amber-400 font-bold">{yearPct}% roka</span>
+                    </div>
+                  )
+                })()}
                 {slovakFacts.loading && <p className="text-xs text-slate-500">Načítavam...</p>}
                 {slovakFacts.data && (
                   <div className="grid grid-cols-2 gap-2">
@@ -299,23 +315,6 @@ export default function DaySummaryWidget() {
                     ))}
                   </div>
                 )}
-                {now && (() => {
-                  const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000)
-                  const daysInYear = new Date(now.getFullYear(), 1, 29).getDate() === 29 ? 366 : 365
-                  const yearPct = Math.round((dayOfYear / daysInYear) * 1000) / 10
-                  const weekNum = Math.ceil((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 604800000)
-                  return (
-                    <div className="border-t border-white/5 pt-3 space-y-2">
-                      <div className="flex justify-between text-[10px] text-slate-500 mb-1">
-                        <span>Rok {now.getFullYear()}</span><span>{yearPct}%</span>
-                      </div>
-                      <div className="w-full bg-white/5 rounded-full h-2">
-                        <div className="bg-gradient-to-r from-amber-500 to-orange-500 h-2 rounded-full" style={{ width: `${yearPct}%` }} />
-                      </div>
-                      <div className="text-[9px] text-slate-600 text-center font-mono">W{weekNum} · Deň {dayOfYear}/{daysInYear}</div>
-                    </div>
-                  )
-                })()}
               </div>
             </div>
           )}
@@ -472,11 +471,6 @@ export default function DaySummaryWidget() {
             <span className="text-[9px] text-slate-600">online</span>
           </div>
           <Pill icon="" value={visitors ? String(visitors.todayPageViews) : '...'} label="dnes" valueColor="text-orange-300" />
-
-          {/* Speedtest mini - far right */}
-          <div className="ml-auto">
-            <SpeedtestMini onOpenChange={setSpeedtestMiniOpen} />
-          </div>
         </div>
 
         {/* Row 2: Section quick-nav + panel icons */}
@@ -524,6 +518,7 @@ export default function DaySummaryWidget() {
             <span className="hidden lg:inline">Zľavy</span>
           </button>
           <EnvironmentMini onOpenChange={setEnvMiniOpen} />
+          <EnergyMini onOpenChange={setEnergyMiniOpen} />
 
           <div className="ml-auto flex items-center gap-2">
             <div className="hidden xl:flex items-center gap-1.5">
@@ -609,9 +604,9 @@ export default function DaySummaryWidget() {
                 const icon = WMO_MINI[c.weatherCode] ?? '🌡️'
                 const tempColor = c.temp >= 25 ? 'text-orange-400' : c.temp >= 15 ? 'text-amber-400' : c.temp >= 5 ? 'text-blue-400' : c.temp >= 0 ? 'text-indigo-400' : 'text-violet-400'
                 return (
-                  <div key={c.key} className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-all shrink-0">
+                  <button key={c.key} onClick={() => setWeatherCityKey(c.key)} className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-white/[0.02] border border-white/5 hover:bg-white/[0.06] hover:border-blue-500/20 transition-all shrink-0 cursor-pointer">
                     <span className="text-base">{icon}</span>
-                    <div className="min-w-0">
+                    <div className="min-w-0 text-left">
                       <div className="text-[9px] text-slate-500 font-semibold truncate">{c.name}</div>
                       <div className="flex items-baseline gap-1">
                         <span className={`text-[13px] font-bold tabular-nums ${tempColor}`}>{c.temp}°</span>
@@ -621,10 +616,77 @@ export default function DaySummaryWidget() {
                     {c.precipitation != null && c.precipitation > 0 && (
                       <span className="text-[8px] text-blue-400">💧{c.precipitation}mm</span>
                     )}
-                  </div>
+                  </button>
                 )
               })}
             </div>
+            {/* Weather city detail popup */}
+            {weatherCityKey && (() => {
+              const c = stats.data?.cityTemps?.find(ct => ct.key === weatherCityKey)
+              if (!c) return null
+              const icon = WMO_MINI[c.weatherCode] ?? '🌡️'
+              const tempColor = c.temp >= 25 ? 'text-orange-400' : c.temp >= 15 ? 'text-amber-400' : c.temp >= 5 ? 'text-blue-400' : c.temp >= 0 ? 'text-indigo-400' : 'text-violet-400'
+              const tomorrowIcon = c.tomorrowCode != null ? (WMO_MINI[c.tomorrowCode] ?? '🌡️') : null
+              return (
+                <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setWeatherCityKey(null)}>
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                  <div className="relative w-full max-w-[400px] bg-[var(--bg-card)] border border-blue-500/20 rounded-2xl shadow-2xl p-5 space-y-3" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold text-blue-300">{icon} {c.name}</span>
+                      <button onClick={() => setWeatherCityKey(null)} className="text-slate-500 hover:text-white text-lg">✕</button>
+                    </div>
+                    <div className="flex items-center justify-center gap-6">
+                      <div className="text-center">
+                        <div className="text-4xl">{icon}</div>
+                        <div className={`text-3xl font-bold font-mono ${tempColor}`}>{c.temp}°C</div>
+                        <div className="text-[10px] text-slate-500">Pocitovo {c.feelsLike}°C</div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-white/[0.03] border border-white/5 rounded-xl p-2.5 text-center">
+                        <div className="text-[9px] text-slate-500">Min / Max</div>
+                        <div className="text-[13px] font-bold text-white">{c.tempMin}° / {c.tempMax}°</div>
+                      </div>
+                      <div className="bg-white/[0.03] border border-white/5 rounded-xl p-2.5 text-center">
+                        <div className="text-[9px] text-slate-500">Vlhkosť</div>
+                        <div className="text-[13px] font-bold text-cyan-300">{c.humidity}%</div>
+                      </div>
+                      <div className="bg-white/[0.03] border border-white/5 rounded-xl p-2.5 text-center">
+                        <div className="text-[9px] text-slate-500">Vietor</div>
+                        <div className="text-[13px] font-bold text-white">{c.windSpeed} km/h</div>
+                      </div>
+                      <div className="bg-white/[0.03] border border-white/5 rounded-xl p-2.5 text-center">
+                        <div className="text-[9px] text-slate-500">Tlak</div>
+                        <div className="text-[13px] font-bold text-white">{c.pressure} hPa</div>
+                      </div>
+                      <div className="bg-white/[0.03] border border-white/5 rounded-xl p-2.5 text-center">
+                        <div className="text-[9px] text-slate-500">UV index</div>
+                        <div className="text-[13px] font-bold text-amber-300">{c.uvIndex}</div>
+                      </div>
+                      <div className="bg-white/[0.03] border border-white/5 rounded-xl p-2.5 text-center">
+                        <div className="text-[9px] text-slate-500">Zrážky</div>
+                        <div className="text-[13px] font-bold text-blue-300">{c.precipitation ?? 0} mm</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-center gap-4 text-[10px] text-slate-400">
+                      <span>🌅 {c.sunrise}</span>
+                      <span>🌇 {c.sunset}</span>
+                    </div>
+                    {tomorrowIcon && (
+                      <div className="bg-white/[0.03] border border-white/5 rounded-xl p-3">
+                        <div className="text-[9px] text-slate-500 mb-1">🗓️ Zajtra</div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl">{tomorrowIcon}</span>
+                          <span className="text-[13px] font-bold text-white">{c.tomorrowMin}° / {c.tomorrowMax}°</span>
+                          {c.tomorrowPrecipProb != null && <span className="text-[10px] text-blue-400">💧 {c.tomorrowPrecipProb}%</span>}
+                          {c.tomorrowWindMax != null && <span className="text-[10px] text-slate-400">💨 {c.tomorrowWindMax} km/h</span>}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })()}
           </div>
         )}
       </div>

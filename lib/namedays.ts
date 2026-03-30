@@ -392,8 +392,8 @@ export function getTomorrowNameday(date: Date): string {
   return getNameday(tomorrow)
 }
 
-// Slovak public holidays
-const SK_HOLIDAYS: Record<string, string> = {
+// Slovak public holidays (fixed dates)
+const SK_HOLIDAYS_FIXED: Record<string, string> = {
   '1-1': 'Deň vzniku SR',
   '1-6': 'Traja králi',
   '5-1': 'Sviatok práce',
@@ -409,9 +409,50 @@ const SK_HOLIDAYS: Record<string, string> = {
   '12-26': 'Druhý sviatok vianočný',
 }
 
+// Dynamic Easter calculation (Anonymous Gregorian algorithm)
+function getEasterDate(year: number): Date {
+  const a = year % 19
+  const b = Math.floor(year / 100)
+  const c = year % 100
+  const d = Math.floor(b / 4)
+  const e = b % 4
+  const f = Math.floor((b + 8) / 25)
+  const g = Math.floor((b - f + 1) / 3)
+  const h = (19 * a + b - d - g + 15) % 30
+  const i = Math.floor(c / 4)
+  const k = c % 4
+  const l = (32 + 2 * e + 2 * i - h - k) % 7
+  const m = Math.floor((a + 11 * h + 22 * l) / 451)
+  const month = Math.floor((h + l - 7 * m + 114) / 31)
+  const day = ((h + l - 7 * m + 114) % 31) + 1
+  return new Date(year, month - 1, day)
+}
+
+function getEasterHolidays(year: number): { key: string; name: string; date: Date }[] {
+  const easter = getEasterDate(year)
+  const goodFriday = new Date(easter)
+  goodFriday.setDate(easter.getDate() - 2)
+  const easterMonday = new Date(easter)
+  easterMonday.setDate(easter.getDate() + 1)
+  return [
+    { key: `${goodFriday.getMonth() + 1}-${goodFriday.getDate()}`, name: 'Veľký piatok', date: goodFriday },
+    { key: `${easter.getMonth() + 1}-${easter.getDate()}`, name: 'Veľkonočná nedeľa', date: easter },
+    { key: `${easterMonday.getMonth() + 1}-${easterMonday.getDate()}`, name: 'Veľkonočný pondelok', date: easterMonday },
+  ]
+}
+
+function getAllHolidaysForYear(year: number): Record<string, string> {
+  const holidays = { ...SK_HOLIDAYS_FIXED }
+  for (const eh of getEasterHolidays(year)) {
+    holidays[eh.key] = eh.name
+  }
+  return holidays
+}
+
 export function getHoliday(date: Date): string | null {
+  const holidays = getAllHolidaysForYear(date.getFullYear())
   const key = `${date.getMonth() + 1}-${date.getDate()}`
-  return SK_HOLIDAYS[key] ?? null
+  return holidays[key] ?? null
 }
 
 export function getNextHoliday(date: Date): { name: string; date: Date; daysUntil: number } {
@@ -424,7 +465,8 @@ export function getNextHolidays(date: Date, count: number): { name: string; date
   const all: { name: string; date: Date; daysUntil: number }[] = []
 
   for (const y of [year, year + 1]) {
-    for (const [key, name] of Object.entries(SK_HOLIDAYS)) {
+    const holidays = getAllHolidaysForYear(y)
+    for (const [key, name] of Object.entries(holidays)) {
       const [m, d] = key.split('-').map(Number)
       const hDate = new Date(y, m - 1, d)
       const diff = Math.ceil((hDate.getTime() - today.getTime()) / 86400000)

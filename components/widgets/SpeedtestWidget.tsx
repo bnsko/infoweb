@@ -196,32 +196,20 @@ export default function SpeedtestWidget() {
   )
 }
 
-/* ── Mini speedtest for main panel ── */
+/* ── Mini speedtest for footer ── */
 export function SpeedtestMini(props: { onOpenChange?: (open: boolean) => void }) {
   const { onOpenChange } = props
   const [open, setOpen] = useState(false)
   useEffect(() => { onOpenChange?.(open) }, [open, onOpenChange])
-  const [history] = useState<SpeedResult[]>(() => loadHistory())
-  const last = history[0]
 
   return (
     <>
       <button onClick={() => setOpen(o => !o)}
-        className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-semibold transition-all border shrink-0 ${
-          open ? 'bg-cyan-500/15 border-cyan-500/25 text-cyan-300' : 'bg-white/[0.02] border-white/5 text-slate-400 hover:text-cyan-300 hover:border-cyan-500/20'
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-semibold transition-all border ${
+          open ? 'bg-cyan-500/15 border-cyan-500/25 text-cyan-300' : 'bg-white/[0.03] border-white/5 text-slate-500 hover:text-cyan-300 hover:border-cyan-500/20'
         }`}>
         <span>📶</span>
-        {last ? (
-          <span className="font-mono tabular-nums">
-            <span className="text-green-400">⬇{last.download}</span>
-            <span className="text-slate-600 mx-0.5">/</span>
-            <span className="text-blue-400">⬆{last.upload}</span>
-            <span className="text-slate-600 mx-0.5">/</span>
-            <span className="text-cyan-400">{last.ping}ms</span>
-          </span>
-        ) : (
-          <span className="text-slate-500">Merať</span>
-        )}
+        <span>Speedtest</span>
       </button>
 
       {open && (
