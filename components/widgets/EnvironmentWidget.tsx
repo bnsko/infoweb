@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useWidget } from '@/hooks/useWidget'
 import { useLang } from '@/hooks/useLang'
 import WidgetCard from '@/components/ui/WidgetCard'
@@ -245,5 +245,38 @@ export default function EnvironmentWidget() {
 
       <p className="text-[10px] text-slate-600 mt-2">SVP · ÚVZ · SHMÚ · Mestá SR</p>
     </WidgetCard>
+  )
+}
+
+/* ── Mini panel button with animated icon ── */
+export function EnvironmentMini(props: { onOpenChange?: (open: boolean) => void }) {
+  const { onOpenChange } = props
+  const [open, setOpen] = useState(false)
+  useEffect(() => { onOpenChange?.(open) }, [open, onOpenChange])
+
+  const reservoirs = useWidget<ReservoirData>('/api/reservoirs', 60 * 60 * 1000)
+  const avg = reservoirs.data?.avgCapacity ?? 0
+
+  return (
+    <>
+      <button onClick={() => setOpen(o => !o)}
+        className={`flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-1 rounded-md transition-all border ${
+          open ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/20' : 'text-slate-500 hover:text-slate-200 hover:bg-white/5 border-transparent hover:border-white/10'
+        }`}
+        title="Životné prostredie">
+        <span className="inline-block animate-pulse">🌍</span>
+        <span className="hidden lg:inline">Prostredie</span>
+        {avg > 0 && <span className="text-[7px] text-emerald-400 ml-0.5">{avg}%</span>}
+      </button>
+      {open && (
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setOpen(false)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="relative w-full max-w-[500px]" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setOpen(false)} className="absolute -top-2 -right-2 z-10 w-7 h-7 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-white border border-white/10 text-sm">✕</button>
+            <EnvironmentWidget />
+          </div>
+        </div>
+      )}
+    </>
   )
 }

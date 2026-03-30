@@ -20,7 +20,21 @@ function relativeAgo(ts: number): string {
 }
 
 function decodeEntities(s: string): string {
-  return s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/<!\[CDATA\[|\]\]>/g, '')
+  return s
+    .replace(/<!\[CDATA\[|\]\]>/g, '')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&ndash;/g, '–')
+    .replace(/&mdash;/g, '—')
+    .replace(/&hellip;/g, '…')
+    .replace(/&laquo;/g, '«')
+    .replace(/&raquo;/g, '»')
 }
 
 interface RSSSource {

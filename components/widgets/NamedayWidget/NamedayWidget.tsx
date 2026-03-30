@@ -62,10 +62,76 @@ function getSlavicNamedays(d: Date): { country: string; flag: string; names: str
     '3-19':'József','3-20':'Klaudia','3-21':'Benedek','3-25':'Gyöngyi,Irész',
     '3-30':'Zalán','3-31':'Árpád',
   }
+  const HR: Record<string, string> = {
+    '1-1':'Marija','1-2':'Bazilije,Grgur','1-3':'Genoveva','1-4':'Tit,Rigobert','1-5':'Šimun','1-6':'Gašpar,Melkior,Baltazar',
+    '1-7':'Rajmund,Lucijan','1-8':'Severin','1-9':'Julijan','1-10':'Doroteja','1-11':'Pavao','1-12':'Tatjana',
+    '1-13':'Veronika,Hilari','1-14':'Feliks','1-15':'Pavel','1-16':'Marcel','1-17':'Ante,Antun','1-18':'Margareta,Priska',
+    '1-19':'Suzana,Marta','1-20':'Fabijan,Sebastijan','1-21':'Agneza,Ines','1-22':'Vjenceslav','1-23':'Rajmund','1-24':'Franjo',
+    '1-25':'Pavao','1-26':'Timotej,Tit','1-27':'Angela,Đuro','1-28':'Toma','1-29':'Franjo','1-30':'Martina','1-31':'Ivan,Marcela',
+    '2-1':'Brigita','2-2':'Marija','2-3':'Blaž','2-4':'Andreja,Veronika','2-5':'Agata','2-6':'Pavao,Doroteja',
+    '2-7':'Rihard,Romuald','2-8':'Jeronim','2-9':'Apolonija','2-10':'Skolastika',
+    '2-14':'Valentin,Valentina','2-22':'Petar','2-24':'Matija','2-28':'Roman',
+    '3-1':'Albin','3-3':'Kunigunda','3-4':'Kazimir','3-7':'Toma','3-8':'Ivan','3-9':'Franciska,Kata',
+    '3-10':'Viktorija','3-12':'Grgur','3-17':'Patrik','3-19':'Josip','3-20':'Klaudija','3-21':'Benedikt',
+    '3-25':'Blagovijest','3-30':'Amadej','3-31':'Benjamin',
+    '4-1':'Hugo','4-2':'Franjo','4-4':'Izidor','4-5':'Irena,Vjenceslav','4-7':'Ivan','4-8':'Julija',
+    '4-9':'Dušan','4-10':'Danijel','4-11':'Stanislav','4-13':'Martin','4-14':'Valerija','4-16':'Bernadeta',
+    '4-17':'Rudolf','4-18':'Valerija','4-20':'Marcel','4-21':'Anzelmo','4-22':'Leonida','4-23':'Vojtjeh,Đuro',
+    '4-24':'Juraj','4-25':'Marko','4-27':'Zita','4-28':'Valeria,Petar','4-29':'Katarina','4-30':'Pio',
+    '5-1':'Josip','5-2':'Atanazij','5-3':'Filip,Jakov','5-4':'Florijan','5-6':'Dominik','5-7':'Gizela',
+    '5-10':'Ivan','5-12':'Leopold','5-13':'Fatimska Gospa','5-15':'Izidor','5-16':'Ivan',
+    '5-20':'Bernardin','5-22':'Julija','5-23':'Desiré','5-25':'Grgur,Beda','5-26':'Filip',
+    '5-30':'Ivana,Ferdinand','5-31':'Petra',
+    '6-1':'Justin','6-3':'Karlo','6-5':'Bonifacije','6-6':'Norbert','6-8':'Medard','6-9':'Efrem',
+    '6-11':'Barnaba','6-13':'Ante,Antun','6-15':'Vid','6-21':'Alojzije','6-22':'Paulin,Toma',
+    '6-24':'Ivan','6-27':'Ladislav','6-29':'Petar,Pavao','6-30':'Mirko',
+  }
+  const SI: Record<string, string> = {
+    '1-1':'Novo leto','1-2':'Bazilij','1-3':'Genovefa','1-5':'Šimona','1-6':'Gašper,Miha,Baltazar',
+    '1-7':'Rajmond','1-8':'Severin','1-9':'Julijan','1-10':'Gregor','1-11':'Honorat',
+    '1-12':'Arkadij','1-13':'Veronika','1-14':'Feliks','1-15':'Pavel','1-16':'Marcel',
+    '1-17':'Anton','1-18':'Margareta','1-19':'Sara,Mario','1-20':'Fabijan,Sebastijan',
+    '1-21':'Neža,Ines','1-22':'Vincencij','1-23':'Rajmond','1-24':'Frančišek',
+    '1-25':'Pavel','1-26':'Timotej','1-27':'Angela','1-28':'Tomaž','1-29':'Valerij',
+    '1-30':'Martina','1-31':'Ivan,Marcela',
+    '2-1':'Brigita','2-2':'Svečnica','2-3':'Blaž','2-5':'Agata','2-6':'Doroteja',
+    '2-7':'Rihard','2-8':'Jeronim','2-9':'Apolonija','2-10':'Šolastika',
+    '2-14':'Valentin,Valentina','2-22':'Peter','2-24':'Matija','2-28':'Roman',
+    '3-1':'Albin','3-4':'Kazimir','3-7':'Tomaž','3-8':'Janez','3-9':'Frančiška',
+    '3-12':'Gregor','3-17':'Patrik','3-19':'Jožef','3-20':'Klavdija','3-21':'Benedikt',
+    '3-25':'Blagovest','3-30':'Amadej','3-31':'Benjamin',
+  }
+  const RS: Record<string, string> = {
+    '1-1':'Нова година','1-2':'Игњатије','1-3':'Јулијана','1-6':'Богојављење',
+    '1-7':'Божић','1-9':'Стефан','1-12':'Татјана','1-14':'Нова година (стара)',
+    '1-17':'Антоније','1-18':'Атанасије','1-19':'Теофан','1-20':'Јован',
+    '1-21':'Максим','1-22':'Тимотеј','1-25':'Григорије','1-27':'Сава',
+    '1-29':'Игњатије','1-30':'Три Јерарха','1-31':'Кирил,Методије',
+    '2-1':'Трифун','2-2':'Сретење','2-6':'Дорофеј','2-10':'Харалампије',
+    '2-14':'Валентин','2-15':'Сретење','2-23':'Свети Харалампије',
+    '3-1':'Евдокија','3-6':'Тимотеј','3-8':'Жилен дан','3-9':'Сави',
+    '3-19':'Дарко','3-22':'Свети 40 мученика','3-25':'Благовести',
+    '3-30':'Алексеј','3-31':'Кирил',
+  }
+  const BG: Record<string, string> = {
+    '1-1':'Васил,Василка','1-2':'Игнат','1-6':'Йордан,Йорданка,Богдан',
+    '1-7':'Иванов ден','1-17':'Антон,Антоний,Антония','1-18':'Атанас,Атанаска',
+    '1-20':'Ефтимий','1-21':'Емилиян','1-25':'Григорий',
+    '1-27':'Савва','1-30':'Три светители',
+    '2-1':'Трифон','2-2':'Сретение','2-10':'Харалампий',
+    '2-14':'Валентин,Валентина','3-1':'Баба Марта',
+    '3-3':'Национален празник','3-8':'Женски ден','3-9':'Четирисет мъченици',
+    '3-19':'Дарин','3-25':'Благовещение','3-27':'Матей',
+    '3-30':'Алексей','3-31':'Кирил',
+  }
   const result: { country: string; flag: string; names: string }[] = []
   if (CZ[key]) result.push({ country: 'Česko', flag: '🇨🇿', names: CZ[key] })
   if (PL[key]) result.push({ country: 'Poľsko', flag: '🇵🇱', names: PL[key] })
   if (HU[key]) result.push({ country: 'Maďarsko', flag: '🇭🇺', names: HU[key] })
+  if (HR[key]) result.push({ country: 'Chorvátsko', flag: '🇭🇷', names: HR[key] })
+  if (SI[key]) result.push({ country: 'Slovinsko', flag: '🇸🇮', names: SI[key] })
+  if (RS[key]) result.push({ country: 'Srbsko', flag: '🇷🇸', names: RS[key] })
+  if (BG[key]) result.push({ country: 'Bulharsko', flag: '🇧🇬', names: BG[key] })
   return result
 }
 
