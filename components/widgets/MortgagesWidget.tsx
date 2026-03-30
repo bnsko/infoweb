@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useWidget } from '@/hooks/useWidget'
 import { useLang } from '@/hooks/useLang'
 import WidgetCard from '@/components/ui/WidgetCard'
@@ -68,5 +69,36 @@ export default function MortgagesWidget() {
         </div>
       )}
     </WidgetCard>
+  )
+}
+
+export function MortgagesMini(props: { onOpenChange?: (open: boolean) => void }) {
+  const { onOpenChange } = props
+  const [open, setOpen] = useState(false)
+  const { data } = useWidget<MortgageData>('/api/mortgages', 60 * 60 * 1000)
+  useEffect(() => { onOpenChange?.(open) }, [open, onOpenChange])
+
+  return (
+    <>
+      <button onClick={() => setOpen(o => !o)}
+        className={`flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-1 rounded-md transition-all border ${
+          open ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/20' : 'text-slate-500 hover:text-slate-200 hover:bg-white/5 border-transparent hover:border-white/10'
+        }`}
+        title="Hypotéky · Obnovuje sa každú hodinu">
+        <span>🏠</span>
+        <span className="hidden lg:inline">Hypotéky</span>
+        {data?.avgRate && <span className="text-[8px] text-cyan-400 font-bold ml-0.5">{data.avgRate}%</span>}
+      </button>
+      {open && (
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setOpen(false)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="relative w-full max-w-[500px]" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setOpen(false)} className="absolute -top-2 -right-2 z-10 w-7 h-7 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-white border border-white/10 text-sm">✕</button>
+            <MortgagesWidget />
+            <div className="mt-2 text-center text-[8px] text-slate-600">🔄 Obnovuje sa každú hodinu</div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }

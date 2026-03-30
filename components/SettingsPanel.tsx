@@ -12,6 +12,7 @@ const WIDGET_LIST = [
   { id: 'news', label: '📰 Správy', labelEn: '📰 News' },
   { id: 'slovensko', label: '🇸🇰 Slovensko', labelEn: '🇸🇰 Slovakia' },
   { id: 'financie', label: '💶 Financie', labelEn: '💶 Finance' },
+  { id: 'podnikanie', label: '💼 Podnikanie', labelEn: '💼 Business' },
   { id: 'space', label: '🔭 Vesmír', labelEn: '🔭 Space' },
   { id: 'fun', label: '🎮 Zábava', labelEn: '🎮 Entertainment' },
   { id: 'restaurants', label: '🍽️ Reštaurácie', labelEn: '🍽️ Restaurants' },
