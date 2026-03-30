@@ -25,12 +25,14 @@ const SHOW_STYLE: Record<string, { color: string; bg: string }> = {
   'Startitup': { color: '#10b981', bg: 'bg-emerald-500/10' },
   'Lužifčák': { color: '#f59e0b', bg: 'bg-amber-500/10' },
   'Recast': { color: '#ec4899', bg: 'bg-pink-500/10' },
+  'Jirka Král': { color: '#ef4444', bg: 'bg-red-500/10' },
   'Dobré ráno': { color: '#f97316', bg: 'bg-orange-500/10' },
   'Index': { color: '#3b82f6', bg: 'bg-blue-500/10' },
   'Forbes SK': { color: '#8b5cf6', bg: 'bg-violet-500/10' },
   'Pravda': { color: '#ef4444', bg: 'bg-red-500/10' },
   'Tech.sme': { color: '#06b6d4', bg: 'bg-cyan-500/10' },
   'Para podcast': { color: '#14b8a6', bg: 'bg-teal-500/10' },
+  'Aktuality': { color: '#f43f5e', bg: 'bg-rose-500/10' },
 }
 
 function relativeDate(dateStr: string): string {
@@ -46,12 +48,16 @@ export default function PodcastWidget() {
   const { lang } = useLang()
   const [playingUrl, setPlayingUrl] = useState<string | null>(null)
   const [showFilter, setShowFilter] = useState<string>('all')
+  const [sortBy, setSortBy] = useState<'recent' | 'show'>('recent')
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const { data, loading, error, refetch } = useWidget<PodcastData>('/api/podcasts', 15 * 60 * 1000)
 
   const allPodcasts = data?.podcasts ?? []
   const shows = Array.from(new Set(allPodcasts.map(p => p.show))).sort()
-  const podcasts = showFilter === 'all' ? allPodcasts : allPodcasts.filter(p => p.show === showFilter)
+  const filtered = showFilter === 'all' ? allPodcasts : allPodcasts.filter(p => p.show === showFilter)
+  const podcasts = sortBy === 'show'
+    ? [...filtered].sort((a, b) => a.show.localeCompare(b.show) || new Date(b.date).getTime() - new Date(a.date).getTime())
+    : filtered
 
   const togglePlay = (url: string) => {
     if (playingUrl === url) {
@@ -78,7 +84,7 @@ export default function PodcastWidget() {
       {!loading && allPodcasts.length > 0 && (
         <>
           {/* Show filter */}
-          <div className="flex flex-wrap gap-1 mb-3">
+          <div className="flex flex-wrap gap-1 mb-2">
             <button onClick={() => setShowFilter('all')}
               className={`text-[8px] px-2 py-0.5 rounded-full font-semibold transition-colors ${showFilter === 'all' ? 'bg-purple-500/20 text-purple-300' : 'text-slate-500 hover:text-slate-300'}`}>
               Všetky ({allPodcasts.length})
@@ -93,6 +99,11 @@ export default function PodcastWidget() {
                 </button>
               )
             })}
+          </div>
+          {/* Sort toggle */}
+          <div className="flex gap-1 mb-3">
+            <button onClick={() => setSortBy('recent')} className={`text-[8px] px-2 py-0.5 rounded-full font-semibold transition-colors ${sortBy === 'recent' ? 'bg-purple-500/20 text-purple-300' : 'text-slate-500 hover:text-slate-300'}`}>🕐 Najnovšie</button>
+            <button onClick={() => setSortBy('show')} className={`text-[8px] px-2 py-0.5 rounded-full font-semibold transition-colors ${sortBy === 'show' ? 'bg-purple-500/20 text-purple-300' : 'text-slate-500 hover:text-slate-300'}`}>📻 Podľa relácie</button>
           </div>
 
           {/* Episode list */}
@@ -140,7 +151,7 @@ export default function PodcastWidget() {
           </div>
         </>
       )}
-      <p className="text-[10px] text-slate-600 mt-2">Denník N · Startitup · Lužifčák · Recast · Dobré ráno + ďalšie</p>
+      <p className="text-[10px] text-slate-600 mt-2">Denník N · Startitup · Lužifčák · Recast · Jirka Král · Dobré ráno · Forbes SK + ďalšie</p>
     </WidgetCard>
   )
 }

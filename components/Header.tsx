@@ -88,6 +88,24 @@ export default function Header() {
           <div className="hidden md:flex items-center gap-1.5 text-[9px] text-slate-500 font-mono tabular-nums" suppressHydrationWarning>
             <span>🇸🇰 {fmtBig(skPop)}</span><span className="text-slate-700">|</span><span>🌍 {fmtBig(worldPop)}</span>
           </div>
+          {/* Year progress */}
+          {(() => {
+            const n = new Date()
+            const dayOfYear = Math.floor((n.getTime() - new Date(n.getFullYear(), 0, 0).getTime()) / 86400000)
+            const daysInYear = new Date(n.getFullYear(), 1, 29).getDate() === 29 ? 366 : 365
+            const yearPct = Math.round((dayOfYear / daysInYear) * 1000) / 10
+            const weekNum = Math.ceil(((n.getTime() - new Date(n.getFullYear(), 0, 1).getTime()) / 86400000 + new Date(n.getFullYear(), 0, 1).getDay()) / 7)
+            return (
+              <div className="hidden lg:flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/[0.03] border border-white/5" suppressHydrationWarning>
+                <span className="text-[8px] text-slate-500 font-mono">W{weekNum}</span>
+                <div className="w-16 bg-white/5 rounded-full h-1.5 overflow-hidden">
+                  <div className="bg-gradient-to-r from-amber-500 to-orange-500 h-full rounded-full" style={{ width: `${yearPct}%` }} />
+                </div>
+                <span className="text-[8px] text-amber-400 font-mono font-bold">{yearPct}%</span>
+                <span className="text-[7px] text-slate-600 font-mono">D{dayOfYear}</span>
+              </div>
+            )
+          })()}
           <div className="hidden sm:flex items-center gap-1.5">
             {THEMES.map((tm) => (
               <button key={tm.key} onClick={() => setTheme(tm.key)}

@@ -22,14 +22,7 @@ interface FluResponse { flu: FluData; timestamp: number }
 interface Doctor { name: string; type: string; city: string; address: string; phone: string; acceptsNew: boolean; waitDays: number; openHours: string; note: string }
 interface DoctorData { doctors: Doctor[]; stats: Record<string, number>; timestamp: number }
 
-type Tab = 'pharmacies' | 'pollen' | 'flu' | 'doctors'
-
-const TABS: { key: Tab; icon: string; sk: string }[] = [
-  { key: 'pharmacies', icon: '💊', sk: 'Lekárne' },
-  { key: 'pollen', icon: '🌿', sk: 'Peľ' },
-  { key: 'flu', icon: '🤒', sk: 'Chrípka' },
-  { key: 'doctors', icon: '🩺', sk: 'Lekári' },
-]
+type Tab = 'pollen' | 'flu' | 'doctors'
 
 const POLLEN_INFO: Record<string, string> = {
   'Trávy': 'Najčastejší alergén na SK. Sezóna máj-august.',
@@ -49,7 +42,7 @@ const FLU_LEVEL_INFO: Record<string, { desc: string; advice: string }> = {
 
 export default function HealthWidget() {
   const { lang } = useLang()
-  const [tab, setTab] = useState<Tab>('pharmacies')
+  const [tab, setTab] = useState<Tab>('pollen')
   const [doctorType, setDoctorType] = useState<string>('all')
   const [doctorCity, setDoctorCity] = useState<string>('all')
   const [pharmFilter, setPharmFilter] = useState<'all' | 'emergency' | 'night'>('all')
@@ -64,6 +57,7 @@ export default function HealthWidget() {
   const cities = Object.keys(pharmacies.data?.pharmacies ?? {})
   const [city, setCity] = useState('')
   const allPharmacies = pharmacies.data?.pharmacies?.[city || cities[0]] ?? []
+  const emergencyPharmacies = allPharmacies.filter(p => p.isEmergency || p.isNight)
   const filteredPharmacies = pharmFilter === 'emergency' ? allPharmacies.filter(p => p.isEmergency) :
     pharmFilter === 'night' ? allPharmacies.filter(p => p.isNight) : allPharmacies
 
@@ -73,8 +67,67 @@ export default function HealthWidget() {
     .filter(d => doctorType === 'all' || d.type === doctorType)
     .filter(d => doctorCity === 'all' || d.city === doctorCity)
 
+  const TABS: { key: Tab; icon: string; sk: string }[] = [
+    { key: 'pollen', icon: '🌿', sk: 'Peľ' },
+    { key: 'flu', icon: '🤒', sk: 'Chrípka' },
+    { key: 'doctors', icon: '🩺', sk: 'Lekári' },
+  ]
+
   return (
     <WidgetCard accent="green" title={lang === 'sk' ? 'Zdravie' : 'Health'} icon="🏥" onRefresh={refetchAll}>
+      {/* ── Pharmacies & Emergency — always visible ── */}
+      <div className="mb-4">
+        <div className="flex items-center gap-1.5 mb-2">
+          <span className="text-sm">💊</span>
+          <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">Lekárne & Pohotovosť</span>
+          {emergencyPharmacies.length > 0 && <span className="text-[8px] min-w-[16px] h-[16px] flex items-center justify-center rounded-full font-bold bg-red-500/15 text-red-300">{emergencyPharmacies.length}</span>}
+          <div className="flex-1 h-px bg-white/5" />
+        </div>
+        {pharmacies.loading ? <SkeletonRows rows={2} /> : !pharmacies.data ? null : (
+          <>
+            <div className="flex gap-1 mb-2">
+              {([
+                { key: 'all' as const, label: '📋 Všetky' },
+                { key: 'emergency' as const, label: '🚨 Pohotovosť' },
+                { key: 'night' as const, label: '🌙 Nočné' },
+              ] as const).map(f => (
+                <button key={f.key} onClick={() => setPharmFilter(f.key)}
+                  className={`text-[9px] px-2 py-0.5 rounded-full font-semibold transition-colors ${
+                    pharmFilter === f.key ? 'bg-green-500/20 text-green-300' : 'text-slate-500 hover:text-slate-300'
+                  }`}>{f.label}</button>
+              ))}
+            </div>
+            {cities.length > 1 && (
+              <select value={city || cities[0]} onChange={e => setCity(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-slate-300 mb-2 focus:outline-none">
+                {cities.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            )}
+            <div className="space-y-0.5 max-h-[160px] overflow-y-auto scrollbar-hide">
+              {filteredPharmacies.length === 0 ? (
+                <p className="text-[10px] text-slate-500 text-center py-2">Žiadne lekárne v tejto kategórii</p>
+              ) : filteredPharmacies.slice(0, 6).map((p, i) => (
+                <div key={i} className="flex items-start gap-2 rounded-lg p-1.5 widget-item-hover">
+                  <span className="text-sm shrink-0 mt-0.5">{p.isEmergency ? '🚨' : '💊'}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] text-slate-200 font-medium line-clamp-1">{p.name}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[9px] text-slate-500">📍 {p.address}</span>
+                      {p.openUntil && <span className="text-[9px] text-slate-600">do {p.openUntil}</span>}
+                    </div>
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    {p.isNight && <span className="text-[7px] px-1 py-0.5 rounded bg-emerald-500/15 text-emerald-300 font-bold">24h</span>}
+                    {p.isEmergency && <span className="text-[7px] px-1 py-0.5 rounded bg-red-500/15 text-red-300 font-bold">Pohot.</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* ── Tabs: Pollen, Flu, Doctors ── */}
       <div className="flex gap-0.5 mb-3 bg-white/[0.03] rounded-lg p-0.5 border border-white/5">
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
@@ -86,56 +139,6 @@ export default function HealthWidget() {
           </button>
         ))}
       </div>
-
-      {/* Pharmacies + Emergency */}
-      {tab === 'pharmacies' && (
-        <>
-          {pharmacies.loading && <SkeletonRows rows={4} />}
-          {!pharmacies.loading && pharmacies.data && (
-            <>
-              <div className="flex gap-1 mb-2">
-                {([
-                  { key: 'all' as const, label: '📋 Všetky' },
-                  { key: 'emergency' as const, label: '🚨 Pohotovosť' },
-                  { key: 'night' as const, label: '🌙 Nočné' },
-                ] as const).map(f => (
-                  <button key={f.key} onClick={() => setPharmFilter(f.key)}
-                    className={`text-[9px] px-2 py-0.5 rounded-full font-semibold transition-colors ${
-                      pharmFilter === f.key ? 'bg-green-500/20 text-green-300' : 'text-slate-500 hover:text-slate-300'
-                    }`}>{f.label}</button>
-                ))}
-              </div>
-              {cities.length > 1 && (
-                <select value={city || cities[0]} onChange={e => setCity(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-slate-300 mb-2 focus:outline-none">
-                  {cities.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              )}
-              <div className="space-y-0.5 max-h-[280px] overflow-y-auto scrollbar-hide">
-                {filteredPharmacies.length === 0 ? (
-                  <p className="text-[10px] text-slate-500 text-center py-4">Žiadne lekárne v tejto kategórii</p>
-                ) : filteredPharmacies.map((p, i) => (
-                  <div key={i} className="flex items-start gap-2 rounded-lg p-1.5 widget-item-hover">
-                    <span className="text-sm shrink-0 mt-0.5">{p.isEmergency ? '🚨' : '💊'}</span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[11px] text-slate-200 font-medium line-clamp-1">{p.name}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[9px] text-slate-500">📍 {p.address}</span>
-                        {p.openUntil && <span className="text-[9px] text-slate-600">do {p.openUntil}</span>}
-                      </div>
-                      {p.phone && <span className="text-[9px] text-green-400/70">📞 {p.phone}</span>}
-                    </div>
-                    <div className="flex gap-1 shrink-0">
-                      {p.isNight && <span className="text-[7px] px-1 py-0.5 rounded bg-emerald-500/15 text-emerald-300 font-bold">24h</span>}
-                      {p.isEmergency && <span className="text-[7px] px-1 py-0.5 rounded bg-red-500/15 text-red-300 font-bold">Pohot.</span>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </>
-      )}
 
       {/* Pollen extensive */}
       {tab === 'pollen' && (
