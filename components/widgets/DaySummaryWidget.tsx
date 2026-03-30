@@ -18,9 +18,16 @@ import OfficeWaitWidget from '@/components/widgets/OfficeWaitWidget'
 import LotteryWidget from '@/components/widgets/LotteryWidget'
 import DealsWidget from '@/components/widgets/DealsWidget'
 import FlightsWidget from '@/components/widgets/FlightsWidget'
+import { EnvironmentMini } from '@/components/widgets/EnvironmentWidget'
 
 interface SlovakFact { icon: string; title: string; value: string; detail: string }
 interface SlovakFactsData { staticFacts: SlovakFact[]; dynamicFacts: SlovakFact[]; generalStats: Record<string, number>; dayOfYear: number }
+
+const WMO_MINI: Record<number, string> = {
+  0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',
+  61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'🌨️',75:'❄️',77:'🌨️',
+  80:'🌦️',81:'🌧️',82:'⛈️',85:'🌨️',86:'❄️',95:'⛈️',96:'⛈️',99:'⛈️',
+}
 
 interface VisitorData {
   lifetimeViews: number; activeNow: number; todayPageViews: number
@@ -48,27 +55,55 @@ function scrollTo(id: string) {
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
-const WORK_FREE: Record<string, string> = {
-  '01-01': 'Deň vzniku SR',
-  '01-06': 'Traja králi',
-  '03-28': 'Veľký piatok',
-  '03-31': 'Veľkonočný pondelok',
-  '05-01': 'Sviatok práce',
-  '05-08': 'Deň víťazstva',
-  '07-05': 'Sviatok sv. Cyrila a Metoda',
-  '08-29': 'SNP',
-  '09-01': 'Deň Ústavy SR',
-  '09-15': 'Sedembolestná Panna Mária',
-  '11-01': 'Sviatok všetkých svätých',
-  '11-17': 'Deň boja za slobodu',
-  '12-24': 'Štedrý deň',
-  '12-25': 'Prvý sviatok vianočný',
-  '12-26': 'Druhý sviatok vianočný',
+// Dynamic Easter calculation (Anonymous Gregorian algorithm)
+function getEasterDate(year: number): Date {
+  const a = year % 19
+  const b = Math.floor(year / 100)
+  const c = year % 100
+  const d = Math.floor(b / 4)
+  const e = b % 4
+  const f = Math.floor((b + 8) / 25)
+  const g = Math.floor((b - f + 1) / 3)
+  const h = (19 * a + b - d - g + 15) % 30
+  const i = Math.floor(c / 4)
+  const k = c % 4
+  const l = (32 + 2 * e + 2 * i - h - k) % 7
+  const m = Math.floor((a + 11 * h + 22 * l) / 451)
+  const month = Math.floor((h + l - 7 * m + 114) / 31)
+  const day = ((h + l - 7 * m + 114) % 31) + 1
+  return new Date(year, month - 1, day)
+}
+
+function getWorkFreeForYear(year: number): Record<string, string> {
+  const easter = getEasterDate(year)
+  const goodFriday = new Date(easter)
+  goodFriday.setDate(easter.getDate() - 2)
+  const easterMonday = new Date(easter)
+  easterMonday.setDate(easter.getDate() + 1)
+  const fmt = (d: Date) => `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  return {
+    '01-01': 'Deň vzniku SR',
+    '01-06': 'Traja králi',
+    [fmt(goodFriday)]: 'Veľký piatok',
+    [fmt(easterMonday)]: 'Veľkonočný pondelok',
+    '05-01': 'Sviatok práce',
+    '05-08': 'Deň víťazstva',
+    '07-05': 'Sviatok sv. Cyrila a Metoda',
+    '08-29': 'SNP',
+    '09-01': 'Deň Ústavy SR',
+    '09-15': 'Sedembolestná Panna Mária',
+    '11-01': 'Sviatok všetkých svätých',
+    '11-17': 'Deň boja za slobodu',
+    '12-24': 'Štedrý deň',
+    '12-25': 'Prvý sviatok vianočný',
+    '12-26': 'Druhý sviatok vianočný',
+  }
 }
 
 function isWorkFree(d: Date): boolean {
+  const wf = getWorkFreeForYear(d.getFullYear())
   const key = `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-  return key in WORK_FREE || d.getDay() === 0 || d.getDay() === 6
+  return key in wf || d.getDay() === 0 || d.getDay() === 6
 }
 
 function getSessionId(): string {
@@ -105,9 +140,10 @@ export default function DaySummaryWidget() {
   const [officeOpen, setOfficeOpen] = useState(false)
   const [lotteryOpen, setLotteryOpen] = useState(false)
   const [dealsOpen, setDealsOpen] = useState(false)
+  const [envMiniOpen, setEnvMiniOpen] = useState(false)
   const slovakFacts = useWidget<SlovakFactsData>('/api/slovakfacts', 60 * 1000)
 
-  const anyPopupOpen = showerOpen || auroraOpen || spaceOpen || flightsOpen || holidayOpen || dayPopupOpen || namedayMiniOpen || horoscopeMiniOpen || issMiniOpen || launchesMiniOpen || speedtestMiniOpen || mhdOpen || trainOpen || officeOpen || lotteryOpen || dealsOpen
+  const anyPopupOpen = showerOpen || auroraOpen || spaceOpen || flightsOpen || holidayOpen || dayPopupOpen || namedayMiniOpen || horoscopeMiniOpen || issMiniOpen || launchesMiniOpen || speedtestMiniOpen || mhdOpen || trainOpen || officeOpen || lotteryOpen || dealsOpen || envMiniOpen
 
   const holiday = useMemo(() => now ? getHoliday(now) : null, [now])
   const nextHolidays = useMemo(() => now ? getNextHolidays(now, 6) : [], [now])
@@ -158,18 +194,30 @@ export default function DaySummaryWidget() {
               {now && isWorkFree(now) && <span className="text-[8px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded-full">🏠 voľno</span>}
               <span className="text-[8px] text-slate-500">▼</span>
             </button>
-            {/* Year progress bar */}
+            {/* Day progress bar */}
             {now && (() => {
-              const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000)
-              const daysInYear = new Date(now.getFullYear(), 1, 29).getDate() === 29 ? 366 : 365
-              const yearPct = Math.round((dayOfYear / daysInYear) * 1000) / 10
-              const weekNum = Math.ceil((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 604800000)
+              const totalMinutes = now.getHours() * 60 + now.getMinutes()
+              const dayPct = Math.round((totalMinutes / 1440) * 1000) / 10
+              const remaining = 1440 - totalMinutes
+              const remH = Math.floor(remaining / 60)
+              const remM = remaining % 60
               return (
-                <div className="mt-0.5">
-                  <div className="w-full bg-white/5 rounded-full h-[3px]">
-                    <div className="bg-gradient-to-r from-amber-500 to-orange-500 h-[3px] rounded-full transition-all" style={{ width: `${yearPct}%` }} />
+                <div className="mt-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[8px] text-slate-600 font-mono">00:00</span>
+                    <div className="flex-1 bg-white/5 rounded-full h-[5px] relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/20 via-violet-500/20 to-amber-500/20 rounded-full" />
+                      <div className="bg-gradient-to-r from-indigo-500 via-violet-500 to-amber-500 h-[5px] rounded-full transition-all relative" style={{ width: `${dayPct}%` }}>
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-white shadow-lg shadow-violet-500/50" />
+                      </div>
+                    </div>
+                    <span className="text-[8px] text-slate-600 font-mono">23:59</span>
                   </div>
-                  <div className="text-[8px] text-slate-600 mt-0.5 text-center font-mono tabular-nums">{yearPct}% · W{weekNum} · D{dayOfYear}</div>
+                  <div className="text-[8px] text-slate-500 mt-0.5 text-center font-mono tabular-nums">
+                    <span className="text-violet-400 font-bold">{dayPct}%</span>
+                    <span className="mx-1">·</span>
+                    <span>zostáva {remH}h {remM}m</span>
+                  </div>
                 </div>
               )
             })()}
@@ -209,7 +257,8 @@ export default function DaySummaryWidget() {
                 <div className="space-y-1">
                   {nextHolidays.slice(0, 5).map((h, i) => {
                     const hKey = `${String(h.date.getMonth() + 1).padStart(2, '0')}-${String(h.date.getDate()).padStart(2, '0')}`
-                    const wf = hKey in WORK_FREE
+                    const wfMap = getWorkFreeForYear(h.date.getFullYear())
+                    const wf = hKey in wfMap
                     return (
                       <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.03] hover:bg-white/[0.05] transition-colors">
                         <span className="text-sm">{wf ? '🏠' : '🗓️'}</span>
@@ -254,14 +303,16 @@ export default function DaySummaryWidget() {
                   const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000)
                   const daysInYear = new Date(now.getFullYear(), 1, 29).getDate() === 29 ? 366 : 365
                   const yearPct = Math.round((dayOfYear / daysInYear) * 1000) / 10
+                  const weekNum = Math.ceil((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 604800000)
                   return (
-                    <div className="border-t border-white/5 pt-3">
+                    <div className="border-t border-white/5 pt-3 space-y-2">
                       <div className="flex justify-between text-[10px] text-slate-500 mb-1">
                         <span>Rok {now.getFullYear()}</span><span>{yearPct}%</span>
                       </div>
                       <div className="w-full bg-white/5 rounded-full h-2">
                         <div className="bg-gradient-to-r from-amber-500 to-orange-500 h-2 rounded-full" style={{ width: `${yearPct}%` }} />
                       </div>
+                      <div className="text-[9px] text-slate-600 text-center font-mono">W{weekNum} · Deň {dayOfYear}/{daysInYear}</div>
                     </div>
                   )
                 })()}
@@ -351,6 +402,60 @@ export default function DaySummaryWidget() {
                     <div className="text-[9px] text-slate-500 mt-0.5">{astro.planets.note}</div>
                   </div>
                 )}
+                {/* Space facts & fun info */}
+                <div className="bg-white/[0.03] border border-white/5 rounded-xl p-3 space-y-2">
+                  <div className="text-[10px] text-purple-400 font-bold">🔭 Zaujímavosti z vesmíru</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { icon: '🌍', label: 'Vzdialenosť Mesiac', value: '384 400 km' },
+                      { icon: '☀️', label: 'Vzdialenosť Slnko', value: '149.6 mil km' },
+                      { icon: '🚀', label: 'ISS rýchlosť', value: '27 600 km/h' },
+                      { icon: '🌡️', label: 'Povrch Slnka', value: '5 500 °C' },
+                      { icon: '⏱️', label: 'Svetlo zo Slnka', value: '8 min 20 s' },
+                      { icon: '🪐', label: 'Obeh Saturna', value: '29.5 rokov' },
+                    ].map((f, i) => (
+                      <div key={i} className="flex items-center gap-1.5">
+                        <span className="text-sm">{f.icon}</span>
+                        <div>
+                          <div className="text-[8px] text-slate-500">{f.label}</div>
+                          <div className="text-[10px] text-white font-bold">{f.value}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Next eclipse */}
+                {astro?.nextEclipse && (
+                  <div className="bg-white/[0.03] border border-white/5 rounded-xl p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-amber-300">
+                        {astro.nextEclipse.type === 'solar' ? '🌑' : '🌕'} {astro.nextEclipse.name}
+                      </span>
+                      <span className="text-[9px] text-slate-500">za {astro.nextEclipse.daysUntil} dní</span>
+                    </div>
+                    <div className="text-[9px] text-slate-400 mt-1">
+                      {astro.nextEclipse.date} · {astro.nextEclipse.visible}
+                    </div>
+                  </div>
+                )}
+                {/* Daily space tip */}
+                {now && (() => {
+                  const tips = [
+                    'Najlepšie pozorovanie oblohy je 45 min po západe slnka 🌅',
+                    'Medzinárodná vesmírna stanica je 3. najjasnejší objekt na nočnej oblohe 🌟',
+                    'Na Marse trvá deň 24 hodín a 37 minút ⏰',
+                    'Jupiter má 95 známych mesiacov 🪐',
+                    'Voyager 1 je najvzdialenejší ľudský objekt — 24 mld km od Zeme 🛰️',
+                    'Neutrónová hviezda sa točí až 716× za sekundu 💫',
+                    'Vo vesmíre je viac hviezd ako zrniek piesku na Zemi 🏖️',
+                  ]
+                  const tip = tips[now.getDate() % tips.length]
+                  return (
+                    <div className="bg-purple-500/5 border border-purple-500/10 rounded-xl p-2.5 text-[9px] text-purple-300/80">
+                      💡 {tip}
+                    </div>
+                  )
+                })()}
               </div>
             </div>
           )}
@@ -418,6 +523,7 @@ export default function DaySummaryWidget() {
             <span>🏷️</span>
             <span className="hidden lg:inline">Zľavy</span>
           </button>
+          <EnvironmentMini onOpenChange={setEnvMiniOpen} />
 
           <div className="ml-auto flex items-center gap-2">
             <div className="hidden xl:flex items-center gap-1.5">
@@ -478,6 +584,46 @@ export default function DaySummaryWidget() {
             <div className="relative w-full max-w-[500px]" onClick={e => e.stopPropagation()}>
               <button onClick={() => setFlightsOpen(false)} className="absolute -top-2 -right-2 z-10 w-7 h-7 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-white border border-white/10 text-sm">✕</button>
               <FlightsWidget />
+            </div>
+          </div>
+        )}
+
+        {/* Compact Weather Strip */}
+        {stats.data?.cityTemps && stats.data.cityTemps.length > 0 && (
+          <div className="pt-2 border-t border-white/5">
+            {/* Warnings */}
+            {(stats.data.warnings ?? []).length > 0 && (
+              <div className="mb-1.5 space-y-0.5">
+                {(stats.data.warnings ?? []).slice(0, 2).map((w, i) => (
+                  <div key={i} className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-[9px] font-semibold border ${
+                    w.severity === 'high' ? 'bg-red-500/8 border-red-500/15 text-red-400' : 'bg-yellow-500/8 border-yellow-500/15 text-yellow-400'
+                  }`}>
+                    <span>{w.type === 'wind' ? '💨' : w.type === 'rain' ? '🌧️' : w.type === 'uv' ? '☀️' : w.type === 'heat' ? '🔥' : '❄️'}</span>
+                    <span className="truncate">⚠️ {w.message}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
+              {stats.data.cityTemps.map(c => {
+                const icon = WMO_MINI[c.weatherCode] ?? '🌡️'
+                const tempColor = c.temp >= 25 ? 'text-orange-400' : c.temp >= 15 ? 'text-amber-400' : c.temp >= 5 ? 'text-blue-400' : c.temp >= 0 ? 'text-indigo-400' : 'text-violet-400'
+                return (
+                  <div key={c.key} className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-all shrink-0">
+                    <span className="text-base">{icon}</span>
+                    <div className="min-w-0">
+                      <div className="text-[9px] text-slate-500 font-semibold truncate">{c.name}</div>
+                      <div className="flex items-baseline gap-1">
+                        <span className={`text-[13px] font-bold tabular-nums ${tempColor}`}>{c.temp}°</span>
+                        <span className="text-[8px] text-slate-600">{c.tempMin}°/{c.tempMax}°</span>
+                      </div>
+                    </div>
+                    {c.precipitation != null && c.precipitation > 0 && (
+                      <span className="text-[8px] text-blue-400">💧{c.precipitation}mm</span>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}

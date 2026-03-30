@@ -73,11 +73,14 @@ export default function Home() {
         {/* Flash News - breaking news ticker */}
         {isWidgetVisible('flashnews') && <FlashNewsWidget />}
 
-        {/* Stats bar + City Weather half + Summary widget beside */}
+        {/* Stats bar + Summary + Health widgets */}
         {isWidgetVisible('stats') && (
-          <div id="sec-weather" className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div id="sec-weather" className="space-y-4">
             <StatsWidget />
-            <SummaryWidget />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <SummaryWidget />
+              <HealthWidget />
+            </div>
           </div>
         )}
 
@@ -96,11 +99,6 @@ export default function Home() {
           <div id="sec-slovensko">
             <SectionLabel label={lang === 'sk' ? '🇸🇰 Slovensko' : '🇸🇰 Slovakia'} />
 
-            {/* Health (combined) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <HealthWidget />
-            </div>
-
             {/* Events, Sport suggestions */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <EventsWidget />
@@ -113,14 +111,10 @@ export default function Home() {
               <GroceriesWidget />
             </div>
 
-            {/* Environment */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <EnvironmentWidget />
-            </div>
-
-            {/* Highway cams */}
+            {/* Highway cams + Webcams */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <HighwayCamsWidget />
+              <WebcamsWidget />
             </div>
 
             {/* Sports */}
@@ -204,7 +198,6 @@ export default function Home() {
               <RandomFactWidget />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <WebcamsWidget />
               <GitHubTrendingWidget />
             </div>
             <div className="mt-4">

@@ -12,6 +12,12 @@ interface QuoteData {
 interface HoroscopeSign {
   name: string; nameEn: string; emoji: string; stars: number
   luckyNumber: number; focus: string; prediction: string
+  details?: {
+    love: { text: string; stars: number }
+    work: { text: string; stars: number }
+    health: { text: string; stars: number }
+    finance: { text: string; stars: number }
+  }
 }
 interface HoroscopeData {
   currentSign: number; horoscopes: HoroscopeSign[]; date: string
@@ -122,6 +128,32 @@ function HoroscopeMini(props: { onOpenChange?: (open: boolean) => void }) {
               <div className="flex items-center gap-2">
                 <span className="text-[9px] text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-full font-semibold">🎯 {viewing.focus}</span>
               </div>
+              {/* Detailed aspect predictions */}
+              {viewing.details && (
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/5">
+                  {([
+                    { key: 'love' as const, icon: '❤️', label: 'Láska', color: 'text-pink-400', bg: 'bg-pink-500/8 border-pink-500/15' },
+                    { key: 'work' as const, icon: '💼', label: 'Práca', color: 'text-blue-400', bg: 'bg-blue-500/8 border-blue-500/15' },
+                    { key: 'health' as const, icon: '💪', label: 'Zdravie', color: 'text-green-400', bg: 'bg-green-500/8 border-green-500/15' },
+                    { key: 'finance' as const, icon: '💰', label: 'Financie', color: 'text-amber-400', bg: 'bg-amber-500/8 border-amber-500/15' },
+                  ]).map(aspect => {
+                    const d = viewing.details![aspect.key]
+                    return (
+                      <div key={aspect.key} className={`rounded-xl p-2.5 border ${aspect.bg} space-y-1.5`}>
+                        <div className="flex items-center justify-between">
+                          <span className={`text-[10px] font-bold ${aspect.color}`}>{aspect.icon} {aspect.label}</span>
+                          <div className="flex gap-0.5">
+                            {Array.from({ length: 5 }, (_, i) => (
+                              <span key={i} className={`text-[8px] ${i < d.stars ? 'text-yellow-400' : 'text-slate-700'}`}>★</span>
+                            ))}
+                          </div>
+                        </div>
+                        <p className="text-[9px] text-slate-300 leading-relaxed">{d.text}</p>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>

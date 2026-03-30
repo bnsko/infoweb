@@ -4,7 +4,7 @@ import { useWidget } from '@/hooks/useWidget'
 import { useLang } from '@/hooks/useLang'
 import WidgetCard from '@/components/ui/WidgetCard'
 import SkeletonRows from '@/components/ui/SkeletonRows'
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 interface Camera {
   id: string
@@ -22,32 +22,62 @@ interface CamData {
 
 export default function HighwayCamsWidget() {
   const { lang } = useLang()
-  const { data, loading, error, refetch } = useWidget<CamData>('/api/highwaycams', 5 * 60 * 1000)
+  const { data, loading, error, refetch } = useWidget<CamData>('/api/highwaycams', 30 * 1000)
   const [selected, setSelected] = useState<Camera | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  // Auto-refresh every 30 seconds to get new images
+  useEffect(() => {
+    const iv = setInterval(() => {
+      setRefreshKey(k => k + 1)
+      refetch()
+    }, 30 * 1000)
+    return () => clearInterval(iv)
+  }, [refetch])
 
   const cameras = data?.cameras ?? []
 
+  const imgSrc = useCallback((src: string) => {
+    return src.includes('?') ? `${src}&_t=${refreshKey}` : `${src}?_t=${refreshKey}`
+  }, [refreshKey])
+
   return (
-    <WidgetCard accent="cyan" title={lang === 'sk' ? 'Diaľničné kamery' : 'Highway Cameras'} icon="🎥" onRefresh={refetch}>
-      {loading && <SkeletonRows rows={3} />}
-      {!loading && error && <p className="text-xs text-slate-500">Chyba</p>}
-      {!loading && cameras.length > 0 && (
-        <div className="grid grid-cols-3 gap-1.5">
-          {cameras.slice(0, 9).map(cam => (
-            <button key={cam.id} onClick={() => setSelected(cam)}
-              className="rounded-lg overflow-hidden border border-white/5 hover:border-cyan-500/30 transition-all group text-left">
-              <div className="relative aspect-video bg-black/30">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={cam.image} alt={cam.name} className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity" loading="lazy" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-                <div className="absolute bottom-0.5 left-1 right-1">
-                  <p className="text-[7px] text-white font-medium truncate">{cam.name}</p>
+    <WidgetCard accent="cyan" title={lang === 'sk' ? 'Diaľničné kamery' : 'Highway Cameras'} icon="🎥" onRefresh={refetch}
+      badge={cameras.length > 0 ? `${cameras.length} kamier` : undefined}>
+      {loading && !data && <SkeletonRows rows={3} />}
+      {!loading && error && !data && <p className="text-xs text-slate-500">Chyba načítania</p>}
+      {cameras.length > 0 && (
+        <>
+          {/* Live indicator */}
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-50" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+            </span>
+            <span className="text-[9px] text-red-400 font-semibold">LIVE</span>
+            <span className="text-[8px] text-slate-600">· Obnovenie každých 30s</span>
+          </div>
+          <div className="grid grid-cols-3 gap-1.5">
+            {cameras.slice(0, 9).map(cam => (
+              <button key={cam.id} onClick={() => setSelected(cam)}
+                className="rounded-lg overflow-hidden border border-white/5 hover:border-cyan-500/30 transition-all group text-left relative">
+                <div className="relative aspect-video bg-black/30">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={imgSrc(cam.image)} alt={cam.name} className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity" loading="lazy" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                  <div className="absolute bottom-0.5 left-1 right-1">
+                    <p className="text-[7px] text-white font-medium truncate">{cam.name}</p>
+                  </div>
+                  <span className="absolute top-0.5 right-0.5 text-[6px] px-1 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-bold">{cam.road}</span>
+                  <span className="absolute top-0.5 left-0.5 flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-50" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
+                  </span>
                 </div>
-                <span className="absolute top-0.5 right-0.5 text-[6px] px-1 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-bold">{cam.road}</span>
-              </div>
-            </button>
-          ))}
-        </div>
+              </button>
+            ))}
+          </div>
+        </>
       )}
 
       {selected && (
@@ -55,7 +85,10 @@ export default function HighwayCamsWidget() {
           <div className="bg-[#181a20] rounded-2xl overflow-hidden max-w-3xl w-full border border-white/10 shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-3 border-b border-white/5">
               <div className="flex items-center gap-2">
-                <span>🎥</span>
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-50" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+                </span>
                 <span className="text-sm font-bold text-white">{selected.name}</span>
                 <span className="text-[9px] text-slate-500">{selected.road}</span>
               </div>
@@ -67,7 +100,7 @@ export default function HighwayCamsWidget() {
               </div>
             </div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={selected.image} alt={selected.name} className="w-full aspect-video object-cover" />
+            <img src={imgSrc(selected.image)} alt={selected.name} className="w-full aspect-video object-cover" />
           </div>
         </div>
       )}
