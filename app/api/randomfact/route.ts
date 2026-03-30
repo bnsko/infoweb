@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-export const revalidate = 86400
+export const revalidate = 600  // 10 minutes
 
 interface Fact {
   text: string
@@ -44,12 +44,13 @@ const FACTS: Fact[] = [
 
 export async function GET() {
   const now = new Date()
-  const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000)
+  // Rotate every 10 minutes instead of daily
+  const minuteSlot = Math.floor(now.getTime() / (10 * 60 * 1000))
 
-  const todayFact = FACTS[dayOfYear % FACTS.length]
+  const todayFact = FACTS[minuteSlot % FACTS.length]
   const past: Fact[] = []
   for (let d = 1; d <= 7; d++) {
-    past.push(FACTS[(dayOfYear - d + FACTS.length * 100) % FACTS.length])
+    past.push(FACTS[(minuteSlot - d + FACTS.length * 100) % FACTS.length])
   }
 
   return NextResponse.json({

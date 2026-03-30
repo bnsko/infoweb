@@ -7,15 +7,15 @@ import RedditWidget from '@/components/widgets/RedditWidget'
 import OnThisDayWidget from '@/components/widgets/OnThisDayWidget'
 import CurrencyWidget from '@/components/widgets/CurrencyWidget'
 import CryptoWidget from '@/components/widgets/CryptoWidget'
-import FlightsWidget from '@/components/widgets/FlightsWidget'
+// FlightsWidget moved to DaySummary panel
 // SpaceEnvWidget & LaunchesWidget moved to DaySummary panel
 import NamedayWidget from '@/components/widgets/NamedayWidget'
-import PopulationWidget from '@/components/widgets/PopulationWidget'
+// PopulationWidget moved to Header stats popup
 import SteamWidget from '@/components/widgets/SteamWidget'
 import SportsWidget from '@/components/widgets/SportsWidget'
 import RedditGlobalWidget from '@/components/widgets/RedditGlobalWidget'
 import EventsWidget from '@/components/widgets/EventsWidget'
-import CountersWidget from '@/components/widgets/CountersWidget'
+// CountersWidget moved to Header stats popup
 import WikiWidget from '@/components/widgets/WikiWidget'
 import RestaurantsWidget from '@/components/widgets/RestaurantsWidget'
 import HackerNewsWidget from '@/components/widgets/HackerNewsWidget'
@@ -40,10 +40,10 @@ import HistoryNumbersWidget from '@/components/widgets/HistoryNumbersWidget'
 import InflationWidget from '@/components/widgets/InflationWidget'
 import SportSuggestionsWidget from '@/components/widgets/SportSuggestionsWidget'
 // MHDWidget moved to DaySummary panel
-import ToolOfTheDayWidget from '@/components/widgets/ToolOfTheDayWidget'
+// ToolOfTheDayWidget removed
 import WebcamsWidget from '@/components/widgets/WebcamsWidget'
 // TrainDelaysWidget moved to DaySummary panel
-import OutagesWidget from '@/components/widgets/OutagesWidget'
+// OutagesWidget moved to SummaryWidget
 import HighwayCamsWidget from '@/components/widgets/HighwayCamsWidget'
 import MortgagesWidget from '@/components/widgets/MortgagesWidget'
 import TrendingSearchesWidget from '@/components/widgets/TrendingSearchesWidget'
@@ -96,10 +96,9 @@ export default function Home() {
           <div id="sec-slovensko">
             <SectionLabel label={lang === 'sk' ? '🇸🇰 Slovensko' : '🇸🇰 Slovakia'} />
 
-            {/* Health (combined), Flights */}
+            {/* Health (combined) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <HealthWidget />
-              <FlightsWidget />
             </div>
 
             {/* Events, Sport suggestions */}
@@ -114,15 +113,13 @@ export default function Home() {
               <GroceriesWidget />
             </div>
 
-            {/* Population + Environment (merged) */}
+            {/* Environment */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <PopulationWidget />
               <EnvironmentWidget />
             </div>
 
-            {/* Outages, Highway cams */}
+            {/* Highway cams */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <OutagesWidget />
               <HighwayCamsWidget />
             </div>
 
@@ -154,9 +151,7 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <JobMarketWidget />
             </div>
-            <div className="mt-4">
-              <CountersWidget />
-            </div>
+
           </div>
         )}
 
@@ -206,7 +201,6 @@ export default function Home() {
           <div id="sec-extras">
             <SectionLabel label={lang === 'sk' ? '🔭 Objavy' : '🔭 Discover'} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <ToolOfTheDayWidget />
               <RandomFactWidget />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">

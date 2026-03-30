@@ -88,24 +88,24 @@ export async function GET() {
     }
   }
 
-  // Filter: only last 20 minutes
-  const twentyMinAgo = Date.now() - 20 * 60 * 1000
-  let recentItems = deduped.filter(i => i.timestamp >= twentyMinAgo)
-  // If nothing in 20 min, take last 60 min as fallback
+  // Filter: only last 2 hours for fresh rotation each minute
+  const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000
+  let recentItems = deduped.filter(i => i.timestamp >= twoHoursAgo)
+  // If nothing in 2 hours, take last 6 hours as fallback
   if (recentItems.length === 0) {
-    const hourAgo = Date.now() - 60 * 60 * 1000
-    recentItems = deduped.filter(i => i.timestamp >= hourAgo)
+    const sixHoursAgo = Date.now() - 6 * 60 * 60 * 1000
+    recentItems = deduped.filter(i => i.timestamp >= sixHoursAgo)
   }
-  // If still nothing, take newest 12
+  // If still nothing, take newest 15
   if (recentItems.length === 0) {
-    recentItems = deduped.slice(0, 12)
+    recentItems = deduped.slice(0, 15)
   }
 
   // Sort by timestamp descending
   recentItems.sort((a, b) => b.timestamp - a.timestamp)
 
   // All sources are Slovak, just add ago labels
-  const translated = recentItems.slice(0, 12).map(item => {
+  const translated = recentItems.slice(0, 15).map(item => {
     return { ...item, ago: relativeAgo(item.timestamp) }
   })
 

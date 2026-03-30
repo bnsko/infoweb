@@ -133,7 +133,7 @@ export default function SpeedtestWidget() {
   const pingVals = history.filter(h => h.ping != null).map(h => h.ping!).reverse()
 
   return (
-    <WidgetCard accent="cyan" title={lang === 'sk' ? 'Rýchlosť internetu' : 'Internet Speed'} icon="📶">
+    <WidgetCard accent="cyan" title="Speedtest" icon="📶">
       {/* Gauges */}
       <div className="flex items-center justify-around mb-3">
         <GaugeArc value={result.download ?? last?.download ?? null} max={200} color="#22c55e" label="Download" unit="Mbps" active={testing && phase.includes('Download')} />
@@ -141,11 +141,18 @@ export default function SpeedtestWidget() {
         <GaugeArc value={result.ping ?? last?.ping ?? null} max={200} color="#06b6d4" label="Ping" unit="ms" active={testing && phase.includes('Ping')} />
       </div>
 
-      {/* Jitter + button */}
+      {/* Jitter + ISP info + button */}
       <div className="flex items-center justify-between mb-3">
-        <span className="text-[9px] text-slate-500">
-          Jitter: <span className="text-purple-400 font-mono font-bold">{result.jitter ?? last?.jitter ?? '—'} ms</span>
-        </span>
+        <div className="space-y-0.5">
+          <span className="text-[9px] text-slate-500 block">
+            Jitter: <span className="text-purple-400 font-mono font-bold">{result.jitter ?? last?.jitter ?? '—'} ms</span>
+          </span>
+          {last && (
+            <span className="text-[8px] text-slate-600 block">
+              Posledné: {new Date(last.timestamp).toLocaleString('sk-SK', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+        </div>
         <button onClick={runTest} disabled={testing}
           className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500/15 to-blue-500/15 border border-cyan-500/25 text-cyan-300 font-bold text-[10px] hover:from-cyan-500/25 hover:to-blue-500/25 transition-all disabled:opacity-50">
           {testing ? `⏳ ${phase}` : '▶ Merať'}

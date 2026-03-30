@@ -12,6 +12,7 @@ interface Camera {
   location: string
   image: string
   road: string
+  link?: string
 }
 
 interface CamData {
@@ -58,7 +59,12 @@ export default function HighwayCamsWidget() {
                 <span className="text-sm font-bold text-white">{selected.name}</span>
                 <span className="text-[9px] text-slate-500">{selected.road}</span>
               </div>
-              <button onClick={() => setSelected(null)} className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white">✕</button>
+              <div className="flex items-center gap-2">
+                {selected.link && (
+                  <a href={selected.link} target="_blank" rel="noopener noreferrer" className="text-[10px] text-cyan-400 hover:text-cyan-300 px-2 py-1 rounded-lg bg-cyan-500/10">Živý obraz ↗</a>
+                )}
+                <button onClick={() => setSelected(null)} className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white">✕</button>
+              </div>
             </div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={selected.image} alt={selected.name} className="w-full aspect-video object-cover" />

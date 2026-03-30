@@ -67,7 +67,7 @@ export default function RandomFactWidget() {
 
   useEffect(() => {
     fetchFact()
-    const iv = setInterval(fetchFact, 5 * 60 * 1000)
+    const iv = setInterval(fetchFact, 10 * 60 * 1000)  // every 10 min
     return () => clearInterval(iv)
   }, [fetchFact])
 
@@ -81,7 +81,7 @@ export default function RandomFactWidget() {
             <div className="flex items-center gap-1.5 mb-1.5">
               <span className="text-base">{current.emoji}</span>
               <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-white/5 text-slate-500">{current.category}</span>
-              <span className="text-[8px] text-yellow-400/50 ml-auto">{lang === 'sk' ? 'Dnešná' : 'Today'}</span>
+              <span className="text-[8px] text-yellow-400/50 ml-auto">{lang === 'sk' ? 'Aktuálna' : 'Current'}</span>
             </div>
             <p className="text-[11px] text-slate-200 leading-relaxed">{current.text}</p>
             <p className="text-[8px] text-slate-500 mt-1.5">Zdroj: {current.source}</p>

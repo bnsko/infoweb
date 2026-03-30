@@ -80,43 +80,47 @@ function HoroscopeMini(props: { onOpenChange?: (open: boolean) => void }) {
         <span className="hidden sm:inline">{current?.name}</span>
       </button>
       {open && (
-        <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 px-4 bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)}>
-          <div className="w-full max-w-sm max-h-[80vh] overflow-y-auto bg-slate-900 border border-indigo-500/20 rounded-2xl p-4 shadow-2xl backdrop-blur-xl" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold text-indigo-300">{current?.emoji} {lang === 'sk' ? 'Horoskop' : 'Horoscope'}</h3>
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-12 sm:pt-20 px-4 bg-black/50 backdrop-blur-sm" onClick={() => setOpen(false)}>
+          <div className="w-full max-w-md max-h-[85vh] overflow-y-auto bg-[var(--bg-card)] border border-indigo-500/20 rounded-2xl p-5 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-bold text-indigo-300">✨ {lang === 'sk' ? 'Denný horoskop' : 'Daily Horoscope'}</h3>
               <button onClick={() => setOpen(false)} className="text-slate-500 hover:text-white text-lg">✕</button>
             </div>
-            {/* Sign selector */}
-            <div className="flex flex-wrap gap-1 mb-3">
+            {/* Sign selector - beautiful grid */}
+            <div className="grid grid-cols-6 gap-1.5 mb-4">
               {data.horoscopes.map((s, i) => (
                 <button key={i} onClick={() => setSelectedSign(i)}
-                  className={`text-[14px] w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
-                    (selectedSign ?? data.currentSign) === i ? 'bg-indigo-500/20 border border-indigo-500/30' : 'hover:bg-white/5'
+                  className={`flex flex-col items-center gap-0.5 py-2 rounded-xl transition-all ${
+                    (selectedSign ?? data.currentSign) === i
+                      ? 'bg-indigo-500/20 border border-indigo-500/30 shadow-lg shadow-indigo-500/10'
+                      : 'bg-white/[0.02] border border-transparent hover:bg-white/[0.05] hover:border-white/10'
                   }`} title={s.name}>
-                  {s.emoji}
+                  <span className="text-xl">{s.emoji}</span>
+                  <span className={`text-[7px] font-semibold ${(selectedSign ?? data.currentSign) === i ? 'text-indigo-300' : 'text-slate-500'}`}>{s.name}</span>
                 </button>
               ))}
             </div>
             {/* Selected sign detail */}
-            <div className="bg-indigo-500/8 border border-indigo-500/15 rounded-xl p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-2xl">{viewing.emoji}</span>
-                <div>
-                  <p className="text-sm font-bold text-white">{viewing.name}</p>
-                  <div className="flex items-center gap-1">
+            <div className="bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent border border-indigo-500/15 rounded-xl p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <span className="text-4xl">{viewing.emoji}</span>
+                <div className="flex-1">
+                  <p className="text-lg font-bold text-white">{viewing.name}</p>
+                  <p className="text-[10px] text-slate-500">{viewing.nameEn}</p>
+                </div>
+                <div className="text-right">
+                  <div className="flex items-center gap-0.5 justify-end">
                     {Array.from({ length: 5 }, (_, i) => (
-                      <span key={i} className={`text-[10px] ${i < viewing.stars ? 'text-yellow-400' : 'text-slate-700'}`}>★</span>
+                      <span key={i} className={`text-sm ${i < viewing.stars ? 'text-yellow-400' : 'text-slate-700'}`}>★</span>
                     ))}
                   </div>
-                </div>
-                <div className="ml-auto text-right">
-                  <div className="text-[9px] text-slate-500">Lucky #</div>
-                  <div className="text-sm font-bold text-indigo-300">{viewing.luckyNumber}</div>
+                  <div className="text-[9px] text-slate-500 mt-0.5">Šťastné číslo</div>
+                  <div className="text-xl font-bold text-indigo-300 font-mono">{viewing.luckyNumber}</div>
                 </div>
               </div>
-              <p className="text-[11px] text-slate-300 leading-relaxed">{viewing.prediction}</p>
-              <div className="mt-2 flex items-center gap-2">
-                <span className="text-[9px] text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full">{viewing.focus}</span>
+              <p className="text-[12px] text-slate-200 leading-relaxed">{viewing.prediction}</p>
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-full font-semibold">🎯 {viewing.focus}</span>
               </div>
             </div>
           </div>
