@@ -28,7 +28,16 @@ export default function FlashNewsWidget() {
       .then(r => r.json())
       .then((d: FlashData) => {
         setData(prev => {
-          const newTitles = (d.items ?? []).map(i => i.title).join('|')
+          // Deduplicate items by title
+          const seen = new Set<string>()
+          const uniqueItems = (d.items ?? []).filter(i => {
+            const k = i.title.toLowerCase().trim()
+            if (seen.has(k)) return false
+            seen.add(k)
+            return true
+          })
+          d = { ...d, items: uniqueItems }
+          const newTitles = uniqueItems.map(i => i.title).join('|')
           const oldTitles = (prev?.items ?? []).map(i => i.title).join('|')
           if (newTitles !== oldTitles) setDataKey(k => k + 1)
           return d

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useWidget } from '@/hooks/useWidget'
 import WidgetCard from '@/components/ui/WidgetCard'
 import WidgetError from '@/components/ui/WidgetError'
@@ -27,10 +27,12 @@ interface LaunchResult {
 }
 
 /* ── Mini rocket widget for main panel ── */
-export function LaunchesMini() {
+export function LaunchesMini(props: { onOpenChange?: (open: boolean) => void }) {
+  const { onOpenChange } = props
   const { lang } = useLang()
   const loc = lang === 'sk' ? sk : enUS
   const [open, setOpen] = useState(false)
+  useEffect(() => { onOpenChange?.(open) }, [open, onOpenChange])
   const { data } = useWidget<{ results: LaunchResult[] }>('/api/launches', 60 * 60 * 1000)
 
   const next = data?.results?.[0]

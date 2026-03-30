@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { format } from 'date-fns'
 import { sk, enUS } from 'date-fns/locale'
 import { getNameday, getTomorrowNameday, getHoliday, getNextHoliday } from '@/lib/namedays'
@@ -14,8 +14,9 @@ function getDayOfYear(d: Date): number {
 }
 
 /* ── Mini expandable from main panel ── */
-export function NamedayMini({ showLabel }: { showLabel?: boolean }) {
+export function NamedayMini({ showLabel, onOpenChange }: { showLabel?: boolean; onOpenChange?: (open: boolean) => void }) {
   const [open, setOpen] = useState(false)
+  useEffect(() => { onOpenChange?.(open) }, [open, onOpenChange])
   const now = useMemo(() => new Date(), [])
   const { t, lang } = useLang()
   const loc = lang === 'sk' ? sk : enUS

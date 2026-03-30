@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useWidget } from '@/hooks/useWidget'
 import { useLang } from '@/hooks/useLang'
 
@@ -57,11 +57,13 @@ function QuoteMini() {
 }
 
 /* ── Mini expandable widget for horoscope ── */
-function HoroscopeMini() {
+function HoroscopeMini(props: { onOpenChange?: (open: boolean) => void }) {
+  const { onOpenChange } = props
   const { lang } = useLang()
   const { data } = useWidget<HoroscopeData>('/api/horoscope', 60 * 60 * 1000)
   const [open, setOpen] = useState(false)
   const [selectedSign, setSelectedSign] = useState<number | null>(null)
+  useEffect(() => { onOpenChange?.(open) }, [open, onOpenChange])
 
   if (!data) return null
 

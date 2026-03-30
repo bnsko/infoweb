@@ -47,11 +47,15 @@ export async function GET() {
   const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000)
 
   const todayFact = FACTS[dayOfYear % FACTS.length]
-  const yesterdayFact = FACTS[(dayOfYear - 1 + FACTS.length) % FACTS.length]
+  const past: Fact[] = []
+  for (let d = 1; d <= 7; d++) {
+    past.push(FACTS[(dayOfYear - d + FACTS.length * 100) % FACTS.length])
+  }
 
   return NextResponse.json({
     today: todayFact,
-    yesterday: yesterdayFact,
+    yesterday: past[0],
+    past,
     timestamp: Date.now(),
   })
 }

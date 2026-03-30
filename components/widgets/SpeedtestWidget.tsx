@@ -190,8 +190,10 @@ export default function SpeedtestWidget() {
 }
 
 /* ── Mini speedtest for main panel ── */
-export function SpeedtestMini() {
+export function SpeedtestMini(props: { onOpenChange?: (open: boolean) => void }) {
+  const { onOpenChange } = props
   const [open, setOpen] = useState(false)
+  useEffect(() => { onOpenChange?.(open) }, [open, onOpenChange])
   const [history] = useState<SpeedResult[]>(() => loadHistory())
   const last = history[0]
 

@@ -77,13 +77,28 @@ export async function GET() {
     if (r.status === 'fulfilled') allItems.push(...r.value)
   }
 
+  // Deduplicate by title (normalized)
+  const seen = new Set<string>()
+  const deduped: FlashItem[] = []
+  for (const item of allItems) {
+    const key = item.title.toLowerCase().replace(/\s+/g, ' ').trim()
+    if (!seen.has(key)) {
+      seen.add(key)
+      deduped.push(item)
+    }
+  }
+
   // Filter: only last 20 minutes
   const twentyMinAgo = Date.now() - 20 * 60 * 1000
-  let recentItems = allItems.filter(i => i.timestamp >= twentyMinAgo)
+  let recentItems = deduped.filter(i => i.timestamp >= twentyMinAgo)
   // If nothing in 20 min, take last 60 min as fallback
   if (recentItems.length === 0) {
     const hourAgo = Date.now() - 60 * 60 * 1000
-    recentItems = allItems.filter(i => i.timestamp >= hourAgo)
+    recentItems = deduped.filter(i => i.timestamp >= hourAgo)
+  }
+  // If still nothing, take newest 12
+  if (recentItems.length === 0) {
+    recentItems = deduped.slice(0, 12)
   }
 
   // Sort by timestamp descending
