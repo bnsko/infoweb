@@ -9,7 +9,9 @@ import SkeletonRows from '@/components/ui/SkeletonRows'
 /* ── Traffic ── */
 interface TrafficItem { title: string; link: string; description: string; pubDate: string; source: string }
 interface TrafficStats { accidents: number; jams: number; closures: number; total: number; congestion: string }
-interface TrafficData { items: TrafficItem[]; restrictions: TrafficItem[]; speedCameras: { road: string; location: string; type: string; limit: number }[]; stats?: TrafficStats }
+interface GreenWave { active: boolean; corridors: { name: string; status: string }[]; note: string }
+interface LiveMetrics { avgSpeedBA: number; avgSpeedD1: number; delayMinutes: number; trafficIndex: number; activeCameras: number }
+interface TrafficData { items: TrafficItem[]; restrictions: TrafficItem[]; speedCameras: { road: string; location: string; type: string; limit: number }[]; stats?: TrafficStats; greenWave?: GreenWave; liveMetrics?: LiveMetrics }
 
 /* ── Health Alerts ── */
 interface HealthAlert { title: string; description: string; source: string; date: string; severity: 'low' | 'medium' | 'high'; category: string; link: string; region: 'sk' | 'world' }
@@ -62,6 +64,49 @@ export default function SummaryWidget() {
                   </div>
                 </div>
               )}
+
+              {/* Live metrics */}
+              {traffic.data?.liveMetrics && (
+                <div className="grid grid-cols-5 gap-1 mb-1">
+                  <div className="text-center px-1 py-1 rounded-lg bg-white/[0.02] border border-white/5">
+                    <div className="text-[11px] font-bold text-cyan-400">{traffic.data.liveMetrics.avgSpeedBA}</div>
+                    <div className="text-[6px] text-slate-600">km/h BA</div>
+                  </div>
+                  <div className="text-center px-1 py-1 rounded-lg bg-white/[0.02] border border-white/5">
+                    <div className="text-[11px] font-bold text-blue-400">{traffic.data.liveMetrics.avgSpeedD1}</div>
+                    <div className="text-[6px] text-slate-600">km/h D1</div>
+                  </div>
+                  <div className="text-center px-1 py-1 rounded-lg bg-white/[0.02] border border-white/5">
+                    <div className="text-[11px] font-bold text-amber-400">+{traffic.data.liveMetrics.delayMinutes}′</div>
+                    <div className="text-[6px] text-slate-600">zdržanie</div>
+                  </div>
+                  <div className="text-center px-1 py-1 rounded-lg bg-white/[0.02] border border-white/5">
+                    <div className="text-[11px] font-bold text-rose-400">{traffic.data.liveMetrics.trafficIndex}/10</div>
+                    <div className="text-[6px] text-slate-600">index</div>
+                  </div>
+                  <div className="text-center px-1 py-1 rounded-lg bg-white/[0.02] border border-white/5">
+                    <div className="text-[11px] font-bold text-slate-300">📹 {traffic.data.liveMetrics.activeCameras}</div>
+                    <div className="text-[6px] text-slate-600">kamier</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Green wave */}
+              {traffic.data?.greenWave && (
+                <div className={`flex items-center gap-2 px-2 py-1.5 rounded-lg mb-1 border ${traffic.data.greenWave.active ? 'bg-green-500/8 border-green-500/15' : 'bg-slate-500/5 border-white/5'}`}>
+                  <span className="text-[10px]">{traffic.data.greenWave.active ? '🟢' : '⚪'}</span>
+                  <span className={`text-[9px] font-bold ${traffic.data.greenWave.active ? 'text-green-400' : 'text-slate-500'}`}>Zelená vlna</span>
+                  <span className="text-[8px] text-slate-500 flex-1">{traffic.data.greenWave.note}</span>
+                  {traffic.data.greenWave.corridors.length > 0 && (
+                    <div className="flex gap-1">
+                      {traffic.data.greenWave.corridors.slice(0, 2).map((c, i) => (
+                        <span key={i} className="text-[7px] bg-green-500/10 text-green-300 px-1.5 py-0.5 rounded-full">{c.name}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="space-y-0.5 max-h-[160px] overflow-y-auto scrollbar-hide">
                 {trafficItems.length === 0 ? (
                   <p className="text-[10px] text-emerald-400 text-center py-2">✅ Bez dopravných udalostí</p>
@@ -85,23 +130,46 @@ export default function SummaryWidget() {
           {health.loading ? <SkeletonRows rows={2} /> : healthAlerts.length === 0 ? (
             <p className="text-[10px] text-emerald-400 text-center py-2">✅ Žiadne zdravotné výstrahy</p>
           ) : (
-            <div className="space-y-0.5 max-h-[180px] overflow-y-auto scrollbar-hide">
-              {healthAlerts.slice(0, 8).map((alert, i) => (
-                <a key={i} href={alert.link} target="_blank" rel="noopener noreferrer" className="flex items-start gap-2 rounded-lg px-2 py-1.5 hover:bg-white/[0.03] transition-colors">
-                  <span className={`text-[10px] mt-0.5 ${alert.severity === 'high' ? 'text-red-400' : alert.severity === 'medium' ? 'text-amber-400' : 'text-emerald-400'}`}>
-                    {alert.severity === 'high' ? '‼️' : alert.severity === 'medium' ? '⚠️' : 'ℹ️'}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[10px] text-slate-200 font-medium line-clamp-1">{alert.title}</p>
-                    <p className="text-[8px] text-slate-500 line-clamp-1 mt-0.5">{alert.description}</p>
-                  </div>
-                  <div className="flex flex-col items-end gap-0.5 shrink-0">
-                    <span className={`text-[7px] px-1.5 py-0.5 rounded-full font-bold ${alert.region === 'sk' ? 'bg-blue-500/15 text-blue-300' : 'bg-purple-500/15 text-purple-300'}`}>{alert.region === 'sk' ? '🇸🇰' : '🌍'}</span>
-                    <span className="text-[7px] text-slate-600">{alert.category}</span>
-                  </div>
-                </a>
-              ))}
-            </div>
+            <>
+              {/* Severity summary */}
+              <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-white/[0.02] border border-white/5 mb-1">
+                {(() => {
+                  const high = healthAlerts.filter(a => a.severity === 'high').length
+                  const med = healthAlerts.filter(a => a.severity === 'medium').length
+                  const low = healthAlerts.filter(a => a.severity === 'low').length
+                  return (
+                    <>
+                      {high > 0 && <span className="text-[9px] font-bold text-red-400">‼️ {high} vysokých</span>}
+                      {med > 0 && <span className="text-[9px] font-bold text-amber-400">⚠️ {med} stredných</span>}
+                      {low > 0 && <span className="text-[9px] font-bold text-slate-400">ℹ️ {low} nízkych</span>}
+                      <span className="flex-1" />
+                      <span className="text-[8px] text-slate-500">{healthAlerts.filter(a => a.region === 'sk').length} SK · {healthAlerts.filter(a => a.region === 'world').length} svet</span>
+                    </>
+                  )
+                })()}
+              </div>
+              <div className="space-y-0.5 max-h-[180px] overflow-y-auto scrollbar-hide">
+                {healthAlerts.slice(0, 10).map((alert, i) => (
+                  <a key={i} href={alert.link} target="_blank" rel="noopener noreferrer" className="flex items-start gap-2 rounded-lg px-2 py-1.5 hover:bg-white/[0.03] transition-colors">
+                    <span className={`text-[10px] mt-0.5 ${alert.severity === 'high' ? 'text-red-400' : alert.severity === 'medium' ? 'text-amber-400' : 'text-emerald-400'}`}>
+                      {alert.severity === 'high' ? '‼️' : alert.severity === 'medium' ? '⚠️' : 'ℹ️'}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] text-slate-200 font-medium line-clamp-1">{alert.title}</p>
+                      <p className="text-[8px] text-slate-500 line-clamp-1 mt-0.5">{alert.description}</p>
+                      <div className="flex items-center gap-2 mt-0.5 text-[7px]">
+                        <span className="text-slate-600">{alert.date}</span>
+                        <span className="text-slate-600">{alert.source}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-0.5 shrink-0">
+                      <span className={`text-[7px] px-1.5 py-0.5 rounded-full font-bold ${alert.region === 'sk' ? 'bg-blue-500/15 text-blue-300' : 'bg-purple-500/15 text-purple-300'}`}>{alert.region === 'sk' ? '🇸🇰' : '🌍'}</span>
+                      <span className="text-[7px] text-slate-600">{alert.category}</span>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </>
           )}
         </Section>
 

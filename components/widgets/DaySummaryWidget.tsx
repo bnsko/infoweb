@@ -149,7 +149,6 @@ export default function DaySummaryWidget() {
   const astronomy = useWidget<AstronomyData>('/api/astronomy', 30 * 60 * 1000)
 
   const [now, setNow] = useState<Date | null>(null)
-  const [visitors, setVisitors] = useState<VisitorData | null>(null)
   const [showerOpen, setShowerOpen] = useState(false)
   const [auroraOpen, setAuroraOpen] = useState(false)
   const [spaceOpen, setSpaceOpen] = useState(false)
@@ -180,25 +179,6 @@ export default function DaySummaryWidget() {
     setNow(new Date())
     const iv = setInterval(() => setNow(new Date()), 1000)
     return () => clearInterval(iv)
-  }, [])
-
-  useEffect(() => {
-    const sid = getSessionId()
-    const doVisit = () => {
-      fetch(`/api/visitors?action=visit&sid=${sid}`)
-        .then(r => r.json())
-        .then((v: VisitorData) => setVisitors(v))
-        .catch(() => {})
-    }
-    const doPing = () => {
-      fetch(`/api/visitors?action=ping&sid=${sid}`)
-        .then(r => r.json())
-        .then((v: VisitorData) => setVisitors(v))
-        .catch(() => {})
-    }
-    doVisit()
-    const ping = setInterval(doPing, 60 * 1000)
-    return () => clearInterval(ping)
   }, [])
 
   const timeStr = now ? now.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '--:--:--'
@@ -247,7 +227,7 @@ export default function DaySummaryWidget() {
           {holidayOpen && (
             <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setHolidayOpen(false)}>
               <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-              <div className="relative w-full max-w-[360px] bg-[var(--bg-card)] border border-emerald-500/20 rounded-2xl shadow-2xl p-4 space-y-3" onClick={e => e.stopPropagation()}>
+              <div className="relative w-full max-w-[360px] bg-[var(--bg-card)] border border-emerald-500/20 rounded-2xl shadow-2xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold text-emerald-300">🗓️ Sviatky a dni pracovného pokoja</span>
                   <button onClick={() => setHolidayOpen(false)} className="text-slate-500 hover:text-white text-lg">✕</button>
@@ -287,7 +267,7 @@ export default function DaySummaryWidget() {
           {dayPopupOpen && now && (
             <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setDayPopupOpen(false)}>
               <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-              <div className="relative w-full max-w-[480px] bg-[var(--bg-card)] border border-amber-500/20 rounded-2xl shadow-2xl p-4 space-y-3 max-h-[70vh] overflow-y-auto scrollbar-hide" onClick={e => e.stopPropagation()}>
+              <div className="relative w-full max-w-[480px] bg-[var(--bg-card)] border border-amber-500/20 rounded-2xl shadow-2xl p-4 space-y-3 max-h-[70vh] overflow-y-auto scrollbar-hide">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold text-amber-300">📅 {now.toLocaleDateString('sk-SK', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
                   <button onClick={() => setDayPopupOpen(false)} className="text-slate-500 hover:text-white text-lg">✕</button>
@@ -355,7 +335,7 @@ export default function DaySummaryWidget() {
           {spaceOpen && (
             <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setSpaceOpen(false)}>
               <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-              <div className="relative w-full max-w-[420px] bg-[var(--bg-card)] border border-purple-500/20 rounded-2xl shadow-2xl p-4 space-y-3 max-h-[80vh] overflow-y-auto scrollbar-hide" onClick={e => e.stopPropagation()}>
+              <div className="relative w-full max-w-[420px] bg-[var(--bg-card)] border border-purple-500/20 rounded-2xl shadow-2xl p-4 space-y-3 max-h-[80vh] overflow-y-auto scrollbar-hide">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-bold text-purple-300">🌌 Vesmír</span>
                   <button onClick={() => setSpaceOpen(false)} className="text-slate-500 hover:text-white text-lg">✕</button>
@@ -466,17 +446,6 @@ export default function DaySummaryWidget() {
           )}
 
           <div className="hidden md:block w-px h-6 bg-white/5" />
-
-          {/* Online indicator */}
-          <div className="hidden lg:flex items-center gap-1.5 shrink-0" suppressHydrationWarning>
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-50" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
-            </span>
-            <span className="text-[10px] font-bold text-green-400">{visitors ? String(visitors.activeNow) : '...'}</span>
-            <span className="text-[9px] text-slate-600">online</span>
-          </div>
-          <Pill icon="" value={visitors ? String(visitors.todayPageViews) : '...'} label="dnes" valueColor="text-orange-300" />
         </div>
 
         {/* Row 2: Section quick-nav + panel icons */}
@@ -537,7 +506,7 @@ export default function DaySummaryWidget() {
         {mhdOpen && (
           <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setMhdOpen(false)}>
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-            <div className="relative w-full max-w-[500px]" onClick={e => e.stopPropagation()}>
+            <div className="relative w-full max-w-[500px]">
               <button onClick={() => setMhdOpen(false)} className="absolute -top-2 -right-2 z-10 w-7 h-7 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-white border border-white/10 text-sm">✕</button>
               <MHDWidget />
             </div>
@@ -546,7 +515,7 @@ export default function DaySummaryWidget() {
         {trainOpen && (
           <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setTrainOpen(false)}>
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-            <div className="relative w-full max-w-[500px]" onClick={e => e.stopPropagation()}>
+            <div className="relative w-full max-w-[500px]">
               <button onClick={() => setTrainOpen(false)} className="absolute -top-2 -right-2 z-10 w-7 h-7 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-white border border-white/10 text-sm">✕</button>
               <TrainDelaysWidget />
             </div>
@@ -555,7 +524,7 @@ export default function DaySummaryWidget() {
         {officeOpen && (
           <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setOfficeOpen(false)}>
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-            <div className="relative w-full max-w-[500px]" onClick={e => e.stopPropagation()}>
+            <div className="relative w-full max-w-[500px]">
               <button onClick={() => setOfficeOpen(false)} className="absolute -top-2 -right-2 z-10 w-7 h-7 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-white border border-white/10 text-sm">✕</button>
               <OfficeWaitWidget />
             </div>
@@ -564,7 +533,7 @@ export default function DaySummaryWidget() {
         {lotteryOpen && (
           <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setLotteryOpen(false)}>
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-            <div className="relative w-full max-w-[500px]" onClick={e => e.stopPropagation()}>
+            <div className="relative w-full max-w-[500px]">
               <button onClick={() => setLotteryOpen(false)} className="absolute -top-2 -right-2 z-10 w-7 h-7 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-white border border-white/10 text-sm">✕</button>
               <LotteryWidget />
             </div>
@@ -573,7 +542,7 @@ export default function DaySummaryWidget() {
         {dealsOpen && (
           <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setDealsOpen(false)}>
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-            <div className="relative w-full max-w-[500px]" onClick={e => e.stopPropagation()}>
+            <div className="relative w-full max-w-[500px]">
               <button onClick={() => setDealsOpen(false)} className="absolute -top-2 -right-2 z-10 w-7 h-7 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-white border border-white/10 text-sm">✕</button>
               <DealsWidget />
             </div>
@@ -582,7 +551,7 @@ export default function DaySummaryWidget() {
         {flightsOpen && (
           <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setFlightsOpen(false)}>
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-            <div className="relative w-full max-w-[500px]" onClick={e => e.stopPropagation()}>
+            <div className="relative w-full max-w-[500px]">
               <button onClick={() => setFlightsOpen(false)} className="absolute -top-2 -right-2 z-10 w-7 h-7 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:text-white border border-white/10 text-sm">✕</button>
               <FlightsWidget />
             </div>
@@ -632,7 +601,7 @@ export default function DaySummaryWidget() {
                   </button>
                 )
               })}
-              {/* Sunrise/Sunset animation card (last) */}
+              {/* Sunrise/Sunset arc animation card (last) */}
               {(() => {
                 const ba = stats.data?.cityTemps?.find(ct => ct.key === 'BA')
                 if (!ba) return null
@@ -646,26 +615,43 @@ export default function DaySummaryWidget() {
                 const dayM = dayLength % 60
                 const sunPct = sunriseMin && sunsetMin ? Math.max(0, Math.min(100, ((nowMin - sunriseMin) / (sunsetMin - sunriseMin)) * 100)) : 50
                 const isDay = nowMin >= sunriseMin && nowMin <= sunsetMin
+                // Arc position: sun moves along a semicircle
+                const angle = Math.PI * (1 - sunPct / 100) // π to 0
+                const cx = 50 + 38 * Math.cos(angle)
+                const cy = 52 - 36 * Math.sin(angle)
                 return (
-                  <div className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl bg-gradient-to-b from-amber-500/[0.06] via-orange-500/[0.04] to-rose-500/[0.03] border border-amber-500/15 shrink-0 min-w-[120px] relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-amber-400/5 to-transparent pointer-events-none" />
-                    <div className="relative flex items-center gap-3 text-[9px]">
-                      <div className="flex flex-col items-center">
-                        <span className="text-lg leading-none">🌅</span>
-                        <span className="text-amber-400 font-bold">{sunriseTime}</span>
-                      </div>
-                      <div className="flex flex-col items-center">
-                        <span className="text-lg leading-none">🌇</span>
-                        <span className="text-orange-400 font-bold">{sunsetTime}</span>
-                      </div>
+                  <div className="flex flex-col items-center gap-0 px-4 py-2 rounded-2xl shrink-0 min-w-[160px] relative overflow-hidden" style={{ background: isDay ? 'linear-gradient(180deg, rgba(56,189,248,0.08) 0%, rgba(251,191,36,0.06) 50%, rgba(0,0,0,0) 100%)' : 'linear-gradient(180deg, rgba(30,41,59,0.12) 0%, rgba(100,116,139,0.06) 100%)', border: '1px solid rgba(251,191,36,0.12)' }}>
+                    {/* Sky arc SVG */}
+                    <svg viewBox="0 0 100 58" className="w-full h-auto" style={{ maxWidth: 150 }}>
+                      {/* Horizon line */}
+                      <line x1="8" y1="52" x2="92" y2="52" stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
+                      {/* Day arc (dashed) */}
+                      <path d="M 12 52 A 38 36 0 0 1 88 52" fill="none" stroke="rgba(251,191,36,0.15)" strokeWidth="1" strokeDasharray="2,2" />
+                      {/* Filled day arc portion */}
+                      <path d="M 12 52 A 38 36 0 0 1 88 52" fill="none" stroke={isDay ? 'url(#sunGrad)' : 'rgba(100,116,139,0.2)'} strokeWidth="1.5" strokeDashoffset={`${(1 - sunPct / 100) * 120}`} strokeDasharray="120" />
+                      <defs>
+                        <linearGradient id="sunGrad" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor="#f59e0b" />
+                          <stop offset="50%" stopColor="#fbbf24" />
+                          <stop offset="100%" stopColor="#f97316" />
+                        </linearGradient>
+                        <radialGradient id="sunGlow"><stop offset="0%" stopColor={isDay ? '#fbbf24' : '#94a3b8'} stopOpacity="0.6" /><stop offset="100%" stopColor={isDay ? '#fbbf24' : '#94a3b8'} stopOpacity="0" /></radialGradient>
+                      </defs>
+                      {/* Sun glow */}
+                      <circle cx={cx} cy={cy} r="8" fill="url(#sunGlow)" />
+                      {/* Sun dot */}
+                      <circle cx={cx} cy={cy} r="3.5" fill={isDay ? '#fbbf24' : '#64748b'} />
+                      <circle cx={cx} cy={cy} r="2" fill={isDay ? '#fef3c7' : '#94a3b8'} />
+                      {/* Sunrise label */}
+                      <text x="12" y="50" textAnchor="middle" fill="#f59e0b" fontSize="5" fontWeight="600" opacity="0.7">🌅</text>
+                      {/* Sunset label */}
+                      <text x="88" y="50" textAnchor="middle" fill="#f97316" fontSize="5" fontWeight="600" opacity="0.7">🌇</text>
+                    </svg>
+                    <div className="flex items-center justify-between w-full px-1 -mt-0.5">
+                      <span className="text-[9px] font-bold text-amber-400/80">{sunriseTime}</span>
+                      <span className="text-[8px] font-semibold" style={{ color: isDay ? 'rgba(251,191,36,0.6)' : 'rgba(148,163,184,0.5)' }}>{dayH}h {dayM}m</span>
+                      <span className="text-[9px] font-bold text-orange-400/80">{sunsetTime}</span>
                     </div>
-                    <div className="relative w-full h-[6px] bg-white/5 rounded-full overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-r from-amber-500/30 via-yellow-400/40 to-orange-500/30 rounded-full" />
-                      <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full shadow-lg transition-all" style={{ left: `calc(${sunPct}% - 6px)`, background: isDay ? '#fbbf24' : '#64748b', boxShadow: isDay ? '0 0 10px #fbbf24, 0 0 20px rgba(251,191,36,0.3)' : 'none' }}>
-                        <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-[9px]">{isDay ? '☀️' : '🌙'}</span>
-                      </div>
-                    </div>
-                    <div className="relative text-[8px] text-amber-400/70 font-semibold">{dayH}h {dayM}m svetla</div>
                   </div>
                 )
               })()}
@@ -681,7 +667,7 @@ export default function DaySummaryWidget() {
               return (
                 <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setWeatherCityKey(null)}>
                   <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-                  <div className="relative w-full max-w-[400px] bg-[var(--bg-card)] border border-blue-500/20 rounded-2xl shadow-2xl p-5 space-y-3" onClick={e => e.stopPropagation()}>
+                  <div className="relative w-full max-w-[400px] bg-[var(--bg-card)] border border-blue-500/20 rounded-2xl shadow-2xl p-5 space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-bold text-blue-300">{icon} {c.name}</span>
                       <button onClick={() => setWeatherCityKey(null)} className="text-slate-500 hover:text-white text-lg">✕</button>
@@ -718,10 +704,6 @@ export default function DaySummaryWidget() {
                         <div className="text-[9px] text-slate-500">AQI</div>
                         <div className={`text-[13px] font-bold ${aqiColor(cityAqi)}`}>{cityAqi > 0 ? `${cityAqi} · ${aqiLabel(cityAqi)}` : '–'}</div>
                       </div>
-                    </div>
-                    <div className="flex items-center justify-center gap-4 text-[10px] text-slate-400">
-                      <span>🌅 {c.sunrise}</span>
-                      <span>🌇 {c.sunset}</span>
                     </div>
                     {tomorrowIcon && (
                       <div className="bg-white/[0.03] border border-white/5 rounded-xl p-3">

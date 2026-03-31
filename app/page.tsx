@@ -75,6 +75,14 @@ import RegistersWidget from '@/components/widgets/RegistersWidget'
 import GovDataWidget from '@/components/widgets/GovDataWidget'
 import GoogleNewsSKWidget from '@/components/widgets/GoogleNewsSKWidget'
 import PodcastSKWidget from '@/components/widgets/PodcastSKWidget'
+import LunchMenuWidget from '@/components/widgets/LunchMenuWidget'
+import CloudflareRadarWidget from '@/components/widgets/CloudflareRadarWidget'
+import GoOutWidget from '@/components/widgets/GoOutWidget'
+import FoodDeliveryWidget from '@/components/widgets/FoodDeliveryWidget'
+import HotelWidget from '@/components/widgets/HotelWidget'
+import MarineTrafficWidget from '@/components/widgets/MarineTrafficWidget'
+import NCZIWidget from '@/components/widgets/NCZIWidget'
+import KatasterWidget from '@/components/widgets/KatasterWidget'
 import SettingsPanel from '@/components/SettingsPanel'
 import { SpeedtestMini } from '@/components/widgets/SpeedtestWidget'
 import { useLang } from '@/hooks/useLang'
@@ -105,7 +113,12 @@ export default function Home() {
         )}
 
         {/* Internet & Services - below Summary+Health */}
-        {isWidgetVisible('stats') && <InternetServicesWidget />}
+        {isWidgetVisible('stats') && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <InternetServicesWidget />
+            <CloudflareRadarWidget />
+          </div>
+        )}
 
         {/* Denný citát & Fakt - now rendered as mini widgets in DaySummary */}
 
@@ -128,6 +141,12 @@ export default function Home() {
               <SportSuggestionsWidget />
             </div>
 
+            {/* GoOut events & Food delivery */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <GoOutWidget />
+              <FoodDeliveryWidget />
+            </div>
+
             {/* Prices & EV */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
               <FuelPricesWidget />
@@ -140,6 +159,13 @@ export default function Home() {
               <ParkingWidget />
               <RideShareWidget />
               <NDSCameraWidget />
+            </div>
+
+            {/* Marine traffic & Hotels & NCZI */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <MarineTrafficWidget />
+              <HotelWidget />
+              <NCZIWidget />
             </div>
 
             {/* Sports */}
@@ -193,8 +219,9 @@ export default function Home() {
               <EGovWidget />
               <RegistersWidget />
             </div>
-            <div className="mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <GovDataWidget />
+              <KatasterWidget />
             </div>
           </div>
         )}
@@ -229,7 +256,10 @@ export default function Home() {
         {isWidgetVisible('restaurants') && (
           <div id="sec-restaurants">
             <SectionLabel label={lang === 'sk' ? '🍽️ Reštaurácie' : '🍽️ Restaurants'} />
-            <RestaurantsWidget />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <RestaurantsWidget />
+              <LunchMenuWidget />
+            </div>
           </div>
         )}
 
