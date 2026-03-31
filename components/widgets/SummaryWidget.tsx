@@ -158,27 +158,49 @@ export default function SummaryWidget() {
         <Section icon="🌐" title="Internet & služby" count={internetIssues.length} color="violet">
           {internet.loading ? <SkeletonRows rows={2} /> : (
             <>
+              {/* Metrics bar */}
+              <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl bg-white/[0.02] border border-white/5 mb-2">
+                <div className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: internet.data?.allGood ? '#22c55e' : '#f97316' }} />
+                  <span className="text-[9px] font-bold" style={{ color: internet.data?.allGood ? '#22c55e' : '#f97316' }}>
+                    {internet.data?.allGood ? 'Všetko OK' : `${internetIssues.length} problém${internetIssues.length > 1 ? 'y' : ''}`}
+                  </span>
+                </div>
+                <div className="text-[8px] text-slate-500">
+                  <span className="text-green-400 font-bold">{internetServices.filter(s => s.status === 'up').length}</span> ✅
+                  {internetIssues.length > 0 && <><span className="mx-1">·</span><span className="text-amber-400 font-bold">{internetServices.filter(s => s.status === 'issues').length}</span> ⚠️</>}
+                  {internetServices.filter(s => s.status === 'down').length > 0 && <><span className="mx-1">·</span><span className="text-red-400 font-bold">{internetServices.filter(s => s.status === 'down').length}</span> 🔴</>}
+                </div>
+                <div className="flex-1" />
+                <span className="text-[7px] text-slate-600">{internet.data?.issueCount ?? 0} hlásení</span>
+              </div>
+              {/* Issues first */}
               {internetIssues.length > 0 && (
                 <div className="space-y-0.5 mb-1.5">
                   {internetIssues.map((s, i) => (
                     <div key={i} className={`flex items-center gap-2 rounded-lg px-2 py-1 border ${s.status === 'down' ? 'bg-red-500/8 border-red-500/15' : 'bg-amber-500/8 border-amber-500/15'}`}>
-                      <span className="text-sm">{s.icon}</span>
-                      <span className="text-[10px] font-semibold text-white flex-1">{s.name}</span>
-                      <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-bold ${s.status === 'down' ? 'bg-red-500/20 text-red-300' : 'bg-amber-500/20 text-amber-300'}`}>{s.status === 'down' ? '🔴' : '🟡'}</span>
+                      <span className="text-xs">{s.icon}</span>
+                      <span className="text-[9px] font-semibold text-white flex-1">{s.name}</span>
+                      <span className="text-[7px] text-slate-500">{s.reports > 0 ? `${s.reports} hlásení` : ''}</span>
+                      <span className={`text-[7px] px-1.5 py-0.5 rounded-full font-bold ${s.status === 'down' ? 'bg-red-500/20 text-red-300' : 'bg-amber-500/20 text-amber-300'}`}>{s.status === 'down' ? '🔴 Down' : '🟡 Problémy'}</span>
                     </div>
                   ))}
                 </div>
               )}
-              <div className="grid grid-cols-4 sm:grid-cols-5 gap-1">
-                {internetServices.map((s, i) => (
-                  <div key={i} className={`flex items-center gap-1 rounded-lg px-1.5 py-1 border ${s.status === 'up' ? 'bg-white/[0.02] border-white/5' : s.status === 'issues' ? 'bg-amber-500/5 border-amber-500/15' : 'bg-red-500/5 border-red-500/15'}`}>
-                    <span className="text-xs">{s.icon}</span>
-                    <div className="min-w-0">
-                      <div className="text-[7px] text-slate-300 font-medium truncate">{s.name}</div>
-                      <div className={`text-[7px] font-bold ${s.status === 'up' ? 'text-green-400' : s.status === 'issues' ? 'text-amber-400' : 'text-red-400'}`}>{s.status === 'up' ? '✅' : s.status === 'issues' ? '⚠️' : '🔴'}</div>
+              {/* Compact grid of all services */}
+              <div className="grid grid-cols-5 sm:grid-cols-6 gap-0.5">
+                {internetServices.map((s, i) => {
+                  const dot = s.status === 'up' ? 'bg-green-400' : s.status === 'issues' ? 'bg-amber-400' : 'bg-red-400'
+                  return (
+                    <div key={i} className="flex flex-col items-center gap-0.5 rounded-md px-1 py-1 bg-white/[0.015] hover:bg-white/[0.04] transition-colors" title={`${s.name}: ${s.status}`}>
+                      <span className="text-sm leading-none">{s.icon}</span>
+                      <div className="flex items-center gap-0.5">
+                        <span className={`w-1 h-1 rounded-full ${dot}`} />
+                        <span className="text-[6px] text-slate-400 font-medium truncate max-w-[40px]">{s.name}</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </>
           )}

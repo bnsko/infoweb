@@ -1,7 +1,7 @@
 'use client'
 
 import Header from '@/components/Header'
-import StatsWidget from '@/components/widgets/StatsWidget'
+// StatsWidget deleted
 import NewsFeedWidget from '@/components/widgets/NewsFeedWidget'
 import RedditWidget from '@/components/widgets/RedditWidget'
 import OnThisDayWidget from '@/components/widgets/OnThisDayWidget'
@@ -53,6 +53,17 @@ import EnvironmentWidget from '@/components/widgets/EnvironmentWidget'
 import SummaryWidget from '@/components/widgets/SummaryWidget'
 import HealthWidget from '@/components/widgets/HealthWidget'
 import JobMarketWidget from '@/components/widgets/JobMarketWidget'
+import BusinessTipsWidget from '@/components/widgets/BusinessTipsWidget'
+import TaxCalendarWidget from '@/components/widgets/TaxCalendarWidget'
+import BizConceptsWidget from '@/components/widgets/BizConceptsWidget'
+import StartupNewsWidget from '@/components/widgets/StartupNewsWidget'
+import EGovWidget from '@/components/widgets/EGovWidget'
+import EUGrantsWidget from '@/components/widgets/EUGrantsWidget'
+import MarketTrendsWidget from '@/components/widgets/MarketTrendsWidget'
+import ProductivityWidget from '@/components/widgets/ProductivityWidget'
+import FreelanceWidget from '@/components/widgets/FreelanceWidget'
+import BizQuoteWidget from '@/components/widgets/BizQuoteWidget'
+import BizToolsWidget from '@/components/widgets/BizToolsWidget'
 import SettingsPanel from '@/components/SettingsPanel'
 import { SpeedtestMini } from '@/components/widgets/SpeedtestWidget'
 import { useLang } from '@/hooks/useLang'
@@ -74,10 +85,9 @@ export default function Home() {
         {/* Flash News - breaking news ticker */}
         {isWidgetVisible('flashnews') && <FlashNewsWidget />}
 
-        {/* Stats bar + Summary + Health widgets */}
+        {/* Summary + Health widgets side by side */}
         {isWidgetVisible('stats') && (
-          <div id="sec-weather" className="space-y-4">
-            <StatsWidget />
+          <div id="sec-weather" className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <SummaryWidget />
             <HealthWidget />
           </div>
@@ -133,11 +143,36 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <MortgagesWidget />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <JobMarketWidget />
             </div>
+          </div>
+        )}
 
+        {/* ── PODNIKANIE ── */}
+        {isWidgetVisible('podnikanie') && (
+          <div id="sec-podnikanie">
+            <SectionLabel label={lang === 'sk' ? '💼 Podnikanie' : '💼 Business'} />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <BusinessTipsWidget />
+              <BizConceptsWidget />
+              <ProductivityWidget />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <StartupNewsWidget />
+              <MarketTrendsWidget />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+              <FreelanceWidget />
+              <TaxCalendarWidget />
+              <EUGrantsWidget />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <EGovWidget />
+              <BizToolsWidget />
+            </div>
+            <div className="mt-4">
+              <BizQuoteWidget />
+            </div>
           </div>
         )}
 

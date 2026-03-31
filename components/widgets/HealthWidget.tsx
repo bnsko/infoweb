@@ -45,7 +45,6 @@ export default function HealthWidget() {
   const [tab, setTab] = useState<Tab>('pollen')
   const [doctorType, setDoctorType] = useState<string>('all')
   const [doctorCity, setDoctorCity] = useState<string>('all')
-  const [pharmFilter, setPharmFilter] = useState<'all' | 'emergency' | 'night'>('all')
 
   const pharmacies = useWidget<PharmacyData>('/api/pharmacies', 10 * 60 * 1000)
   const pollen = useWidget<PollenData>('/api/pollen', 60 * 60 * 1000)
@@ -58,8 +57,6 @@ export default function HealthWidget() {
   const [city, setCity] = useState('')
   const allPharmacies = pharmacies.data?.pharmacies?.[city || cities[0]] ?? []
   const emergencyPharmacies = allPharmacies.filter(p => p.isEmergency || p.isNight)
-  const filteredPharmacies = pharmFilter === 'emergency' ? allPharmacies.filter(p => p.isEmergency) :
-    pharmFilter === 'night' ? allPharmacies.filter(p => p.isNight) : allPharmacies
 
   const allDoctors = doctors.data?.doctors ?? []
   const doctorCities = Array.from(new Set(allDoctors.map(d => d.city))).sort()
@@ -75,56 +72,74 @@ export default function HealthWidget() {
 
   return (
     <WidgetCard accent="green" title={lang === 'sk' ? 'Zdravie' : 'Health'} icon="🏥" onRefresh={refetchAll}>
-      {/* ── Pharmacies & Emergency — always visible ── */}
-      <div className="mb-4">
-        <div className="flex items-center gap-1.5 mb-2">
-          <span className="text-sm">💊</span>
-          <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">Lekárne & Pohotovosť</span>
-          {emergencyPharmacies.length > 0 && <span className="text-[8px] min-w-[16px] h-[16px] flex items-center justify-center rounded-full font-bold bg-red-500/15 text-red-300">{emergencyPharmacies.length}</span>}
-          <div className="flex-1 h-px bg-white/5" />
+      {/* ── Pharmacies & Emergency — both visible, separated ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+        {/* Lekárne */}
+        <div>
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className="text-sm">💊</span>
+            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">Lekárne</span>
+            <div className="flex-1 h-px bg-white/5" />
+          </div>
+          {pharmacies.loading ? <SkeletonRows rows={2} /> : !pharmacies.data ? null : (
+            <>
+              {cities.length > 1 && (
+                <select value={city || cities[0]} onChange={e => setCity(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-slate-300 mb-2 focus:outline-none">
+                  {cities.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              )}
+              <div className="space-y-0.5 max-h-[140px] overflow-y-auto scrollbar-hide">
+                {allPharmacies.filter(p => !p.isEmergency).length === 0 ? (
+                  <p className="text-[10px] text-slate-500 text-center py-2">Žiadne bežné lekárne</p>
+                ) : allPharmacies.filter(p => !p.isEmergency).slice(0, 4).map((p, i) => (
+                  <div key={i} className="flex items-start gap-2 rounded-lg p-1.5 widget-item-hover">
+                    <span className="text-sm shrink-0 mt-0.5">💊</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] text-slate-200 font-medium line-clamp-1">{p.name}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[8px] text-slate-500">📍 {p.address}</span>
+                        {p.openUntil && <span className="text-[8px] text-slate-600">do {p.openUntil}</span>}
+                      </div>
+                    </div>
+                    {p.isNight && <span className="text-[7px] px-1 py-0.5 rounded bg-emerald-500/15 text-emerald-300 font-bold shrink-0">24h</span>}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
-        {pharmacies.loading ? <SkeletonRows rows={2} /> : !pharmacies.data ? null : (
-          <>
-            <div className="flex gap-1 mb-2">
-              {([
-                { key: 'all' as const, label: '📋 Všetky' },
-                { key: 'emergency' as const, label: '🚨 Pohotovosť' },
-                { key: 'night' as const, label: '🌙 Nočné' },
-              ] as const).map(f => (
-                <button key={f.key} onClick={() => setPharmFilter(f.key)}
-                  className={`text-[9px] px-2 py-0.5 rounded-full font-semibold transition-colors ${
-                    pharmFilter === f.key ? 'bg-green-500/20 text-green-300' : 'text-slate-500 hover:text-slate-300'
-                  }`}>{f.label}</button>
-              ))}
-            </div>
-            {cities.length > 1 && (
-              <select value={city || cities[0]} onChange={e => setCity(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-slate-300 mb-2 focus:outline-none">
-                {cities.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            )}
-            <div className="space-y-0.5 max-h-[160px] overflow-y-auto scrollbar-hide">
-              {filteredPharmacies.length === 0 ? (
-                <p className="text-[10px] text-slate-500 text-center py-2">Žiadne lekárne v tejto kategórii</p>
-              ) : filteredPharmacies.slice(0, 6).map((p, i) => (
+        {/* Pohotovosť */}
+        <div>
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className="text-sm">🚨</span>
+            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">Pohotovosť</span>
+            {emergencyPharmacies.length > 0 && <span className="text-[8px] min-w-[16px] h-[16px] flex items-center justify-center rounded-full font-bold bg-red-500/15 text-red-300">{emergencyPharmacies.length}</span>}
+            <div className="flex-1 h-px bg-white/5" />
+          </div>
+          {pharmacies.loading ? <SkeletonRows rows={2} /> : !pharmacies.data ? null : (
+            <div className="space-y-0.5 max-h-[140px] overflow-y-auto scrollbar-hide">
+              {emergencyPharmacies.length === 0 ? (
+                <p className="text-[10px] text-emerald-400 text-center py-2">✅ Žiadna pohotovosť</p>
+              ) : emergencyPharmacies.slice(0, 4).map((p, i) => (
                 <div key={i} className="flex items-start gap-2 rounded-lg p-1.5 widget-item-hover">
-                  <span className="text-sm shrink-0 mt-0.5">{p.isEmergency ? '🚨' : '💊'}</span>
+                  <span className="text-sm shrink-0 mt-0.5">🚨</span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[11px] text-slate-200 font-medium line-clamp-1">{p.name}</p>
+                    <p className="text-[10px] text-slate-200 font-medium line-clamp-1">{p.name}</p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[9px] text-slate-500">📍 {p.address}</span>
-                      {p.openUntil && <span className="text-[9px] text-slate-600">do {p.openUntil}</span>}
+                      <span className="text-[8px] text-slate-500">📍 {p.address}</span>
+                      {p.openUntil && <span className="text-[8px] text-slate-600">do {p.openUntil}</span>}
                     </div>
                   </div>
                   <div className="flex gap-1 shrink-0">
                     {p.isNight && <span className="text-[7px] px-1 py-0.5 rounded bg-emerald-500/15 text-emerald-300 font-bold">24h</span>}
-                    {p.isEmergency && <span className="text-[7px] px-1 py-0.5 rounded bg-red-500/15 text-red-300 font-bold">Pohot.</span>}
+                    <span className="text-[7px] px-1 py-0.5 rounded bg-red-500/15 text-red-300 font-bold">Pohot.</span>
                   </div>
                 </div>
               ))}
             </div>
-          </>
-        )}
+          )}
+        </div>
       </div>
 
       {/* ── Tabs: Pollen, Flu, Doctors ── */}

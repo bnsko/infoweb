@@ -20,6 +20,7 @@ import DealsWidget from '@/components/widgets/DealsWidget'
 import FlightsWidget from '@/components/widgets/FlightsWidget'
 import { EnvironmentMini } from '@/components/widgets/EnvironmentWidget'
 import { EnergyMini } from '@/components/widgets/EnergyWidget/EnergyWidget'
+import { MortgagesMini } from '@/components/widgets/MortgagesWidget'
 
 interface SlovakFact { icon: string; title: string; value: string; detail: string }
 interface SlovakFactsData { staticFacts: SlovakFact[]; dynamicFacts: SlovakFact[]; generalStats: Record<string, number>; dayOfYear: number }
@@ -47,6 +48,7 @@ const SECTIONS = [
   { id: 'sec-news', icon: '📰', label: 'Správy' },
   { id: 'sec-slovensko', icon: '🇸🇰', label: 'Slovensko' },
   { id: 'sec-financie', icon: '💶', label: 'Financie' },
+  { id: 'sec-podnikanie', icon: '💼', label: 'Podnikanie' },
   { id: 'sec-fun', icon: '🎮', label: 'Zábava' },
   { id: 'sec-history', icon: '📚', label: 'História' },
 ]
@@ -117,6 +119,29 @@ function getSessionId(): string {
   return sid
 }
 
+function windDirArrow(deg: number): string {
+  const arrows = ['↓','↙','←','↖','↑','↗','→','↘']
+  return arrows[Math.round(deg / 45) % 8]
+}
+function aqiColor(aqi: number): string {
+  if (aqi <= 20) return 'text-green-400'
+  if (aqi <= 40) return 'text-emerald-400'
+  if (aqi <= 60) return 'text-yellow-400'
+  if (aqi <= 80) return 'text-orange-400'
+  if (aqi <= 100) return 'text-red-400'
+  return 'text-purple-400'
+}
+function aqiLabel(aqi: number): string {
+  if (aqi <= 20) return 'Výborný'
+  if (aqi <= 40) return 'Dobrý'
+  if (aqi <= 60) return 'Stredný'
+  if (aqi <= 80) return 'Zlý'
+  if (aqi <= 100) return 'Veľmi zlý'
+  return 'Extrémny'
+}
+
+const CITY_ORDER = ['BA', 'TT', 'NR', 'ZA', 'BB', 'PO', 'KE', 'TATRY']
+
 export default function DaySummaryWidget() {
   const { lang } = useLang()
   const loc = lang === 'sk' ? sk : enUS
@@ -142,10 +167,11 @@ export default function DaySummaryWidget() {
   const [dealsOpen, setDealsOpen] = useState(false)
   const [envMiniOpen, setEnvMiniOpen] = useState(false)
   const [energyMiniOpen, setEnergyMiniOpen] = useState(false)
+  const [mortgagesMiniOpen, setMortgagesMiniOpen] = useState(false)
   const [weatherCityKey, setWeatherCityKey] = useState<string | null>(null)
   const slovakFacts = useWidget<SlovakFactsData>('/api/slovakfacts', 60 * 1000)
 
-  const anyPopupOpen = showerOpen || auroraOpen || spaceOpen || flightsOpen || holidayOpen || dayPopupOpen || namedayMiniOpen || horoscopeMiniOpen || issMiniOpen || launchesMiniOpen || mhdOpen || trainOpen || officeOpen || lotteryOpen || dealsOpen || envMiniOpen || energyMiniOpen || !!weatherCityKey
+  const anyPopupOpen = showerOpen || auroraOpen || spaceOpen || flightsOpen || holidayOpen || dayPopupOpen || namedayMiniOpen || horoscopeMiniOpen || issMiniOpen || launchesMiniOpen || mhdOpen || trainOpen || officeOpen || lotteryOpen || dealsOpen || envMiniOpen || energyMiniOpen || mortgagesMiniOpen || !!weatherCityKey
 
   const holiday = useMemo(() => now ? getHoliday(now) : null, [now])
   const nextHolidays = useMemo(() => now ? getNextHolidays(now, 6) : [], [now])
@@ -193,8 +219,26 @@ export default function DaySummaryWidget() {
             <button onClick={() => setDayPopupOpen(o => !o)} className="flex items-center gap-1 mt-0.5 text-[10px] text-slate-400 hover:text-amber-300 transition-colors capitalize cursor-pointer" suppressHydrationWarning>
               <span className="font-medium">{today}</span>
               {now && isWorkFree(now) && <span className="text-[8px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded-full">🏠 voľno</span>}
+              {now && (() => {
+                const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000)
+                const daysInYear = new Date(now.getFullYear(), 1, 29).getDate() === 29 ? 366 : 365
+                const weekNum = Math.ceil(((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 86400000 + new Date(now.getFullYear(), 0, 1).getDay()) / 7)
+                return (
+                  <span className="text-[8px] text-slate-500 font-mono">W{weekNum} · D{dayOfYear}/{daysInYear}</span>
+                )
+              })()}
               <span className="text-[8px] text-slate-600">▼</span>
             </button>
+            {/* Inline dynamic facts */}
+            {slovakFacts.data && slovakFacts.data.dynamicFacts.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1 max-w-[320px]">
+                {slovakFacts.data.dynamicFacts.slice(0, 4).map((f, i) => (
+                  <span key={i} className="text-[7px] text-slate-500 bg-white/[0.03] border border-white/5 rounded px-1 py-0.5" title={f.title}>
+                    {f.icon} <span className="text-slate-300 font-bold">{f.value}</span>
+                  </span>
+                ))}
+              </div>
+            )}
             {/* Day progress bar */}
             {now && (() => {
               const totalMinutes = now.getHours() * 60 + now.getMinutes()
@@ -519,6 +563,7 @@ export default function DaySummaryWidget() {
           </button>
           <EnvironmentMini onOpenChange={setEnvMiniOpen} />
           <EnergyMini onOpenChange={setEnergyMiniOpen} />
+          <MortgagesMini onOpenChange={setMortgagesMiniOpen} />
 
           <div className="ml-auto flex items-center gap-2">
             <div className="hidden xl:flex items-center gap-1.5">
@@ -600,9 +645,45 @@ export default function DaySummaryWidget() {
               </div>
             )}
             <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
-              {stats.data.cityTemps.map(c => {
+              {/* Sunrise/Sunset animation card */}
+              {(() => {
+                const ba = stats.data?.cityTemps?.find(ct => ct.key === 'BA')
+                if (!ba) return null
+                const sunriseTime = ba.sunrise ? ba.sunrise.split('T')[1]?.slice(0, 5) : '--:--'
+                const sunsetTime = ba.sunset ? ba.sunset.split('T')[1]?.slice(0, 5) : '--:--'
+                const sunriseMin = ba.sunrise ? (() => { const p = ba.sunrise.split('T')[1]?.split(':'); return p ? parseInt(p[0]) * 60 + parseInt(p[1]) : 0 })() : 0
+                const sunsetMin = ba.sunset ? (() => { const p = ba.sunset.split('T')[1]?.split(':'); return p ? parseInt(p[0]) * 60 + parseInt(p[1]) : 0 })() : 0
+                const nowMin = now ? now.getHours() * 60 + now.getMinutes() : 720
+                const dayLength = sunsetMin - sunriseMin
+                const dayH = Math.floor(dayLength / 60)
+                const dayM = dayLength % 60
+                const sunPct = sunriseMin && sunsetMin ? Math.max(0, Math.min(100, ((nowMin - sunriseMin) / (sunsetMin - sunriseMin)) * 100)) : 50
+                const isDay = nowMin >= sunriseMin && nowMin <= sunsetMin
+                return (
+                  <div className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-to-b from-amber-500/[0.06] to-orange-500/[0.04] border border-amber-500/15 shrink-0 min-w-[100px]">
+                    <div className="flex items-center gap-2 text-[9px]">
+                      <span className="text-amber-400">🌅 {sunriseTime}</span>
+                      <span className="text-orange-400">🌇 {sunsetTime}</span>
+                    </div>
+                    <div className="w-full h-[6px] bg-white/5 rounded-full relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-r from-amber-500/30 via-yellow-400/30 to-orange-500/30 rounded-full" />
+                      <div className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full shadow-lg transition-all" style={{ left: `calc(${sunPct}% - 5px)`, background: isDay ? '#fbbf24' : '#64748b', boxShadow: isDay ? '0 0 8px #fbbf24' : 'none' }}>
+                        <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px]">{isDay ? '☀️' : '🌙'}</span>
+                      </div>
+                    </div>
+                    <div className="text-[8px] text-slate-500">{dayH}h {dayM}m svetla</div>
+                  </div>
+                )
+              })()}
+              {/* City cards sorted by CITY_ORDER */}
+              {[...stats.data.cityTemps].sort((a, b) => {
+                const ai = CITY_ORDER.indexOf(a.key)
+                const bi = CITY_ORDER.indexOf(b.key)
+                return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
+              }).map(c => {
                 const icon = WMO_MINI[c.weatherCode] ?? '🌡️'
                 const tempColor = c.temp >= 25 ? 'text-orange-400' : c.temp >= 15 ? 'text-amber-400' : c.temp >= 5 ? 'text-blue-400' : c.temp >= 0 ? 'text-indigo-400' : 'text-violet-400'
+                const cityAqi = stats.data?.cityAQI?.find(a => a.key === c.key)?.aqi ?? 0
                 return (
                   <button key={c.key} onClick={() => setWeatherCityKey(c.key)} className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-white/[0.02] border border-white/5 hover:bg-white/[0.06] hover:border-blue-500/20 transition-all shrink-0 cursor-pointer">
                     <span className="text-base">{icon}</span>
@@ -613,9 +694,10 @@ export default function DaySummaryWidget() {
                         <span className="text-[8px] text-slate-600">{c.tempMin}°/{c.tempMax}°</span>
                       </div>
                     </div>
-                    {c.precipitation != null && c.precipitation > 0 && (
-                      <span className="text-[8px] text-blue-400">💧{c.precipitation}mm</span>
-                    )}
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span className="text-[8px] text-slate-500" title={`Vietor ${c.windSpeed} km/h`}>{windDirArrow(c.windDir)} {c.windSpeed}</span>
+                      {cityAqi > 0 && <span className={`text-[7px] font-bold ${aqiColor(cityAqi)}`} title={`AQI: ${aqiLabel(cityAqi)}`}>AQI {cityAqi}</span>}
+                    </div>
                   </button>
                 )
               })}
@@ -627,6 +709,7 @@ export default function DaySummaryWidget() {
               const icon = WMO_MINI[c.weatherCode] ?? '🌡️'
               const tempColor = c.temp >= 25 ? 'text-orange-400' : c.temp >= 15 ? 'text-amber-400' : c.temp >= 5 ? 'text-blue-400' : c.temp >= 0 ? 'text-indigo-400' : 'text-violet-400'
               const tomorrowIcon = c.tomorrowCode != null ? (WMO_MINI[c.tomorrowCode] ?? '🌡️') : null
+              const cityAqi = stats.data?.cityAQI?.find(a => a.key === c.key)?.aqi ?? 0
               return (
                 <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-24 px-4" onClick={() => setWeatherCityKey(null)}>
                   <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
@@ -653,7 +736,7 @@ export default function DaySummaryWidget() {
                       </div>
                       <div className="bg-white/[0.03] border border-white/5 rounded-xl p-2.5 text-center">
                         <div className="text-[9px] text-slate-500">Vietor</div>
-                        <div className="text-[13px] font-bold text-white">{c.windSpeed} km/h</div>
+                        <div className="text-[13px] font-bold text-white">{windDirArrow(c.windDir)} {c.windSpeed} km/h</div>
                       </div>
                       <div className="bg-white/[0.03] border border-white/5 rounded-xl p-2.5 text-center">
                         <div className="text-[9px] text-slate-500">Tlak</div>
@@ -664,8 +747,8 @@ export default function DaySummaryWidget() {
                         <div className="text-[13px] font-bold text-amber-300">{c.uvIndex}</div>
                       </div>
                       <div className="bg-white/[0.03] border border-white/5 rounded-xl p-2.5 text-center">
-                        <div className="text-[9px] text-slate-500">Zrážky</div>
-                        <div className="text-[13px] font-bold text-blue-300">{c.precipitation ?? 0} mm</div>
+                        <div className="text-[9px] text-slate-500">AQI</div>
+                        <div className={`text-[13px] font-bold ${aqiColor(cityAqi)}`}>{cityAqi > 0 ? `${cityAqi} · ${aqiLabel(cityAqi)}` : '–'}</div>
                       </div>
                     </div>
                     <div className="flex items-center justify-center gap-4 text-[10px] text-slate-400">

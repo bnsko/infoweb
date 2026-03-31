@@ -85,9 +85,6 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          <div className="hidden md:flex items-center gap-1.5 text-[9px] text-slate-500 font-mono tabular-nums" suppressHydrationWarning>
-            <span>🇸🇰 {fmtBig(skPop)}</span><span className="text-slate-700">|</span><span>🌍 {fmtBig(worldPop)}</span>
-          </div>
           {/* Year progress */}
           {(() => {
             const n = new Date()
@@ -95,14 +92,23 @@ export default function Header() {
             const daysInYear = new Date(n.getFullYear(), 1, 29).getDate() === 29 ? 366 : 365
             const yearPct = Math.round((dayOfYear / daysInYear) * 1000) / 10
             const weekNum = Math.ceil(((n.getTime() - new Date(n.getFullYear(), 0, 1).getTime()) / 86400000 + new Date(n.getFullYear(), 0, 1).getDay()) / 7)
+            const remaining = daysInYear - dayOfYear
             return (
-              <div className="hidden lg:flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/[0.03] border border-white/5" suppressHydrationWarning>
-                <span className="text-[8px] text-slate-500 font-mono">W{weekNum}</span>
-                <div className="w-16 bg-white/5 rounded-full h-1.5 overflow-hidden">
-                  <div className="bg-gradient-to-r from-amber-500 to-orange-500 h-full rounded-full" style={{ width: `${yearPct}%` }} />
+              <div className="hidden lg:flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/5" suppressHydrationWarning>
+                <div className="flex items-center gap-2 text-[9px]">
+                  <span className="text-slate-400 font-semibold">Rok {n.getFullYear()}</span>
+                  <span className="text-amber-400 font-bold font-mono">{yearPct}%</span>
                 </div>
-                <span className="text-[8px] text-amber-400 font-mono font-bold">{yearPct}%</span>
-                <span className="text-[7px] text-slate-600 font-mono">D{dayOfYear}</span>
+                <div className="w-24 bg-white/5 rounded-full h-1.5 overflow-hidden">
+                  <div className="bg-gradient-to-r from-amber-500 to-orange-500 h-full rounded-full transition-all" style={{ width: `${yearPct}%` }} />
+                </div>
+                <div className="flex items-center gap-2 text-[7px] text-slate-500 font-mono">
+                  <span>Týždeň {weekNum}</span>
+                  <span>·</span>
+                  <span>Deň {dayOfYear}/{daysInYear}</span>
+                  <span>·</span>
+                  <span>Zostáva {remaining}d</span>
+                </div>
               </div>
             )
           })()}
