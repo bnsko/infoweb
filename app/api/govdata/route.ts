@@ -48,11 +48,31 @@ export async function GET() {
     industrialProduction: (-1 + rng() * 5).toFixed(1),
   }
 
+  const indicators: { name: string; value: string; change: string; trend: 'up' | 'down' | 'stable' }[] = [
+    { name: 'Rast HDP', value: `${statistics.gdpGrowth} %`, change: `+${(rng() * 0.5).toFixed(1)} %`, trend: 'up' },
+    { name: 'Inflácia', value: `${statistics.inflation} %`, change: `−${(rng() * 0.3).toFixed(1)} %`, trend: 'down' },
+    { name: 'Nezamestnanosť', value: `${statistics.unemployment} %`, change: `−${(rng() * 0.2).toFixed(1)} %`, trend: 'down' },
+    { name: 'Priem. mzda', value: `${statistics.avgSalary} €`, change: `+${Math.floor(rng() * 50)} €`, trend: 'up' },
+    { name: 'Populácia', value: `${(statistics.population / 1e6).toFixed(2)} mil`, change: `−${Math.floor(rng() * 2000)}`, trend: 'down' },
+    { name: 'Narodení', value: `${statistics.births}`, change: `+${Math.floor(rng() * 100)}`, trend: 'up' },
+    { name: 'Úmrtia', value: `${statistics.deaths}`, change: `−${Math.floor(rng() * 50)}`, trend: 'down' },
+    { name: 'Turisti', value: `${(statistics.tourismVisitors / 1e3).toFixed(0)} tis`, change: `+${Math.floor(rng() * 10)} tis`, trend: 'up' },
+    { name: 'Priemysel', value: `${statistics.industrialProduction} %`, change: `+${(rng() * 1).toFixed(1)} %`, trend: 'stable' },
+  ]
+
+  const rpvsSectors = [
+    { name: 'Stavebníctvo', count: Math.floor(3000 + rng() * 500) },
+    { name: 'IT', count: Math.floor(2500 + rng() * 500) },
+    { name: 'Obchod', count: Math.floor(4000 + rng() * 500) },
+    { name: 'Zdravotníctvo', count: Math.floor(1500 + rng() * 300) },
+    { name: 'Doprava', count: Math.floor(1200 + rng() * 200) },
+  ]
+
   return NextResponse.json({
-    parliament: recentVotes,
-    contracts,
-    rpvs,
-    statistics,
+    parliament: { votes: recentVotes.map(v => ({ ...v, result: v.result === 'schválený' ? 'schválené' : v.result === 'zamietnutý' ? 'zamietnuté' : 'presunuté', absent: 150 - v.forVotes - v.againstVotes - v.abstained })) },
+    crz: { contracts: contracts.map(c => ({ name: c.title, supplier: c.contractor, value: c.value, date: c.date, ministry: c.ministry })) },
+    rpvs: { ...rpvs, sectors: rpvsSectors },
+    statistics: { indicators },
     timestamp: Date.now(),
   })
 }

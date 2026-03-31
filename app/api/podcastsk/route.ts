@@ -31,7 +31,7 @@ export async function GET() {
   const shuffled = podcasts.map(p => ({
     ...p,
     rank: p.rank + Math.floor((rng() - 0.5) * 3),
-    listeners: `${Math.floor(5 + rng() * 50)}K`,
+    listeners: Math.floor(5000 + rng() * 50000),
   })).sort((a, b) => a.rank - b.rank)
 
   return NextResponse.json({ podcasts: shuffled, timestamp: Date.now() })

@@ -23,12 +23,35 @@ export async function GET() {
     { name: 'GreenWay Košice', city: 'Košice', address: 'Optima', provider: 'GreenWay', connectors: 4, power: '50 kW' },
   ]
 
-  const stationData = stations.map(s => ({
-    ...s,
-    available: Math.max(0, Math.floor(s.connectors * (0.3 + rng() * 0.7))),
-    price: (0.30 + rng() * 0.20).toFixed(2) + ' €/kWh',
-    status: rng() > 0.1 ? 'online' as const : 'offline' as const,
-  }))
+  const connectorTypes = ['CCS2', 'CHAdeMO', 'Type 2']
 
-  return NextResponse.json({ stations: stationData, total: stations.length, timestamp: Date.now() })
+  const stationData = stations.map(s => {
+    const powerNum = parseInt(s.power)
+    const conns = Array.from({ length: s.connectors }, (_, i) => {
+      const r = rng()
+      return {
+        type: connectorTypes[i % connectorTypes.length],
+        power: powerNum,
+        status: r > 0.6 ? 'available' as const : r > 0.15 ? 'occupied' as const : 'offline' as const,
+      }
+    })
+    return {
+      name: s.name,
+      operator: s.provider,
+      city: s.city,
+      address: s.address,
+      connectors: conns,
+      pricePerKwh: +(0.30 + rng() * 0.20).toFixed(2),
+    }
+  })
+
+  const allConns = stationData.flatMap(s => s.connectors)
+  const stats = {
+    totalStations: stationData.length,
+    totalConnectors: allConns.length,
+    available: allConns.filter(c => c.status === 'available').length,
+    occupied: allConns.filter(c => c.status === 'occupied').length,
+  }
+
+  return NextResponse.json({ stations: stationData, stats, timestamp: Date.now() })
 }
