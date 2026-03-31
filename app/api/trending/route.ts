@@ -40,11 +40,36 @@ function getFallbackTrends(): { term: string; traffic: string; link: string }[] 
   }))
 }
 
+async function fetchGlobalTrends(): Promise<{ term: string; traffic: string; link: string }[]> {
+  try {
+    const res = await fetch('https://trends.google.com/trends/trendingsearches/daily/rss?geo=US', {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; InfoSK/1.0)' },
+      next: { revalidate: 3600 },
+    })
+    if (!res.ok) return []
+    const xml = await res.text()
+
+    const items: { term: string; traffic: string; link: string }[] = []
+    const itemMatches = xml.match(/<item>([\s\S]*?)<\/item>/g) ?? []
+
+    for (const item of itemMatches.slice(0, 15)) {
+      const title = item.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/)?.[1] ?? item.match(/<title>(.*?)<\/title>/)?.[1] ?? ''
+      const traffic = item.match(/<ht:approx_traffic>(.*?)<\/ht:approx_traffic>/)?.[1] ?? ''
+      const link = item.match(/<link>(.*?)<\/link>/)?.[1] ?? `https://www.google.com/search?q=${encodeURIComponent(title)}`
+      if (title) items.push({ term: title.trim(), traffic, link })
+    }
+    return items
+  } catch {
+    return []
+  }
+}
+
 export async function GET() {
-  const trends = await fetchGoogleTrends()
+  const [trends, global] = await Promise.all([fetchGoogleTrends(), fetchGlobalTrends()])
 
   return NextResponse.json({
     trends,
+    global,
     timestamp: Date.now(),
   })
 }

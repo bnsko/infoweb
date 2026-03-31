@@ -12,6 +12,17 @@ const CURRENCIES = [
   { code: 'HUF', name: 'Maďarský forint', flag: '🇭🇺' },
   { code: 'SEK', name: 'Švédska koruna', flag: '🇸🇪' },
   { code: 'NOK', name: 'Nórska koruna', flag: '🇳🇴' },
+  { code: 'THB', name: 'Thajský baht', flag: '🇹🇭' },
+  { code: 'VND', name: 'Vietnamský dong', flag: '🇻🇳' },
+  { code: 'IDR', name: 'Indonézska rupia', flag: '🇮🇩' },
+  { code: 'TRY', name: 'Turecká líra', flag: '🇹🇷' },
+  { code: 'JPY', name: 'Japonský jen', flag: '🇯🇵' },
+  { code: 'AUD', name: 'Austrálsky dolár', flag: '🇦🇺' },
+  { code: 'CAD', name: 'Kanadský dolár', flag: '🇨🇦' },
+  { code: 'HRK', name: 'Chorvátska kuna', flag: '🇭🇷' },
+  { code: 'RON', name: 'Rumunský leu', flag: '🇷🇴' },
+  { code: 'BGN', name: 'Bulharský lev', flag: '🇧🇬' },
+  { code: 'RSD', name: 'Srbský dinár', flag: '🇷🇸' },
 ]
 
 export async function GET() {

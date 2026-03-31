@@ -64,6 +64,15 @@ export default function HealthWidget() {
     .filter(d => doctorType === 'all' || d.type === doctorType)
     .filter(d => doctorCity === 'all' || d.city === doctorCity)
 
+  const IMPORTANT_NUMBERS = [
+    { number: '112', label: 'Tiesňová linka', icon: '🆘', color: 'text-red-400' },
+    { number: '150', label: 'Hasiči', icon: '🚒', color: 'text-orange-400' },
+    { number: '155', label: 'Záchranná služba', icon: '🚑', color: 'text-green-400' },
+    { number: '158', label: 'Polícia', icon: '🚔', color: 'text-blue-400' },
+    { number: '159', label: 'Mestská polícia', icon: '👮', color: 'text-cyan-400' },
+    { number: '0800 500 058', label: 'Linka dôvery', icon: '📞', color: 'text-purple-400' },
+  ]
+
   const TABS: { key: Tab; icon: string; sk: string }[] = [
     { key: 'pollen', icon: '🌿', sk: 'Peľ' },
     { key: 'flu', icon: '🤒', sk: 'Chrípka' },
@@ -89,10 +98,10 @@ export default function HealthWidget() {
                   {cities.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               )}
-              <div className="space-y-0.5 max-h-[140px] overflow-y-auto scrollbar-hide">
+              <div className="space-y-0.5 max-h-[200px] overflow-y-auto scrollbar-hide">
                 {allPharmacies.filter(p => !p.isEmergency).length === 0 ? (
                   <p className="text-[10px] text-slate-500 text-center py-2">Žiadne bežné lekárne</p>
-                ) : allPharmacies.filter(p => !p.isEmergency).slice(0, 4).map((p, i) => (
+                ) : allPharmacies.filter(p => !p.isEmergency).slice(0, 8).map((p, i) => (
                   <div key={i} className="flex items-start gap-2 rounded-lg p-1.5 widget-item-hover">
                     <span className="text-sm shrink-0 mt-0.5">💊</span>
                     <div className="min-w-0 flex-1">
@@ -101,6 +110,7 @@ export default function HealthWidget() {
                         <span className="text-[8px] text-slate-500">📍 {p.address}</span>
                         {p.openUntil && <span className="text-[8px] text-slate-600">do {p.openUntil}</span>}
                       </div>
+                      {p.phone && <span className="text-[8px] text-slate-500 mt-0.5">📞 {p.phone}</span>}
                     </div>
                     {p.isNight && <span className="text-[7px] px-1 py-0.5 rounded bg-emerald-500/15 text-emerald-300 font-bold shrink-0">24h</span>}
                   </div>
@@ -118,10 +128,10 @@ export default function HealthWidget() {
             <div className="flex-1 h-px bg-white/5" />
           </div>
           {pharmacies.loading ? <SkeletonRows rows={2} /> : !pharmacies.data ? null : (
-            <div className="space-y-0.5 max-h-[140px] overflow-y-auto scrollbar-hide">
+            <div className="space-y-0.5 max-h-[200px] overflow-y-auto scrollbar-hide">
               {emergencyPharmacies.length === 0 ? (
                 <p className="text-[10px] text-emerald-400 text-center py-2">✅ Žiadna pohotovosť</p>
-              ) : emergencyPharmacies.slice(0, 4).map((p, i) => (
+              ) : emergencyPharmacies.slice(0, 8).map((p, i) => (
                 <div key={i} className="flex items-start gap-2 rounded-lg p-1.5 widget-item-hover">
                   <span className="text-sm shrink-0 mt-0.5">🚨</span>
                   <div className="min-w-0 flex-1">
@@ -277,16 +287,24 @@ export default function HealthWidget() {
                 {filteredDoctors.length === 0 ? (
                   <p className="text-[10px] text-slate-500 text-center py-4">Žiadni lekári</p>
                 ) : filteredDoctors.map((d, i) => (
-                  <div key={i} className={`flex items-start gap-2 rounded-lg p-1.5 widget-item-hover ${!d.acceptsNew ? 'opacity-50' : ''}`}>
-                    <span className="text-sm shrink-0 mt-0.5">{d.type === 'zubar' ? '🦷' : d.type === 'veterinar' ? '🐾' : '🩺'}</span>
+                  <div key={i} className={`flex items-start gap-2 rounded-lg p-2 widget-item-hover ${!d.acceptsNew ? 'opacity-50' : ''}`}>
+                    <span className="text-sm shrink-0 mt-0.5">{d.type === 'zubar' ? '🦷' : d.type === 'veterinar' ? '🐾' : d.type === 'detsky' ? '👶' : '🩺'}</span>
                     <div className="min-w-0 flex-1">
                       <p className="text-[11px] text-slate-200 font-medium line-clamp-1">{d.name}</p>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[9px] text-slate-500">📍 {d.city}</span>
-                        {d.waitDays > 0 && <span className="text-[9px] text-slate-600">⏳ {d.waitDays}d</span>}
+                        <span className="text-[9px] text-slate-500">📍 {d.city} · {d.address}</span>
                       </div>
+                      <div className="flex items-center gap-3 mt-0.5">
+                        {d.phone && <span className="text-[8px] text-slate-500">📞 {d.phone}</span>}
+                        {d.openHours && <span className="text-[8px] text-slate-600">🕐 {d.openHours}</span>}
+                        {d.waitDays > 0 && <span className="text-[8px] text-slate-600">⏳ čakanie {d.waitDays}d</span>}
+                      </div>
+                      {d.note && <p className="text-[7px] text-slate-600 mt-0.5">{d.note}</p>}
                     </div>
-                    {d.acceptsNew && <span className="text-[7px] px-1 py-0.5 rounded bg-green-500/15 text-green-300 font-bold shrink-0">Prijíma</span>}
+                    <div className="flex flex-col gap-0.5 shrink-0">
+                      {d.acceptsNew && <span className="text-[7px] px-1 py-0.5 rounded bg-green-500/15 text-green-300 font-bold">Prijíma</span>}
+                      {!d.acceptsNew && <span className="text-[7px] px-1 py-0.5 rounded bg-red-500/15 text-red-300 font-bold">Plný</span>}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -294,6 +312,26 @@ export default function HealthWidget() {
           )}
         </>
       )}
+
+      {/* ── Important Numbers ── */}
+      <div className="mt-4 pt-3 border-t border-white/5">
+        <div className="flex items-center gap-1.5 mb-2">
+          <span className="text-sm">📞</span>
+          <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">Dôležité čísla</span>
+          <div className="flex-1 h-px bg-white/5" />
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+          {IMPORTANT_NUMBERS.map((n, i) => (
+            <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-white/[0.02] border border-white/5">
+              <span className="text-sm">{n.icon}</span>
+              <div>
+                <div className={`text-[12px] font-bold font-mono ${n.color}`}>{n.number}</div>
+                <div className="text-[8px] text-slate-500">{n.label}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </WidgetCard>
   )
 }

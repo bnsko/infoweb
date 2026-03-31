@@ -130,22 +130,41 @@ export async function GET(request: Request) {
   const endpoints = SPORT_ENDPOINTS[sport] ?? SPORT_ENDPOINTS.football
   const allMatches: Match[] = []
 
+  // Fetch today + yesterday for recently played results
+  const today = new Date()
+  const yesterday = new Date(today)
+  yesterday.setDate(yesterday.getDate() - 1)
+  const fmtDate = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, '')
+  const dates = [fmtDate(today), fmtDate(yesterday)]
+
   const results = await Promise.allSettled(
-    endpoints.map(async (ep) => {
-      const res = await fetch(ep.url, {
-        cache: 'no-store',
-        headers: { 'User-Agent': 'SlovakiaInfo/1.0' },
-        signal: AbortSignal.timeout(8000),
+    endpoints.flatMap((ep) =>
+      dates.map(async (dateStr) => {
+        const separator = ep.url.includes('?') ? '&' : '?'
+        const url = `${ep.url}${separator}dates=${dateStr}`
+        const res = await fetch(url, {
+          cache: 'no-store',
+          headers: { 'User-Agent': 'SlovakiaInfo/1.0' },
+          signal: AbortSignal.timeout(8000),
+        })
+        if (!res.ok) return []
+        const data = await res.json()
+        return parseESPNData(data, ep.name)
       })
-      if (!res.ok) return []
-      const data = await res.json()
-      return parseESPNData(data, ep.name)
-    })
+    )
   )
 
   for (const r of results) {
     if (r.status === 'fulfilled') allMatches.push(...r.value)
   }
+
+  // Deduplicate by match id
+  const seen = new Set<string>()
+  const unique = allMatches.filter(m => {
+    if (seen.has(m.id)) return false
+    seen.add(m.id)
+    return true
+  })
 
   // Sort: live first, then scheduled, then finished
   allMatches.sort((a, b) => {
@@ -157,7 +176,7 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     sport,
-    matches: allMatches.slice(0, 20),
+    matches: unique.slice(0, 30),
     source: 'ESPN',
     availableSports: Object.keys(SPORT_ENDPOINTS),
   } as SportData & { availableSports: string[] })

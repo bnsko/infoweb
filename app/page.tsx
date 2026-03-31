@@ -31,7 +31,7 @@ import FearGreedWidget from '@/components/widgets/FearGreedWidget'
 import InvestmentWidget from '@/components/widgets/InvestmentWidget'
 import FlashNewsWidget from '@/components/widgets/FlashNewsWidget'
 // LotteryWidget & DealsWidget moved to DaySummary panel
-import PodcastWidget from '@/components/widgets/PodcastWidget'
+// PodcastWidget removed
 import SpeedtestWidget from '@/components/widgets/SpeedtestWidget'
 import SlovakHistoryWidget from '@/components/widgets/SlovakHistoryWidget'
 import YearsAgoWidget from '@/components/widgets/YearsAgoWidget'
@@ -45,13 +45,14 @@ import SportSuggestionsWidget from '@/components/widgets/SportSuggestionsWidget'
 // TrainDelaysWidget moved to DaySummary panel
 // OutagesWidget moved to SummaryWidget
 // HighwayCamsWidget deleted
-import MortgagesWidget from '@/components/widgets/MortgagesWidget'
+// MortgagesWidget removed
 import TrendingSearchesWidget from '@/components/widgets/TrendingSearchesWidget'
 import StreamingWidget from '@/components/widgets/StreamingWidget'
 import RandomFactWidget from '@/components/widgets/RandomFactWidget'
 import EnvironmentWidget from '@/components/widgets/EnvironmentWidget'
 import SummaryWidget from '@/components/widgets/SummaryWidget'
 import HealthWidget from '@/components/widgets/HealthWidget'
+import InternetServicesWidget from '@/components/widgets/InternetServicesWidget'
 import JobMarketWidget from '@/components/widgets/JobMarketWidget'
 import BusinessTipsWidget from '@/components/widgets/BusinessTipsWidget'
 import TaxCalendarWidget from '@/components/widgets/TaxCalendarWidget'
@@ -62,8 +63,18 @@ import EUGrantsWidget from '@/components/widgets/EUGrantsWidget'
 import MarketTrendsWidget from '@/components/widgets/MarketTrendsWidget'
 import ProductivityWidget from '@/components/widgets/ProductivityWidget'
 import FreelanceWidget from '@/components/widgets/FreelanceWidget'
-import BizQuoteWidget from '@/components/widgets/BizQuoteWidget'
-import BizToolsWidget from '@/components/widgets/BizToolsWidget'
+// BizQuoteWidget removed
+// BizToolsWidget removed
+import ParkingWidget from '@/components/widgets/ParkingWidget'
+import RideShareWidget from '@/components/widgets/RideShareWidget'
+import NDSCameraWidget from '@/components/widgets/NDSCameraWidget'
+import EVChargingWidget from '@/components/widgets/EVChargingWidget'
+import FinstatWidget from '@/components/widgets/FinstatWidget'
+import VUBRatesWidget from '@/components/widgets/VUBRatesWidget'
+import RegistersWidget from '@/components/widgets/RegistersWidget'
+import GovDataWidget from '@/components/widgets/GovDataWidget'
+import GoogleNewsSKWidget from '@/components/widgets/GoogleNewsSKWidget'
+import PodcastSKWidget from '@/components/widgets/PodcastSKWidget'
 import SettingsPanel from '@/components/SettingsPanel'
 import { SpeedtestMini } from '@/components/widgets/SpeedtestWidget'
 import { useLang } from '@/hooks/useLang'
@@ -93,6 +104,9 @@ export default function Home() {
           </div>
         )}
 
+        {/* Internet & Services - below Summary+Health */}
+        {isWidgetVisible('stats') && <InternetServicesWidget />}
+
         {/* Denný citát & Fakt - now rendered as mini widgets in DaySummary */}
 
         {/* Správy (full width) */}
@@ -114,10 +128,18 @@ export default function Home() {
               <SportSuggestionsWidget />
             </div>
 
-            {/* Prices */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            {/* Prices & EV */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
               <FuelPricesWidget />
               <GroceriesWidget />
+              <EVChargingWidget />
+            </div>
+
+            {/* Doprava */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <ParkingWidget />
+              <RideShareWidget />
+              <NDSCameraWidget />
             </div>
 
             {/* Sports */}
@@ -141,9 +163,10 @@ export default function Home() {
               <FinanceNewsWidget />
               <InvestmentWidget />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <MortgagesWidget />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
               <JobMarketWidget />
+              <FinstatWidget />
+              <VUBRatesWidget />
             </div>
           </div>
         )}
@@ -168,10 +191,10 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <EGovWidget />
-              <BizToolsWidget />
+              <RegistersWidget />
             </div>
             <div className="mt-4">
-              <BizQuoteWidget />
+              <GovDataWidget />
             </div>
           </div>
         )}
@@ -192,11 +215,12 @@ export default function Home() {
               <HackerNewsWidget />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <PodcastWidget />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <StreamingWidget />
               <TrendingSearchesWidget />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <GoogleNewsSKWidget />
+              <PodcastSKWidget />
             </div>
           </div>
         )}

@@ -2,16 +2,15 @@
 
 import { useState, useEffect, useCallback } from 'react'
 
-export type Theme = 'carbon' | 'obsidian' | 'titanium' | 'graphite'
+export type Theme = 'carbon' | 'sunset' | 'ocean'
 
 export const THEMES: { key: Theme; label: string; labelEn: string; color: string }[] = [
   { key: 'carbon', label: 'Carbon', labelEn: 'Carbon', color: '#1a1a1a' },
-  { key: 'obsidian', label: 'Obsidian', labelEn: 'Obsidian', color: '#38bdf8' },
-  { key: 'titanium', label: 'Titanium', labelEn: 'Titanium', color: '#d4a044' },
-  { key: 'graphite', label: 'Graphite', labelEn: 'Graphite', color: '#8b5cf6' },
+  { key: 'sunset', label: 'Západ slnka', labelEn: 'Sunset', color: '#f97316' },
+  { key: 'ocean', label: 'Oceán', labelEn: 'Ocean', color: '#06b6d4' },
 ]
 
-const VALID_THEMES = new Set<string>(['carbon', 'obsidian', 'titanium', 'graphite'])
+const VALID_THEMES = new Set<string>(['carbon', 'sunset', 'ocean'])
 
 export function useTheme(): { theme: Theme; setTheme: (t: Theme) => void; isDark: boolean } {
   const [theme, setThemeState] = useState<Theme>('carbon')

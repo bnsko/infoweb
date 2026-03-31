@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-export const revalidate = 86400
+export const revalidate = 3600
 
 interface StreamItem {
   title: string
@@ -15,7 +15,7 @@ interface StreamItem {
 // Trending content on streaming platforms in SK region
 function getStreamingTrending(): StreamItem[] {
   const now = new Date()
-  const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000)
+  const hourSeed = Math.floor(now.getTime() / (3600 * 1000))
 
   const catalog: StreamItem[] = [
     { title: 'Adolescence', platform: 'Netflix', type: 'series', genre: 'Dráma', rating: '8.9', year: 2025 },
@@ -35,12 +35,14 @@ function getStreamingTrending(): StreamItem[] {
     { title: 'Fallout S2', platform: 'Amazon Prime', type: 'series', genre: 'Sci-fi', rating: '8.5', year: 2025 },
   ]
 
-  // Rotate selection daily
-  const startIdx = (dayOfYear * 3) % catalog.length
+  // Rotate selection hourly and sort by IMDB rating
+  const startIdx = (hourSeed * 3) % catalog.length
   const items: StreamItem[] = []
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 12; i++) {
     items.push(catalog[(startIdx + i) % catalog.length])
   }
+  // Sort by rating descending (highest IMDB first)
+  items.sort((a, b) => parseFloat(b.rating ?? '0') - parseFloat(a.rating ?? '0'))
   return items
 }
 

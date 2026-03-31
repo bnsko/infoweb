@@ -35,7 +35,10 @@ export default function CurrencyWidget() {
               </div>
             </div>
             <div className="text-sm font-mono font-semibold text-green-300">
-              {r.rate != null ? r.rate.toFixed(r.code === 'HUF' || r.code === 'CZK' || r.code.endsWith('K') ? 2 : 4) : '—'}
+              {r.rate != null ? r.rate.toFixed(
+                r.code === 'VND' || r.code === 'IDR' ? 0 :
+                r.code === 'HUF' || r.code === 'CZK' || r.code === 'JPY' || r.code === 'THB' || r.code === 'RSD' || r.code.endsWith('K') ? 2 : 4
+              ) : '—'}
             </div>
           </div>
         ))}

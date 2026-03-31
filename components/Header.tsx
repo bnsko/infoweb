@@ -85,33 +85,6 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          {/* Year progress */}
-          {(() => {
-            const n = new Date()
-            const dayOfYear = Math.floor((n.getTime() - new Date(n.getFullYear(), 0, 0).getTime()) / 86400000)
-            const daysInYear = new Date(n.getFullYear(), 1, 29).getDate() === 29 ? 366 : 365
-            const yearPct = Math.round((dayOfYear / daysInYear) * 1000) / 10
-            const weekNum = Math.ceil(((n.getTime() - new Date(n.getFullYear(), 0, 1).getTime()) / 86400000 + new Date(n.getFullYear(), 0, 1).getDay()) / 7)
-            const remaining = daysInYear - dayOfYear
-            return (
-              <div className="hidden lg:flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/5" suppressHydrationWarning>
-                <div className="flex items-center gap-2 text-[9px]">
-                  <span className="text-slate-400 font-semibold">Rok {n.getFullYear()}</span>
-                  <span className="text-amber-400 font-bold font-mono">{yearPct}%</span>
-                </div>
-                <div className="w-24 bg-white/5 rounded-full h-1.5 overflow-hidden">
-                  <div className="bg-gradient-to-r from-amber-500 to-orange-500 h-full rounded-full transition-all" style={{ width: `${yearPct}%` }} />
-                </div>
-                <div className="flex items-center gap-2 text-[7px] text-slate-500 font-mono">
-                  <span>Týždeň {weekNum}</span>
-                  <span>·</span>
-                  <span>Deň {dayOfYear}/{daysInYear}</span>
-                  <span>·</span>
-                  <span>Zostáva {remaining}d</span>
-                </div>
-              </div>
-            )
-          })()}
           <div className="hidden sm:flex items-center gap-1.5">
             {THEMES.map((tm) => (
               <button key={tm.key} onClick={() => setTheme(tm.key)}
@@ -130,6 +103,7 @@ export default function Header() {
           </a>
           <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-3 py-1">
             <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+            <span className="text-[10px] font-bold text-emerald-400">live</span>
           </div>
         </div>
       </div>
