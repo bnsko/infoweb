@@ -20,7 +20,7 @@ import DealsWidget from '@/components/widgets/DealsWidget'
 import FlightsWidget from '@/components/widgets/FlightsWidget'
 import { EnvironmentMini } from '@/components/widgets/EnvironmentWidget'
 import { EnergyMini } from '@/components/widgets/EnergyWidget/EnergyWidget'
-import { MortgagesMini } from '@/components/widgets/MortgagesWidget'
+// MortgagesMini removed
 
 interface SlovakFact { icon: string; title: string; value: string; detail: string }
 interface SlovakFactsData { staticFacts: SlovakFact[]; dynamicFacts: SlovakFact[]; generalStats: Record<string, number>; dayOfYear: number }
@@ -167,11 +167,10 @@ export default function DaySummaryWidget() {
   const [dealsOpen, setDealsOpen] = useState(false)
   const [envMiniOpen, setEnvMiniOpen] = useState(false)
   const [energyMiniOpen, setEnergyMiniOpen] = useState(false)
-  const [mortgagesMiniOpen, setMortgagesMiniOpen] = useState(false)
   const [weatherCityKey, setWeatherCityKey] = useState<string | null>(null)
   const slovakFacts = useWidget<SlovakFactsData>('/api/slovakfacts', 60 * 1000)
 
-  const anyPopupOpen = showerOpen || auroraOpen || spaceOpen || flightsOpen || holidayOpen || dayPopupOpen || namedayMiniOpen || horoscopeMiniOpen || issMiniOpen || launchesMiniOpen || mhdOpen || trainOpen || officeOpen || lotteryOpen || dealsOpen || envMiniOpen || energyMiniOpen || mortgagesMiniOpen || !!weatherCityKey
+  const anyPopupOpen = showerOpen || auroraOpen || spaceOpen || flightsOpen || holidayOpen || dayPopupOpen || namedayMiniOpen || horoscopeMiniOpen || issMiniOpen || launchesMiniOpen || mhdOpen || trainOpen || officeOpen || lotteryOpen || dealsOpen || envMiniOpen || energyMiniOpen || !!weatherCityKey
 
   const holiday = useMemo(() => now ? getHoliday(now) : null, [now])
   const nextHolidays = useMemo(() => now ? getNextHolidays(now, 6) : [], [now])
@@ -229,43 +228,6 @@ export default function DaySummaryWidget() {
               })()}
               <span className="text-[8px] text-slate-600">▼</span>
             </button>
-            {/* Inline dynamic facts */}
-            {slovakFacts.data && slovakFacts.data.dynamicFacts.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-1 max-w-[320px]">
-                {slovakFacts.data.dynamicFacts.slice(0, 4).map((f, i) => (
-                  <span key={i} className="text-[7px] text-slate-500 bg-white/[0.03] border border-white/5 rounded px-1 py-0.5" title={f.title}>
-                    {f.icon} <span className="text-slate-300 font-bold">{f.value}</span>
-                  </span>
-                ))}
-              </div>
-            )}
-            {/* Day progress bar */}
-            {now && (() => {
-              const totalMinutes = now.getHours() * 60 + now.getMinutes()
-              const dayPct = Math.round((totalMinutes / 1440) * 1000) / 10
-              const remaining = 1440 - totalMinutes
-              const remH = Math.floor(remaining / 60)
-              const remM = remaining % 60
-              return (
-                <div className="mt-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[8px] text-slate-600 font-mono">00:00</span>
-                    <div className="flex-1 bg-white/5 rounded-full h-[5px] relative overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/20 via-violet-500/20 to-amber-500/20 rounded-full" />
-                      <div className="bg-gradient-to-r from-indigo-500 via-violet-500 to-amber-500 h-[5px] rounded-full transition-all relative" style={{ width: `${dayPct}%` }}>
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-white shadow-lg shadow-violet-500/50" />
-                      </div>
-                    </div>
-                    <span className="text-[8px] text-slate-600 font-mono">23:59</span>
-                  </div>
-                  <div className="text-[8px] text-slate-500 mt-0.5 text-center font-mono tabular-nums">
-                    <span className="text-violet-400 font-bold">{dayPct}%</span>
-                    <span className="mx-1">·</span>
-                    <span>zostáva {remH}h {remM}m</span>
-                  </div>
-                </div>
-              )
-            })()}
           </div>
           <div className="hidden md:block w-px h-8 bg-white/8" />
 
@@ -563,7 +525,6 @@ export default function DaySummaryWidget() {
           </button>
           <EnvironmentMini onOpenChange={setEnvMiniOpen} />
           <EnergyMini onOpenChange={setEnergyMiniOpen} />
-          <MortgagesMini onOpenChange={setMortgagesMiniOpen} />
 
           <div className="ml-auto flex items-center gap-2">
             <div className="hidden xl:flex items-center gap-1.5">
@@ -645,36 +606,6 @@ export default function DaySummaryWidget() {
               </div>
             )}
             <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
-              {/* Sunrise/Sunset animation card */}
-              {(() => {
-                const ba = stats.data?.cityTemps?.find(ct => ct.key === 'BA')
-                if (!ba) return null
-                const sunriseTime = ba.sunrise ? ba.sunrise.split('T')[1]?.slice(0, 5) : '--:--'
-                const sunsetTime = ba.sunset ? ba.sunset.split('T')[1]?.slice(0, 5) : '--:--'
-                const sunriseMin = ba.sunrise ? (() => { const p = ba.sunrise.split('T')[1]?.split(':'); return p ? parseInt(p[0]) * 60 + parseInt(p[1]) : 0 })() : 0
-                const sunsetMin = ba.sunset ? (() => { const p = ba.sunset.split('T')[1]?.split(':'); return p ? parseInt(p[0]) * 60 + parseInt(p[1]) : 0 })() : 0
-                const nowMin = now ? now.getHours() * 60 + now.getMinutes() : 720
-                const dayLength = sunsetMin - sunriseMin
-                const dayH = Math.floor(dayLength / 60)
-                const dayM = dayLength % 60
-                const sunPct = sunriseMin && sunsetMin ? Math.max(0, Math.min(100, ((nowMin - sunriseMin) / (sunsetMin - sunriseMin)) * 100)) : 50
-                const isDay = nowMin >= sunriseMin && nowMin <= sunsetMin
-                return (
-                  <div className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-to-b from-amber-500/[0.06] to-orange-500/[0.04] border border-amber-500/15 shrink-0 min-w-[100px]">
-                    <div className="flex items-center gap-2 text-[9px]">
-                      <span className="text-amber-400">🌅 {sunriseTime}</span>
-                      <span className="text-orange-400">🌇 {sunsetTime}</span>
-                    </div>
-                    <div className="w-full h-[6px] bg-white/5 rounded-full relative overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-r from-amber-500/30 via-yellow-400/30 to-orange-500/30 rounded-full" />
-                      <div className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full shadow-lg transition-all" style={{ left: `calc(${sunPct}% - 5px)`, background: isDay ? '#fbbf24' : '#64748b', boxShadow: isDay ? '0 0 8px #fbbf24' : 'none' }}>
-                        <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px]">{isDay ? '☀️' : '🌙'}</span>
-                      </div>
-                    </div>
-                    <div className="text-[8px] text-slate-500">{dayH}h {dayM}m svetla</div>
-                  </div>
-                )
-              })()}
               {/* City cards sorted by CITY_ORDER */}
               {[...stats.data.cityTemps].sort((a, b) => {
                 const ai = CITY_ORDER.indexOf(a.key)
@@ -701,6 +632,43 @@ export default function DaySummaryWidget() {
                   </button>
                 )
               })}
+              {/* Sunrise/Sunset animation card (last) */}
+              {(() => {
+                const ba = stats.data?.cityTemps?.find(ct => ct.key === 'BA')
+                if (!ba) return null
+                const sunriseTime = ba.sunrise ? ba.sunrise.split('T')[1]?.slice(0, 5) : '--:--'
+                const sunsetTime = ba.sunset ? ba.sunset.split('T')[1]?.slice(0, 5) : '--:--'
+                const sunriseMin = ba.sunrise ? (() => { const p = ba.sunrise.split('T')[1]?.split(':'); return p ? parseInt(p[0]) * 60 + parseInt(p[1]) : 0 })() : 0
+                const sunsetMin = ba.sunset ? (() => { const p = ba.sunset.split('T')[1]?.split(':'); return p ? parseInt(p[0]) * 60 + parseInt(p[1]) : 0 })() : 0
+                const nowMin = now ? now.getHours() * 60 + now.getMinutes() : 720
+                const dayLength = sunsetMin - sunriseMin
+                const dayH = Math.floor(dayLength / 60)
+                const dayM = dayLength % 60
+                const sunPct = sunriseMin && sunsetMin ? Math.max(0, Math.min(100, ((nowMin - sunriseMin) / (sunsetMin - sunriseMin)) * 100)) : 50
+                const isDay = nowMin >= sunriseMin && nowMin <= sunsetMin
+                return (
+                  <div className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl bg-gradient-to-b from-amber-500/[0.06] via-orange-500/[0.04] to-rose-500/[0.03] border border-amber-500/15 shrink-0 min-w-[120px] relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-amber-400/5 to-transparent pointer-events-none" />
+                    <div className="relative flex items-center gap-3 text-[9px]">
+                      <div className="flex flex-col items-center">
+                        <span className="text-lg leading-none">🌅</span>
+                        <span className="text-amber-400 font-bold">{sunriseTime}</span>
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <span className="text-lg leading-none">🌇</span>
+                        <span className="text-orange-400 font-bold">{sunsetTime}</span>
+                      </div>
+                    </div>
+                    <div className="relative w-full h-[6px] bg-white/5 rounded-full overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-r from-amber-500/30 via-yellow-400/40 to-orange-500/30 rounded-full" />
+                      <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full shadow-lg transition-all" style={{ left: `calc(${sunPct}% - 6px)`, background: isDay ? '#fbbf24' : '#64748b', boxShadow: isDay ? '0 0 10px #fbbf24, 0 0 20px rgba(251,191,36,0.3)' : 'none' }}>
+                        <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-[9px]">{isDay ? '☀️' : '🌙'}</span>
+                      </div>
+                    </div>
+                    <div className="relative text-[8px] text-amber-400/70 font-semibold">{dayH}h {dayM}m svetla</div>
+                  </div>
+                )
+              })()}
             </div>
             {/* Weather city detail popup */}
             {weatherCityKey && (() => {
