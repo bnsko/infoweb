@@ -81,6 +81,19 @@ import HotelWidget from '@/components/widgets/HotelWidget'
 import MarineTrafficWidget from '@/components/widgets/MarineTrafficWidget'
 import NCZIWidget from '@/components/widgets/NCZIWidget'
 import KatasterWidget from '@/components/widgets/KatasterWidget'
+import RealEstateSKWidget from '@/components/widgets/RealEstateSKWidget'
+import KrimiWidget from '@/components/widgets/KrimiWidget'
+import StolenVehiclesWidget from '@/components/widgets/StolenVehiclesWidget'
+import CrimeRegionsWidget from '@/components/widgets/CrimeRegionsWidget'
+import SlovLexWidget from '@/components/widgets/SlovLexWidget'
+import TransportIntensityWidget from '@/components/widgets/TransportIntensityWidget'
+import TrainRoutesWidget from '@/components/widgets/TrainRoutesWidget'
+import SchoolsWidget from '@/components/widgets/SchoolsWidget'
+import ForestsFloodsWidget from '@/components/widgets/ForestsFloodsWidget'
+import ConsumerSafetyWidget from '@/components/widgets/ConsumerSafetyWidget'
+import BratislavaOpenDataWidget from '@/components/widgets/BratislavaOpenDataWidget'
+import ParliamentAttendanceWidget from '@/components/widgets/ParliamentAttendanceWidget'
+import PetitionsWidget from '@/components/widgets/PetitionsWidget'
 import SettingsPanel from '@/components/SettingsPanel'
 import { SpeedtestMini } from '@/components/widgets/SpeedtestWidget'
 import { useLang } from '@/hooks/useLang'
@@ -169,6 +182,52 @@ export default function Home() {
             <div className="mt-4">
               <SportsWidget />
             </div>
+
+            {/* Reality + Doprava intenzita + Vlaky */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <RealEstateSKWidget />
+              <TransportIntensityWidget />
+              <TrainRoutesWidget />
+            </div>
+
+            {/* SOI + Bratislava opendata */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <ConsumerSafetyWidget />
+              <BratislavaOpenDataWidget />
+            </div>
+          </div>
+        )}
+
+        {/* ── PROSTREDIE ── */}
+        {isWidgetVisible('slovensko') && (
+          <div id="sec-prostredie">
+            <SectionLabel label={lang === 'sk' ? '🌿 Životné prostredie' : '🌿 Environment'} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <EnvironmentWidget />
+              <ForestsFloodsWidget />
+            </div>
+          </div>
+        )}
+
+        {/* ── BEZPEČNOSŤ & KRIMINALITA ── */}
+        {isWidgetVisible('slovensko') && (
+          <div id="sec-bezpecnost">
+            <SectionLabel label={lang === 'sk' ? '🛡️ Bezpečnosť & Kriminalita' : '🛡️ Safety & Crime'} />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <KrimiWidget />
+              <StolenVehiclesWidget />
+              <CrimeRegionsWidget />
+            </div>
+          </div>
+        )}
+
+        {/* ── VZDELÁVANIE ── */}
+        {isWidgetVisible('slovensko') && (
+          <div id="sec-vzdelavanie">
+            <SectionLabel label={lang === 'sk' ? '🎓 Vzdelávanie' : '🎓 Education'} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <SchoolsWidget />
+            </div>
           </div>
         )}
 
@@ -219,6 +278,18 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <GovDataWidget />
               <KatasterWidget />
+            </div>
+          </div>
+        )}
+
+        {/* ── ŠTÁT & PRÁVO ── */}
+        {isWidgetVisible('podnikanie') && (
+          <div id="sec-stat-pravo">
+            <SectionLabel label={lang === 'sk' ? '⚖️ Štát & Právo' : '⚖️ State & Law'} />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <SlovLexWidget />
+              <ParliamentAttendanceWidget />
+              <PetitionsWidget />
             </div>
           </div>
         )}

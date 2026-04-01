@@ -2,8 +2,16 @@
 
 import { useState, useEffect, useCallback } from 'react'
 
+interface VisitorStats {
+  totalPageViews: number
+  todayPageViews: number
+  weekPageViews: number
+  monthPageViews: number
+  activeSessions: number
+}
+
 interface AdminStats {
-  visitors: { totalPageViews: number; uniqueVisitors: number; activeSessions: number }
+  visitors: VisitorStats
   config: AdminConfig
   banList?: Record<string, { attempts: number; lastAttempt: number; banned: boolean; shadowBanned: boolean }>
 }
@@ -12,9 +20,8 @@ interface AdminConfig {
   siteName: string; announcement: string; maintenanceMode: boolean; enabledWidgets: string[]
 }
 
-interface ApiTestResult {
-  api: string; status: number; ok: boolean; ms: number
-}
+interface ApiTestResult { api: string; status: number; ok: boolean; ms: number }
+interface HistoryEntry { date: string; views: number }
 
 const ALL_WIDGETS = [
   { id: 'daysummary', label: '🕐 Hlavný panel' },
@@ -23,6 +30,7 @@ const ALL_WIDGETS = [
   { id: 'news', label: '📰 Správy' },
   { id: 'slovensko', label: '🇸🇰 Slovensko' },
   { id: 'financie', label: '💶 Financie' },
+  { id: 'podnikanie', label: '💼 Podnikanie' },
   { id: 'fun', label: '🎮 Zábava' },
   { id: 'restaurants', label: '🍽️ Reštaurácie' },
   { id: 'ai', label: '🤖 AI & Tech' },
@@ -37,10 +45,15 @@ export default function AdminPage() {
   const [config, setConfig] = useState<AdminConfig | null>(null)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
-  const [tab, setTab] = useState<'overview' | 'widgets' | 'settings' | 'security' | 'apis' | 'actions'>('overview')
+  const [msgType, setMsgType] = useState<'ok' | 'err'>('ok')
+  const [tab, setTab] = useState<'overview' | 'dev' | 'widgets' | 'settings' | 'security' | 'apis' | 'actions'>('overview')
   const [initializing, setInitializing] = useState(true)
   const [apiResults, setApiResults] = useState<ApiTestResult[] | null>(null)
   const [testingApis, setTestingApis] = useState(false)
+  const [history, setHistory] = useState<HistoryEntry[] | null>(null)
+  const [addViewsVal, setAddViewsVal] = useState('100')
+  const [setTotalVal, setSetTotalVal] = useState('')
+  const [devLoading, setDevLoading] = useState(false)
 
   useEffect(() => {
     const savedCode = localStorage.getItem('admin-code')
@@ -66,6 +79,13 @@ export default function AdminPage() {
     } catch { /* ignore */ }
   }, [code])
 
+  const fetchHistory = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/admin?code=${encodeURIComponent(code)}&action=history`)
+      if (res.ok) { const data = await res.json(); setHistory(data.history) }
+    } catch { /* ignore */ }
+  }, [code])
+
   const handleLogin = async () => {
     setLoading(true); setMessage('')
     try {
@@ -76,17 +96,18 @@ export default function AdminPage() {
         setAuthenticated(true); localStorage.setItem('admin-code', code)
       } else {
         const err = await res.json().catch(() => null)
-        setMessage(err?.error ?? '❌ Neplatný kód')
+        setMessage(err?.error ?? '❌ Neplatný kód'); setMsgType('err')
       }
-    } catch { setMessage('❌ Chyba pripojenia') }
+    } catch { setMessage('❌ Chyba pripojenia'); setMsgType('err') }
     setLoading(false)
   }
 
   useEffect(() => {
     if (!authenticated) return
+    fetchHistory()
     const t = setInterval(fetchStats, 30_000)
     return () => clearInterval(t)
-  }, [authenticated, fetchStats])
+  }, [authenticated, fetchStats, fetchHistory])
 
   const updateConfig = async (updates: Partial<AdminConfig>) => {
     const res = await fetch(`/api/admin?code=${encodeURIComponent(code)}`, {
@@ -96,25 +117,23 @@ export default function AdminPage() {
     if (res.ok) { const data = await res.json(); setConfig(data.config); showMsg('✅ Uložené') }
   }
 
-  const showMsg = (msg: string) => { setMessage(msg); setTimeout(() => setMessage(''), 3000) }
+  const showMsg = (msg: string, type: 'ok' | 'err' = 'ok') => { setMessage(msg); setMsgType(type); setTimeout(() => setMessage(''), 4000) }
 
-  const resetVisitors = async () => {
-    if (!confirm('Naozaj chcete resetovať štatistiky návštevníkov?')) return
-    await fetch(`/api/admin?code=${encodeURIComponent(code)}`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'resetVisitors' }),
-    })
-    showMsg('✅ Štatistiky resetované')
-    fetchStats()
+  const postAction = async (action: string, extra: Record<string, unknown> = {}) => {
+    setDevLoading(true)
+    try {
+      const res = await fetch(`/api/admin?code=${encodeURIComponent(code)}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, ...extra }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok) { showMsg('✅ ' + ((data as Record<string,string>).message ?? 'Hotovo')); fetchStats(); fetchHistory() }
+      else showMsg('❌ ' + ((data as Record<string,string>).error ?? 'Chyba'), 'err')
+    } catch { showMsg('❌ Chyba', 'err') }
+    setDevLoading(false)
   }
 
-  const clearCache = async () => {
-    await fetch(`/api/admin?code=${encodeURIComponent(code)}`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'clearCache' }),
-    })
-    showMsg('✅ Cache vymazaný')
-  }
+  const clearCache = async () => postAction('clearCache')
 
   const testApis = async () => {
     setTestingApis(true); setApiResults(null)
@@ -124,7 +143,7 @@ export default function AdminPage() {
         body: JSON.stringify({ action: 'testApis' }),
       })
       if (res.ok) { const data = await res.json(); setApiResults(data.results) }
-    } catch { showMsg('❌ Test zlyhal') }
+    } catch { showMsg('❌ Test zlyhal', 'err') }
     setTestingApis(false)
   }
 
@@ -158,26 +177,40 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen" style={{ background: '#0c0e14', color: '#d4d8e0' }}>
       {/* Header */}
-      <div className="border-b border-white/5 backdrop-blur-xl" style={{ background: 'rgba(12, 14, 20, 0.88)' }}>
+      <div className="border-b border-white/5 sticky top-0 z-50 backdrop-blur-xl" style={{ background: 'rgba(12,14,20,0.92)' }}>
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-2xl">⚙️</span>
-            <div><h1 className="text-lg font-bold text-white">Slovakia Info Admin</h1><p className="text-[10px] text-slate-500">Správa dashboardu</p></div>
+            <div><h1 className="text-lg font-bold text-white">Slovakia Info Admin</h1><p className="text-[10px] text-slate-500">Správcovský panel</p></div>
           </div>
-          <div className="flex items-center gap-3">
-            <a href="/" className="text-sm text-slate-400 hover:text-white transition-colors px-3 py-1.5 rounded-lg hover:bg-white/5">📊 Dashboard</a>
+          <div className="flex items-center gap-2">
+            {stats?.visitors && (
+              <div className="hidden sm:flex items-center gap-3 mr-3 text-[10px]">
+                <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /><span className="text-emerald-300 font-bold">{stats.visitors.activeSessions}</span><span className="text-slate-600">live</span></span>
+                <span className="text-slate-700">|</span>
+                <span className="text-orange-300 font-bold">{stats.visitors.todayPageViews}</span><span className="text-slate-600">dnes</span>
+                <span className="text-slate-700">|</span>
+                <span className="text-blue-300 font-bold">{stats.visitors.totalPageViews.toLocaleString('sk-SK')}</span><span className="text-slate-600">celkom</span>
+              </div>
+            )}
+            <a href="/" className="text-sm text-slate-400 hover:text-white transition-colors px-3 py-1.5 rounded-lg hover:bg-white/5">📋 Dashboard</a>
             <button onClick={() => { setAuthenticated(false); localStorage.removeItem('admin-code') }} className="text-sm text-red-400 hover:text-red-300 px-3 py-1.5 rounded-lg hover:bg-white/5">🔒 Odhlásiť</button>
           </div>
         </div>
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-6">
-        {message && <div className="mb-4 bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-2 text-sm text-green-400">{message}</div>}
+        {message && (
+          <div className={`mb-4 rounded-xl px-4 py-2.5 text-sm font-semibold ${msgType === 'ok' ? 'bg-green-500/10 border border-green-500/20 text-green-400' : 'bg-red-500/10 border border-red-500/20 text-red-400'}`}>
+            {message}
+          </div>
+        )}
 
         {/* Tab navigation */}
         <div className="flex items-center gap-1 mb-6 overflow-x-auto">
           {[
             { key: 'overview', label: '📊 Prehľad' },
+            { key: 'dev', label: '🛠️ Dev nástroje' },
             { key: 'actions', label: '⚡ Akcie' },
             { key: 'apis', label: '🔌 API Test' },
             { key: 'widgets', label: '🧩 Widgety' },
@@ -196,7 +229,6 @@ export default function AdminPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <StatCard icon="👁️" label="Zobrazenia stránky" value={stats.visitors.totalPageViews.toLocaleString('sk-SK')} color="text-blue-400" />
-              <StatCard icon="🧑" label="Unikátni návštevníci" value={String(stats.visitors.uniqueVisitors)} color="text-emerald-400" />
               <StatCard icon="🟢" label="Teraz online" value={String(stats.visitors.activeSessions)} color="text-yellow-400" />
             </div>
             <div className="bg-[#13161f] border border-white/5 rounded-2xl p-5">
@@ -217,15 +249,9 @@ export default function AdminPage() {
             <div className="bg-[#13161f] border border-white/5 rounded-2xl p-5">
               <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-4">Rýchle akcie</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <ActionButton icon="🗑️" title="Resetovať návštevníkov" desc="Vymaže všetky údaje o návštevách" color="red" onClick={resetVisitors} />
+                <ActionButton icon="�" title="Obnoviť štatistiky" desc="Načítať aktuálne údaje z Redis" color="green" onClick={fetchStats} />
                 <ActionButton icon="🔄" title="Vymazať cache" desc="Vynúti nové načítanie dát" color="blue" onClick={clearCache} />
-                <ActionButton icon="📊" title="Obnoviť štatistiky" desc="Načítať aktuálne údaje" color="green" onClick={fetchStats} />
                 <ActionButton icon="🔌" title="Test všetkých API" desc="Overí dostupnosť endpointov" color="purple" onClick={testApis} loading={testingApis} />
-              </div>
-            </div>
-            <div className="bg-[#13161f] border border-white/5 rounded-2xl p-5">
-              <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-3">Údržba</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <ActionButton icon="🔧" title={config?.maintenanceMode ? 'Vypnúť údržbu' : 'Zapnúť údržbu'} desc="Režim údržby dashboardu" color="yellow"
                   onClick={() => updateConfig({ maintenanceMode: !config?.maintenanceMode })} />
                 <a href="/" className="flex items-center gap-3 bg-white/[0.03] border border-white/5 rounded-xl p-4 text-left hover:bg-white/[0.05] transition-all">
@@ -360,14 +386,46 @@ export default function AdminPage() {
   )
 }
 
-function StatCard({ icon, label, value, color }: { icon: string; label: string; value: string; color: string }) {
+function MiniBarChart({ data }: { data: HistoryEntry[] }) {
+  const max = Math.max(...data.map(d => d.views), 1)
+  const avg = Math.round(data.filter(d => d.views > 0).reduce((a, d) => a + d.views, 0) / (data.filter(d => d.views > 0).length || 1))
+  const recent7 = data.slice(-7).reduce((a, d) => a + d.views, 0)
   return (
-    <div className="bg-[#13161f] border border-white/5 rounded-2xl p-5">
-      <div className="flex items-center gap-3">
-        <span className="text-2xl">{icon}</span>
-        <div>
-          <div className="text-[10px] text-slate-500 uppercase tracking-wide">{label}</div>
-          <div className={`text-2xl font-bold ${color}`}>{value}</div>
+    <div className="space-y-3">
+      <div className="flex items-end gap-px" style={{ height: 64 }}>
+        {data.map((d, i) => {
+          const h = Math.max(2, Math.round((d.views / max) * 60))
+          const isToday = i === data.length - 1
+          const isWknd = [0, 6].includes(new Date(d.date + 'T00:00:00').getDay())
+          return (
+            <div key={d.date} className="flex-1 flex flex-col items-center justify-end group relative" style={{ height: 64 }}>
+              <div className={`w-full rounded-sm ${isToday ? 'bg-blue-400' : isWknd ? 'bg-slate-600/70' : 'bg-slate-700 group-hover:bg-slate-500'} transition-colors`} style={{ height: h }} />
+              <div className="absolute bottom-full mb-1 bg-slate-800 border border-white/10 rounded px-1.5 py-0.5 text-[9px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-10">
+                {d.date.slice(5)}: {d.views}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      <div className="flex flex-wrap items-center gap-3 text-[10px] text-slate-500">
+        <span>Dátum: <span className="text-slate-300">{data[0]?.date.slice(5)} – {data[data.length - 1]?.date.slice(5)}</span></span>
+        <span>Priemer/deň: <span className="text-blue-300">{avg}</span></span>
+        <span>Max: <span className="text-emerald-300">{max}</span> ({data.find(d => d.views === max)?.date.slice(5)})</span>
+        <span>Posl. 7 dní: <span className="text-orange-300">{recent7}</span></span>
+      </div>
+    </div>
+  )
+}
+
+function StatCard({ icon, label, value, color, pulse }: { icon: string; label: string; value: string; color: string; pulse?: boolean }) {
+  return (
+    <div className="bg-[#13161f] border border-white/5 rounded-2xl p-4">
+      <div className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">{label}</div>
+      <div className="flex items-center gap-2">
+        <span className="text-xl">{icon}</span>
+        <div className={`text-xl font-bold tabular-nums ${color} flex items-center gap-1`}>
+          {pulse && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
+          {value}
         </div>
       </div>
     </div>
