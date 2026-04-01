@@ -116,10 +116,33 @@ export async function GET() {
   const total = incidents.length
   const congestion = total === 0 ? 'low' : total <= 4 ? 'moderate' : total <= 8 ? 'high' : 'severe'
 
+  // Green wave & extra metrics (simulated based on time of day)
+  const hour = new Date().getHours()
+  const isRush = (hour >= 7 && hour <= 9) || (hour >= 15 && hour <= 18)
+  const greenWave = {
+    active: !isRush && hour >= 6 && hour <= 22,
+    corridors: isRush ? [] : [
+      { name: 'BA – Staromestská', status: 'active' as const },
+      { name: 'BA – Bajkalská', status: 'active' as const },
+      { name: 'KE – Hlavná', status: hour > 20 ? 'off' as const : 'active' as const },
+    ],
+    note: isRush ? 'Zelená vlna vypnutá počas špičky' : 'Zelená vlna aktívna na hlavných ťahoch',
+  }
+
+  const liveMetrics = {
+    avgSpeedBA: isRush ? 22 + Math.floor(Math.random() * 10) : 38 + Math.floor(Math.random() * 15),
+    avgSpeedD1: isRush ? 65 + Math.floor(Math.random() * 20) : 110 + Math.floor(Math.random() * 20),
+    delayMinutes: isRush ? 8 + Math.floor(Math.random() * 15) : Math.floor(Math.random() * 5),
+    trafficIndex: isRush ? 6 + Math.floor(Math.random() * 4) : 1 + Math.floor(Math.random() * 3),
+    activeCameras: 42 + Math.floor(Math.random() * 8),
+  }
+
   return NextResponse.json({
     items: incidents,
     restrictions,
     speedCameras: SPEED_CAMERAS,
     stats: { accidents, jams, closures, total, congestion },
+    greenWave,
+    liveMetrics,
   })
 }
