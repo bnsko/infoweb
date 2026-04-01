@@ -16,7 +16,7 @@ function ordinal(d: number): string {
   return `${d}.`
 }
 
-function getDayFacts(now: Date): DayFact[] {
+export function getDayFacts(now: Date): DayFact[] {
   const year = now.getFullYear()
   const startOfYear = new Date(year, 0, 1)
   const dayOfYear = Math.floor((now.getTime() - startOfYear.getTime()) / 86400000) + 1

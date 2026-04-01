@@ -35,7 +35,6 @@ import FlashNewsWidget from '@/components/widgets/FlashNewsWidget'
 import SpeedtestWidget from '@/components/widgets/SpeedtestWidget'
 import SlovakHistoryWidget from '@/components/widgets/SlovakHistoryWidget'
 import YearsAgoWidget from '@/components/widgets/YearsAgoWidget'
-import HistoryNumbersWidget from '@/components/widgets/HistoryNumbersWidget'
 // OfficeWaitWidget moved to DaySummary panel
 import InflationWidget from '@/components/widgets/InflationWidget'
 import SportSuggestionsWidget from '@/components/widgets/SportSuggestionsWidget'
@@ -47,7 +46,6 @@ import SportSuggestionsWidget from '@/components/widgets/SportSuggestionsWidget'
 // HighwayCamsWidget deleted
 // MortgagesWidget removed
 import TrendingSearchesWidget from '@/components/widgets/TrendingSearchesWidget'
-import StreamingWidget from '@/components/widgets/StreamingWidget'
 import RandomFactWidget from '@/components/widgets/RandomFactWidget'
 import EnvironmentWidget from '@/components/widgets/EnvironmentWidget'
 import SummaryWidget from '@/components/widgets/SummaryWidget'
@@ -95,6 +93,20 @@ import BratislavaOpenDataWidget from '@/components/widgets/BratislavaOpenDataWid
 import ParliamentAttendanceWidget from '@/components/widgets/ParliamentAttendanceWidget'
 import PetitionsWidget from '@/components/widgets/PetitionsWidget'
 import SettingsPanel from '@/components/SettingsPanel'
+import SKCertWidget from '@/components/widgets/SKCertWidget'
+import NBUAlertsWidget from '@/components/widgets/NBUAlertsWidget'
+import SKDebtWidget from '@/components/widgets/SKDebtWidget'
+import BAParkingWidget from '@/components/widgets/BAParkingWidget'
+import SurgeryWaitlistWidget from '@/components/widgets/SurgeryWaitlistWidget'
+import BuildingPermitsWidget from '@/components/widgets/BuildingPermitsWidget'
+import TourismWidget from '@/components/widgets/TourismWidget'
+import RentalPricesWidget from '@/components/widgets/RentalPricesWidget'
+import KindergartensWidget from '@/components/widgets/KindergartensWidget'
+import BankruptcyRegisterWidget from '@/components/widgets/BankruptcyRegisterWidget'
+import PublicProcurementWidget from '@/components/widgets/PublicProcurementWidget'
+import HealthStatsWidget from '@/components/widgets/HealthStatsWidget'
+import APVVGrantsWidget from '@/components/widgets/APVVGrantsWidget'
+import ConstructionPricesWidget from '@/components/widgets/ConstructionPricesWidget'
 import { SpeedtestMini } from '@/components/widgets/SpeedtestWidget'
 import { useLang } from '@/hooks/useLang'
 import { usePrefs } from '@/hooks/usePrefs'
@@ -183,6 +195,11 @@ export default function Home() {
               <SportsWidget />
             </div>
 
+            {/* Trending searches */}
+            <div className="mt-4">
+              <TrendingSearchesWidget />
+            </div>
+
             {/* Reality + Doprava intenzita + Vlaky */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
               <RealEstateSKWidget />
@@ -193,8 +210,24 @@ export default function Home() {
             {/* SOI + Bratislava opendata */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <ConsumerSafetyWidget />
-              <BratislavaOpenDataWidget />
+              <BratislavaOpenDataWidget />            </div>
+
+            {/* Parking BA + Tourism */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <BAParkingWidget />
+              <TourismWidget />
             </div>
+
+            {/* Building permits + Construction prices */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <BuildingPermitsWidget />
+              <ConstructionPricesWidget />
+            </div>
+
+            {/* Rental prices + Kindergartens */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <RentalPricesWidget />
+              <KindergartensWidget />            </div>
           </div>
         )}
 
@@ -205,6 +238,17 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <EnvironmentWidget />
               <ForestsFloodsWidget />
+            </div>
+          </div>
+        )}
+
+        {/* ── KYBER & BEZPEČNOSŤ ── */}
+        {isWidgetVisible('slovensko') && (
+          <div id="sec-kyber">
+            <SectionLabel label={lang === 'sk' ? '🔒 Kyber & Bezpečnosť' : '🔒 Cyber & Security'} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <SKCertWidget />
+              <NBUAlertsWidget />
             </div>
           </div>
         )}
@@ -227,6 +271,7 @@ export default function Home() {
             <SectionLabel label={lang === 'sk' ? '🎓 Vzdelávanie' : '🎓 Education'} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <SchoolsWidget />
+              <APVVGrantsWidget />
             </div>
           </div>
         )}
@@ -249,6 +294,21 @@ export default function Home() {
               <JobMarketWidget />
               <FinstatWidget />
               <VUBRatesWidget />
+            </div>
+            {/* SK Debt counter */}
+            <div className="mt-4">
+              <SKDebtWidget />
+            </div>
+          </div>
+        )}
+
+        {/* ── ZDRAVIE ── */}
+        {isWidgetVisible('slovensko') && (
+          <div id="sec-zdravie">
+            <SectionLabel label={lang === 'sk' ? '🏥 Zdravie & Čakacie doby' : '🏥 Health & Waiting Times'} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <SurgeryWaitlistWidget />
+              <HealthStatsWidget />
             </div>
           </div>
         )}
@@ -278,6 +338,11 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <GovDataWidget />
               <KatasterWidget />
+            </div>
+            {/* New registers: bankruptcy + procurement */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <BankruptcyRegisterWidget />
+              <PublicProcurementWidget />
             </div>
           </div>
         )}
@@ -309,10 +374,7 @@ export default function Home() {
               <TwitterWidget />
               <HackerNewsWidget />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <StreamingWidget />
-              <TrendingSearchesWidget />
-            </div>
+
           </div>
         )}
 
@@ -361,7 +423,6 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <SlovakHistoryWidget />
-              <HistoryNumbersWidget />
             </div>
           </div>
         )}
