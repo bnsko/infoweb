@@ -6,18 +6,18 @@ interface Grant {
   id: string
   title: string
   agency: 'APVV' | 'VEGA' | 'KEGA' | 'Horizon Europe'
-  amount: number
-  amountUnit: string
+  maxAmount: number
   deadline: string
-  field: string
+  area: string
   status: 'open' | 'closed' | 'evaluation'
   url: string
+  description: string
 }
 
 interface APVVData {
   grants: Grant[]
-  stats: { openGrants: number; totalBudgetEur: number; successRatePct: number }
-  updatedAt: string
+  openCount: number
+  source: string
 }
 
 const AGENCY_COLOR: Record<string, string> = {
@@ -45,16 +45,16 @@ export default function APVVGrantsWidget() {
         <div className="space-y-3">
           <div className="grid grid-cols-3 gap-2">
             <div className="bg-slate-700/40 rounded-lg p-2 text-center">
-              <div className="text-lg font-bold text-green-400">{data.stats.openGrants}</div>
+              <div className="text-lg font-bold text-green-400">{data.openCount}</div>
               <div className="text-[9px] text-slate-500">otvorených</div>
             </div>
             <div className="bg-slate-700/40 rounded-lg p-2 text-center">
-              <div className="text-lg font-bold text-blue-400">{(data.stats.totalBudgetEur / 1e6).toFixed(0)} M€</div>
-              <div className="text-[9px] text-slate-500">celkový budget</div>
+              <div className="text-lg font-bold text-blue-400">{data.grants.length}</div>
+              <div className="text-[9px] text-slate-500">celkovo</div>
             </div>
             <div className="bg-slate-700/40 rounded-lg p-2 text-center">
-              <div className="text-lg font-bold text-white">{data.stats.successRatePct}%</div>
-              <div className="text-[9px] text-slate-500">úspešnosť</div>
+              <div className="text-lg font-bold text-white">{data.grants.filter(g => g.agency === 'Horizon Europe').length}</div>
+              <div className="text-[9px] text-slate-500">Horizon EU</div>
             </div>
           </div>
 
@@ -70,10 +70,10 @@ export default function APVVGrantsWidget() {
                         <span className={`text-[9px] ${STATUS_COLOR[g.status]}`}>{STATUS_LABEL[g.status]}</span>
                       </div>
                       <div className="text-[11px] text-slate-200 font-medium leading-tight">{g.title}</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">{g.field}</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">{g.area}</div>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="text-[12px] font-bold text-white">{g.amount} {g.amountUnit}</div>
+                      <div className="text-[12px] font-bold text-white">{(g.maxAmount / 1000).toFixed(0)}k €</div>
                       {g.status === 'open' && days > 0 && (
                         <div className={`text-[10px] ${days < 14 ? 'text-red-400' : days < 30 ? 'text-orange-400' : 'text-slate-500'}`}>
                           {days}d zostáva
