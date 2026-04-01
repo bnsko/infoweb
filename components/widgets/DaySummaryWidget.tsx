@@ -593,47 +593,56 @@ export default function DaySummaryWidget() {
                   </button>
                 )
               })}
-              {/* Sunrise/Sunset arc animation card (last) */}
+              {/* Sunrise/Sunset — elegant compact */}
               {(() => {
                 const ba = stats.data?.cityTemps?.find(ct => ct.key === 'BA')
                 if (!ba) return null
+                const parseMin = (iso: string | null | undefined) => iso ? (() => { const p = iso.split('T')[1]?.split(':'); return p ? parseInt(p[0]) * 60 + parseInt(p[1]) : 0 })() : 0
                 const sunriseTime = ba.sunrise ? ba.sunrise.split('T')[1]?.slice(0, 5) : '--:--'
                 const sunsetTime = ba.sunset ? ba.sunset.split('T')[1]?.slice(0, 5) : '--:--'
-                const sunriseMin = ba.sunrise ? (() => { const p = ba.sunrise.split('T')[1]?.split(':'); return p ? parseInt(p[0]) * 60 + parseInt(p[1]) : 0 })() : 0
-                const sunsetMin = ba.sunset ? (() => { const p = ba.sunset.split('T')[1]?.split(':'); return p ? parseInt(p[0]) * 60 + parseInt(p[1]) : 0 })() : 0
+                const sunriseMin = parseMin(ba.sunrise)
+                const sunsetMin = parseMin(ba.sunset)
                 const nowMin = now ? now.getHours() * 60 + now.getMinutes() : 720
-                const dayLength = sunsetMin - sunriseMin
+                const dayLength = sunsetMin > sunriseMin ? sunsetMin - sunriseMin : 0
                 const dayH = Math.floor(dayLength / 60)
                 const dayM = dayLength % 60
                 const sunPct = sunriseMin && sunsetMin ? Math.max(0, Math.min(100, ((nowMin - sunriseMin) / (sunsetMin - sunriseMin)) * 100)) : 50
                 const isDay = nowMin >= sunriseMin && nowMin <= sunsetMin
-                // Arc position: sun moves along a semicircle
-                const angle = Math.PI * (1 - sunPct / 100) // π to 0
-                const cx = 50 + 38 * Math.cos(angle)
-                const cy = 52 - 36 * Math.sin(angle)
+                const ang = Math.PI * (1 - sunPct / 100)
+                const sx = 40 + 26 * Math.cos(ang)
+                const sy = 32 - 22 * Math.sin(ang)
+                const glowColor = isDay ? '#fbbf24' : '#94a3b8'
                 return (
-                  <div className="flex flex-col items-center justify-center gap-0.5 px-2.5 py-1.5 rounded-xl shrink-0" style={{ background: isDay ? 'linear-gradient(160deg,rgba(56,189,248,0.07),rgba(251,191,36,0.05))' : 'linear-gradient(160deg,rgba(30,41,59,0.1),rgba(100,116,139,0.05))', border: '1px solid rgba(251,191,36,0.1)', minWidth: 110 }}>
-                    <svg viewBox="0 0 80 44" style={{ width: 80, height: 44 }}>
+                  <div className="flex flex-col shrink-0 rounded-xl overflow-hidden" style={{ minWidth: 94, background: isDay ? 'linear-gradient(175deg,rgba(56,189,248,0.06),rgba(251,191,36,0.03))' : 'rgba(15,23,42,0.4)', border: `1px solid ${isDay ? 'rgba(251,191,36,0.12)' : 'rgba(100,116,139,0.07)'}` }}>
+                    <svg viewBox="0 0 80 36" style={{ width: '100%', height: 36 }}>
                       <defs>
-                        <linearGradient id="sunGrad2" x1="0" y1="0" x2="1" y2="0">
-                          <stop offset="0%" stopColor="#f59e0b" />
-                          <stop offset="100%" stopColor="#f97316" />
+                        <linearGradient id="sgTrack" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.75" />
+                          <stop offset="100%" stopColor="#fb923c" stopOpacity="0.75" />
                         </linearGradient>
-                        <radialGradient id="sunGlow2">
-                          <stop offset="0%" stopColor={isDay ? '#fbbf24' : '#94a3b8'} stopOpacity="0.5" />
-                          <stop offset="100%" stopColor={isDay ? '#fbbf24' : '#94a3b8'} stopOpacity="0" />
+                        <radialGradient id="sgGlow" cx="50%" cy="50%" r="50%">
+                          <stop offset="0%" stopColor={glowColor} stopOpacity="0.55" />
+                          <stop offset="60%" stopColor={glowColor} stopOpacity="0.1" />
+                          <stop offset="100%" stopColor={glowColor} stopOpacity="0" />
                         </radialGradient>
                       </defs>
-                      <line x1="6" y1="40" x2="74" y2="40" stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
-                      <path d="M 8 40 A 32 30 0 0 1 72 40" fill="none" stroke="rgba(251,191,36,0.12)" strokeWidth="1" strokeDasharray="2 2" />
-                      <path d="M 8 40 A 32 30 0 0 1 72 40" fill="none" stroke={isDay ? 'url(#sunGrad2)' : 'rgba(100,116,139,0.18)'} strokeWidth="1.5" strokeDasharray="101" strokeDashoffset={`${(1 - sunPct / 100) * 101}`} />
-                      <circle cx={50 + 30 * Math.cos(angle)} cy={42 - 28 * Math.sin(angle)} r="6" fill="url(#sunGlow2)" />
-                      <circle cx={50 + 30 * Math.cos(angle)} cy={42 - 28 * Math.sin(angle)} r="2.8" fill={isDay ? '#fbbf24' : '#475569'} />
+                      <line x1="7" y1="32" x2="73" y2="32" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
+                      <path d="M 7 32 A 33 26 0 0 1 73 32" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1" strokeDasharray="2 3" />
+                      <path d="M 7 32 A 33 26 0 0 1 73 32" fill="none" stroke={isDay ? 'url(#sgTrack)' : 'rgba(100,116,139,0.12)'} strokeWidth="1.5" strokeLinecap="round" strokeDasharray="104" strokeDashoffset={String((1 - sunPct / 100) * 104)} />
+                      <circle cx={sx} cy={sy} r="8" fill="url(#sgGlow)" />
+                      <circle cx={sx} cy={sy} r="2.5" fill={isDay ? '#fde68a' : '#1e293b'} />
+                      {isDay && <circle cx={sx} cy={sy} r="1.2" fill="#fffbeb" />}
                     </svg>
-                    <div className="flex items-center justify-between w-full px-0.5" style={{ marginTop: -4 }}>
-                      <span className="text-[8px] font-bold text-amber-400/80">🌅{sunriseTime}</span>
-                      <span className="text-[7px] text-slate-600 font-mono">{dayH}h{dayM}m</span>
-                      <span className="text-[8px] font-bold text-orange-400/80">{sunsetTime}🌇</span>
+                    <div className="flex items-center justify-between px-2 pb-1.5" style={{ marginTop: -4 }}>
+                      <div className="flex flex-col items-start leading-none">
+                        <span className="text-[6px] text-amber-500/60">{'🌅'}</span>
+                        <span className="text-[9px] font-bold text-amber-400/90 tabular-nums">{sunriseTime}</span>
+                      </div>
+                      <span className="text-[7px] text-slate-600 font-mono tabular-nums">{dayH}h{String(dayM).padStart(2,'0')}m</span>
+                      <div className="flex flex-col items-end leading-none">
+                        <span className="text-[6px] text-orange-500/60">{'🌇'}</span>
+                        <span className="text-[9px] font-bold text-orange-400/90 tabular-nums">{sunsetTime}</span>
+                      </div>
                     </div>
                   </div>
                 )
