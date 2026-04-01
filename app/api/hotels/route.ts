@@ -7,6 +7,12 @@ function seededRng(seed: number) {
   return () => { s = (s * 16807 + 0) % 2147483647; return s / 2147483647 }
 }
 
+// Booking.com deep links (search by hotel name in Bratislava)
+function bookingUrl(name: string): string {
+  const encoded = encodeURIComponent(name)
+  return `https://www.booking.com/search.html?ss=${encoded}%2C+Bratislava&ssne=Bratislava&ssne_untouched=Bratislava`
+}
+
 export async function GET() {
   const now = new Date()
   const seed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate()
@@ -14,7 +20,7 @@ export async function GET() {
 
   const hotels = [
     { name: 'Hotel Devín', stars: 4, area: 'Staré Mesto', amenities: ['WiFi', 'Raňajky', 'Wellness'] },
-    { name: 'Radisson Blu', stars: 5, area: 'Hviezdoslavovo nám.', amenities: ['WiFi', 'Pool', 'Gym', 'Raňajky'] },
+    { name: 'Radisson Blu Carlton', stars: 5, area: 'Hviezdoslavovo nám.', amenities: ['WiFi', 'Pool', 'Gym', 'Raňajky'] },
     { name: 'Lindner Hotel Gallery', stars: 4, area: 'Záhradnícka', amenities: ['WiFi', 'Raňajky', 'Bar'] },
     { name: 'Hotel Tatra', stars: 4, area: 'Námestie 1. mája', amenities: ['WiFi', 'Raňajky', 'Parking'] },
     { name: 'Grand Hotel River Park', stars: 5, area: 'Dvořákovo nábrežie', amenities: ['WiFi', 'Spa', 'Pool', 'Restaurant'] },
@@ -38,6 +44,7 @@ export async function GET() {
       availability: rng() > 0.15,
       freeCancel: rng() > 0.4,
       deal: rng() > 0.7 ? `${Math.floor(10 + rng() * 30)}% zľava` : null,
+      bookingUrl: bookingUrl(h.name),
     }
   }).sort((a, b) => a.pricePerNight - b.pricePerNight)
 

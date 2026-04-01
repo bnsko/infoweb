@@ -198,14 +198,6 @@ export default function DaySummaryWidget() {
             <button onClick={() => setDayPopupOpen(o => !o)} className="flex items-center gap-1 mt-0.5 text-[10px] text-slate-400 hover:text-amber-300 transition-colors capitalize cursor-pointer" suppressHydrationWarning>
               <span className="font-medium">{today}</span>
               {now && isWorkFree(now) && <span className="text-[8px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded-full">🏠 voľno</span>}
-              {now && (() => {
-                const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000)
-                const daysInYear = new Date(now.getFullYear(), 1, 29).getDate() === 29 ? 366 : 365
-                const weekNum = Math.ceil(((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 86400000 + new Date(now.getFullYear(), 0, 1).getDay()) / 7)
-                return (
-                  <span className="text-[8px] text-slate-500 font-mono">W{weekNum} · D{dayOfYear}/{daysInYear}</span>
-                )
-              })()}
               <span className="text-[8px] text-slate-600">▼</span>
             </button>
           </div>
@@ -620,37 +612,28 @@ export default function DaySummaryWidget() {
                 const cx = 50 + 38 * Math.cos(angle)
                 const cy = 52 - 36 * Math.sin(angle)
                 return (
-                  <div className="flex flex-col items-center gap-0 px-4 py-2 rounded-2xl shrink-0 min-w-[160px] relative overflow-hidden" style={{ background: isDay ? 'linear-gradient(180deg, rgba(56,189,248,0.08) 0%, rgba(251,191,36,0.06) 50%, rgba(0,0,0,0) 100%)' : 'linear-gradient(180deg, rgba(30,41,59,0.12) 0%, rgba(100,116,139,0.06) 100%)', border: '1px solid rgba(251,191,36,0.12)' }}>
-                    {/* Sky arc SVG */}
-                    <svg viewBox="0 0 100 58" className="w-full h-auto" style={{ maxWidth: 150 }}>
-                      {/* Horizon line */}
-                      <line x1="8" y1="52" x2="92" y2="52" stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
-                      {/* Day arc (dashed) */}
-                      <path d="M 12 52 A 38 36 0 0 1 88 52" fill="none" stroke="rgba(251,191,36,0.15)" strokeWidth="1" strokeDasharray="2,2" />
-                      {/* Filled day arc portion */}
-                      <path d="M 12 52 A 38 36 0 0 1 88 52" fill="none" stroke={isDay ? 'url(#sunGrad)' : 'rgba(100,116,139,0.2)'} strokeWidth="1.5" strokeDashoffset={`${(1 - sunPct / 100) * 120}`} strokeDasharray="120" />
+                  <div className="flex flex-col items-center justify-center gap-0.5 px-2.5 py-1.5 rounded-xl shrink-0" style={{ background: isDay ? 'linear-gradient(160deg,rgba(56,189,248,0.07),rgba(251,191,36,0.05))' : 'linear-gradient(160deg,rgba(30,41,59,0.1),rgba(100,116,139,0.05))', border: '1px solid rgba(251,191,36,0.1)', minWidth: 110 }}>
+                    <svg viewBox="0 0 80 44" style={{ width: 80, height: 44 }}>
                       <defs>
-                        <linearGradient id="sunGrad" x1="0" y1="0" x2="1" y2="0">
+                        <linearGradient id="sunGrad2" x1="0" y1="0" x2="1" y2="0">
                           <stop offset="0%" stopColor="#f59e0b" />
-                          <stop offset="50%" stopColor="#fbbf24" />
                           <stop offset="100%" stopColor="#f97316" />
                         </linearGradient>
-                        <radialGradient id="sunGlow"><stop offset="0%" stopColor={isDay ? '#fbbf24' : '#94a3b8'} stopOpacity="0.6" /><stop offset="100%" stopColor={isDay ? '#fbbf24' : '#94a3b8'} stopOpacity="0" /></radialGradient>
+                        <radialGradient id="sunGlow2">
+                          <stop offset="0%" stopColor={isDay ? '#fbbf24' : '#94a3b8'} stopOpacity="0.5" />
+                          <stop offset="100%" stopColor={isDay ? '#fbbf24' : '#94a3b8'} stopOpacity="0" />
+                        </radialGradient>
                       </defs>
-                      {/* Sun glow */}
-                      <circle cx={cx} cy={cy} r="8" fill="url(#sunGlow)" />
-                      {/* Sun dot */}
-                      <circle cx={cx} cy={cy} r="3.5" fill={isDay ? '#fbbf24' : '#64748b'} />
-                      <circle cx={cx} cy={cy} r="2" fill={isDay ? '#fef3c7' : '#94a3b8'} />
-                      {/* Sunrise label */}
-                      <text x="12" y="50" textAnchor="middle" fill="#f59e0b" fontSize="5" fontWeight="600" opacity="0.7">🌅</text>
-                      {/* Sunset label */}
-                      <text x="88" y="50" textAnchor="middle" fill="#f97316" fontSize="5" fontWeight="600" opacity="0.7">🌇</text>
+                      <line x1="6" y1="40" x2="74" y2="40" stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
+                      <path d="M 8 40 A 32 30 0 0 1 72 40" fill="none" stroke="rgba(251,191,36,0.12)" strokeWidth="1" strokeDasharray="2 2" />
+                      <path d="M 8 40 A 32 30 0 0 1 72 40" fill="none" stroke={isDay ? 'url(#sunGrad2)' : 'rgba(100,116,139,0.18)'} strokeWidth="1.5" strokeDasharray="101" strokeDashoffset={`${(1 - sunPct / 100) * 101}`} />
+                      <circle cx={50 + 30 * Math.cos(angle)} cy={42 - 28 * Math.sin(angle)} r="6" fill="url(#sunGlow2)" />
+                      <circle cx={50 + 30 * Math.cos(angle)} cy={42 - 28 * Math.sin(angle)} r="2.8" fill={isDay ? '#fbbf24' : '#475569'} />
                     </svg>
-                    <div className="flex items-center justify-between w-full px-1 -mt-0.5">
-                      <span className="text-[9px] font-bold text-amber-400/80">{sunriseTime}</span>
-                      <span className="text-[8px] font-semibold" style={{ color: isDay ? 'rgba(251,191,36,0.6)' : 'rgba(148,163,184,0.5)' }}>{dayH}h {dayM}m</span>
-                      <span className="text-[9px] font-bold text-orange-400/80">{sunsetTime}</span>
+                    <div className="flex items-center justify-between w-full px-0.5" style={{ marginTop: -4 }}>
+                      <span className="text-[8px] font-bold text-amber-400/80">🌅{sunriseTime}</span>
+                      <span className="text-[7px] text-slate-600 font-mono">{dayH}h{dayM}m</span>
+                      <span className="text-[8px] font-bold text-orange-400/80">{sunsetTime}🌇</span>
                     </div>
                   </div>
                 )

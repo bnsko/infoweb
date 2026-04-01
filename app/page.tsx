@@ -14,7 +14,7 @@ import NamedayWidget from '@/components/widgets/NamedayWidget'
 import SteamWidget from '@/components/widgets/SteamWidget'
 import SportsWidget from '@/components/widgets/SportsWidget'
 import RedditGlobalWidget from '@/components/widgets/RedditGlobalWidget'
-import EventsWidget from '@/components/widgets/EventsWidget'
+// EventsWidget merged into EventsCombinedWidget
 // CountersWidget moved to Header stats popup
 import WikiWidget from '@/components/widgets/WikiWidget'
 import RestaurantsWidget from '@/components/widgets/RestaurantsWidget'
@@ -73,11 +73,9 @@ import FinstatWidget from '@/components/widgets/FinstatWidget'
 import VUBRatesWidget from '@/components/widgets/VUBRatesWidget'
 import RegistersWidget from '@/components/widgets/RegistersWidget'
 import GovDataWidget from '@/components/widgets/GovDataWidget'
-import GoogleNewsSKWidget from '@/components/widgets/GoogleNewsSKWidget'
-import PodcastSKWidget from '@/components/widgets/PodcastSKWidget'
 import LunchMenuWidget from '@/components/widgets/LunchMenuWidget'
 import CloudflareRadarWidget from '@/components/widgets/CloudflareRadarWidget'
-import GoOutWidget from '@/components/widgets/GoOutWidget'
+import EventsCombinedWidget from '@/components/widgets/EventsCombinedWidget'
 import FoodDeliveryWidget from '@/components/widgets/FoodDeliveryWidget'
 import HotelWidget from '@/components/widgets/HotelWidget'
 import MarineTrafficWidget from '@/components/widgets/MarineTrafficWidget'
@@ -135,16 +133,15 @@ export default function Home() {
           <div id="sec-slovensko">
             <SectionLabel label={lang === 'sk' ? '🇸🇰 Slovensko' : '🇸🇰 Slovakia'} />
 
-            {/* Events, Sport suggestions */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <EventsWidget />
-              <SportSuggestionsWidget />
+            {/* Combined Events (GoOut + local events + location) */}
+            <div className="mt-4">
+              <EventsCombinedWidget />
             </div>
 
-            {/* GoOut events & Food delivery */}
+            {/* Food delivery + Sport suggestions */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <GoOutWidget />
               <FoodDeliveryWidget />
+              <SportSuggestionsWidget />
             </div>
 
             {/* Prices & EV */}
@@ -244,10 +241,6 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <StreamingWidget />
               <TrendingSearchesWidget />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <GoogleNewsSKWidget />
-              <PodcastSKWidget />
             </div>
           </div>
         )}

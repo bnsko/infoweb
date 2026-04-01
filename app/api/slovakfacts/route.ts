@@ -64,6 +64,15 @@ function getDynamicFacts(): { icon: string; title: string; value: string; detail
     { icon: '☕', title: 'Káv vypitých', value: fmt(coffee), detail: `~${fmt(coffeePerDay)} šálok/deň` },
     { icon: '🛣️', title: 'Km najazdených', value: fmt(km), detail: `~${fmt(kmDrivenPerDay)} km/deň` },
     { icon: '🗑️', title: 'Kg odpadu', value: fmt(trash), detail: `~${fmt(trashKgPerDay)} kg/deň` },
+    // New dynamic stats
+    { icon: '🏥', title: 'Návštevy lekára', value: fmt(Math.floor(55_000 * fractionOfDay)), detail: '~20M návštev/rok' },
+    { icon: '💉', title: 'eRecepty', value: fmt(Math.floor(180_000 * fractionOfDay)), detail: '~65M/rok vypísaných' },
+    { icon: '📦', title: 'Balíkov doručených', value: fmt(Math.floor(200_000 * fractionOfDay)), detail: '~73M/rok v SR' },
+    { icon: '🛒', title: 'Nákupov online', value: fmt(Math.floor(75_000 * fractionOfDay)), detail: '~27M e-commerce/rok' },
+    { icon: '🍞', title: 'Chlebov upečených', value: fmt(Math.floor(130_000 * fractionOfDay)), detail: '~47M/rok v SR' },
+    { icon: '🚬', title: 'Cigariet vyfajčených', value: fmt(Math.floor(7_800_000 * fractionOfDay)), detail: '~2.85 mld/rok' },
+    { icon: '💊', title: 'Liekov vydaných', value: fmt(Math.floor(320_000 * fractionOfDay)), detail: '~117M/rok v SR' },
+    { icon: '🏦', title: 'Platobných kariet', value: fmt(Math.floor(2_200_000 * fractionOfDay)), detail: '~800M transakcií/rok' },
   ]
 }
 
