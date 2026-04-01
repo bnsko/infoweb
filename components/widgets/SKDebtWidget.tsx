@@ -4,13 +4,15 @@ import WidgetCard from '@/components/ui/WidgetCard'
 import { useEffect, useState } from 'react'
 
 interface SKDebtData {
-  baseDebt: number
-  perSecondIncrease: number
-  perPersonDebt: number
-  gdpPct: number
-  gdpEur: number
-  population: number
-  lastUpdated: string
+  currentDebt: number
+  currentDebtBillions: string
+  debtPerPerson: number
+  debtToGdpPct: string
+  dailyIncrease: number
+  monthlyInterest: number
+  rating: string
+  source: string
+  updatedAt: string
 }
 
 function formatBillion(n: number): string {
@@ -29,9 +31,9 @@ export default function SKDebtWidget() {
 
   useEffect(() => {
     if (!data) return
-    const base = data.baseDebt
-    const pps = data.perSecondIncrease
-    const apiTime = new Date(data.lastUpdated).getTime()
+    const base = data.currentDebt
+    const pps = data.dailyIncrease / 86400
+    const apiTime = new Date(data.updatedAt).getTime()
 
     const update = () => {
       const elapsed = (Date.now() - apiTime) / 1000
@@ -42,7 +44,7 @@ export default function SKDebtWidget() {
     return () => clearInterval(id)
   }, [data])
 
-  const display = liveDebt ?? data?.baseDebt ?? 0
+  const display = liveDebt ?? data?.currentDebt ?? 0
 
   return (
     <WidgetCard accent="rose" title="Dlh Slovenska" icon="📉" onRefresh={refetch}>
@@ -55,14 +57,14 @@ export default function SKDebtWidget() {
             <div className="text-2xl font-mono font-bold text-red-400 tabular-nums">
               {formatCurrency(display)}
             </div>
-            <div className="text-[10px] text-slate-500 mt-1">rastie {formatCurrency(data.perSecondIncrease)}/sek</div>
+            <div className="text-[10px] text-slate-500 mt-1">rastie ~{formatCurrency(data.dailyIncrease / 86400)}/sek</div>
           </div>
 
           <div className="grid grid-cols-3 gap-2">
             {[
-              { label: 'Na osobu', value: formatCurrency(data.perPersonDebt), icon: '👤' },
-              { label: 'k HDP', value: data.gdpPct.toFixed(1) + ' %', icon: '📊' },
-              { label: 'HDP SR', value: formatBillion(data.gdpEur * 1e9), icon: '🏭' },
+              { label: 'Na osobu', value: formatCurrency(data.debtPerPerson), icon: '👤' },
+              { label: 'k HDP', value: data.debtToGdpPct + ' %', icon: '📊' },
+              { label: 'Rating', value: data.rating, icon: '🏦' },
             ].map(s => (
               <div key={s.label} className="bg-slate-700/40 rounded-lg p-2 text-center">
                 <div className="text-base">{s.icon}</div>

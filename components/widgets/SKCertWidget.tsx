@@ -7,21 +7,23 @@ interface Alert {
   title: string
   severity: 'critical' | 'high' | 'medium' | 'low'
   category: string
-  publishedAt: string
-  affectedSystems: string[]
+  date: string
+  description: string
+  url: string
 }
 
 interface Stats {
-  activeAlerts: number
-  resolvedThisMonth: number
   criticalCount: number
   highCount: number
+  totalThisMonth: number
+  lastUpdated: string
 }
 
 interface SKCertData {
   alerts: Alert[]
   stats: Stats
-  updatedAt: string
+  source: string
+  disclaimer: string
 }
 
 const SEVERITY_COLOR: Record<string, string> = {
@@ -53,10 +55,10 @@ export default function SKCertWidget() {
         <div className="space-y-3">
           <div className="grid grid-cols-4 gap-2 mb-1">
             {[
-              { label: 'Aktívne', value: data.stats.activeAlerts, color: 'text-white' },
+              { label: 'Celkom', value: data.alerts.length, color: 'text-white' },
               { label: 'Kritické', value: data.stats.criticalCount, color: 'text-red-400' },
               { label: 'Vysoké', value: data.stats.highCount, color: 'text-orange-400' },
-              { label: 'Vyriešené', value: data.stats.resolvedThisMonth, color: 'text-green-400' },
+              { label: 'Tento mes.', value: data.stats.totalThisMonth, color: 'text-green-400' },
             ].map(s => (
               <div key={s.label} className="text-center bg-slate-700/40 rounded-lg p-2">
                 <div className={`text-lg font-bold ${s.color}`}>{s.value}</div>
@@ -73,7 +75,7 @@ export default function SKCertWidget() {
                 </span>
                 <div className="flex-1 min-w-0">
                   <div className="text-[11px] text-slate-200 font-medium truncate">{a.title}</div>
-                  <div className="text-[10px] text-slate-500">{a.category} · {timeAgo(a.publishedAt)}</div>
+                  <div className="text-[10px] text-slate-500">{a.category} · {timeAgo(a.date)}</div>
                 </div>
               </div>
             ))}

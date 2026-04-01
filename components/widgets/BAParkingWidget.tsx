@@ -3,13 +3,15 @@ import { useWidget } from '@/hooks/useWidget'
 import WidgetCard from '@/components/ui/WidgetCard'
 
 interface ParkingZone {
+  id: string
   name: string
-  location: string
-  totalSpots: number
-  freeSpots: number
+  type: string
+  total: number
+  free: number
+  occupied: number
   occupancyPct: number
-  status: 'open' | 'full' | 'closed'
-  pricePerHour: number
+  status: string
+  address: string
   lat: number
   lng: number
 }
@@ -24,6 +26,7 @@ interface BAParkingData {
 function StatusBadge({ status }: { status: string }) {
   if (status === 'full') return <span className="px-1.5 py-0.5 rounded text-[9px] bg-red-500/20 text-red-400 border border-red-500/30">PLNÉ</span>
   if (status === 'closed') return <span className="px-1.5 py-0.5 rounded text-[9px] bg-slate-500/20 text-slate-400 border border-slate-500/30">ZATVORENÉ</span>
+  if (status === 'limited') return <span className="px-1.5 py-0.5 rounded text-[9px] bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">OBMEDZENÉ</span>
   return <span className="px-1.5 py-0.5 rounded text-[9px] bg-green-500/20 text-green-400 border border-green-500/30">VOĽNÉ</span>
 }
 
@@ -55,10 +58,10 @@ export default function BAParkingWidget() {
               <div className="flex items-center justify-between mb-1">
                 <div>
                   <span className="text-[12px] text-slate-200 font-medium">{z.name}</span>
-                  <span className="ml-1.5 text-[10px] text-slate-500">{z.location}</span>
+                  <span className="ml-1.5 text-[10px] text-slate-500">{z.address}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] text-slate-400">{z.freeSpots}/{z.totalSpots}</span>
+                  <span className="text-[10px] text-slate-400">{z.free}/{z.total}</span>
                   <StatusBadge status={z.status} />
                 </div>
               </div>
