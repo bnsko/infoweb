@@ -10,6 +10,7 @@ import { ISSPassMini } from '@/components/widgets/SpaceEnvWidget'
 import { LaunchesMini } from '@/components/widgets/LaunchesWidget/LaunchesWidget'
 // SpeedtestMini moved to footer
 import { getHoliday, getNextHolidays } from '@/lib/namedays'
+import { getDayFacts } from '@/components/widgets/HistoryNumbersWidget'
 import { format } from 'date-fns'
 import { sk, enUS } from 'date-fns/locale'
 import MHDWidget from '@/components/widgets/MHDWidget'
@@ -293,6 +294,22 @@ export default function DaySummaryWidget() {
                     ))}
                   </div>
                 )}
+                {/* Day-in-numbers facts */}
+                <div className="pt-1 border-t border-white/5">
+                  <p className="text-[8px] text-slate-600 uppercase font-bold tracking-wider mb-2">📊 Dnešný deň v číslach</p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {getDayFacts(now).map((f, i) => (
+                      <div key={i} className="flex items-center gap-2 bg-white/[0.02] border border-white/5 rounded-lg px-2.5 py-2">
+                        <span className="text-sm shrink-0">{f.icon}</span>
+                        <div className="min-w-0">
+                          <div className="text-[8px] text-slate-500 uppercase tracking-wide truncate">{f.label}</div>
+                          <div className={`text-[12px] font-bold ${f.color}`}>{f.value}</div>
+                          <div className="text-[7px] text-slate-600 truncate">{f.detail}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -566,34 +583,28 @@ export default function DaySummaryWidget() {
                 ))}
               </div>
             )}
-            <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
-              {/* City cards sorted by CITY_ORDER */}
+            <div className="flex gap-1 overflow-x-auto scrollbar-hide pb-0.5">
+              {/* City cards — compact narrow pills */}
               {[...stats.data.cityTemps].sort((a, b) => {
                 const ai = CITY_ORDER.indexOf(a.key)
                 const bi = CITY_ORDER.indexOf(b.key)
                 return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
               }).map(c => {
                 const icon = WMO_MINI[c.weatherCode] ?? '🌡️'
-                const tempColor = c.temp >= 25 ? 'text-orange-400' : c.temp >= 15 ? 'text-amber-400' : c.temp >= 5 ? 'text-blue-400' : c.temp >= 0 ? 'text-indigo-400' : 'text-violet-400'
+                const tempColor = c.temp >= 25 ? 'text-orange-400' : c.temp >= 15 ? 'text-amber-400' : c.temp >= 5 ? 'text-blue-300' : c.temp >= 0 ? 'text-indigo-400' : 'text-violet-400'
                 const cityAqi = stats.data?.cityAQI?.find(a => a.key === c.key)?.aqi ?? 0
                 return (
-                  <button key={c.key} onClick={() => setWeatherCityKey(c.key)} className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-white/[0.02] border border-white/5 hover:bg-white/[0.06] hover:border-blue-500/20 transition-all shrink-0 cursor-pointer">
-                    <span className="text-base">{icon}</span>
-                    <div className="min-w-0 text-left">
-                      <div className="text-[9px] text-slate-500 font-semibold truncate">{c.name}</div>
-                      <div className="flex items-baseline gap-1">
-                        <span className={`text-[13px] font-bold tabular-nums ${tempColor}`}>{c.temp}°</span>
-                        <span className="text-[8px] text-slate-600">{c.tempMin}°/{c.tempMax}°</span>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-center gap-0.5">
-                      <span className="text-[8px] text-slate-500" title={`Vietor ${c.windSpeed} km/h`}>{windDirArrow(c.windDir)} {c.windSpeed}</span>
-                      {cityAqi > 0 && <span className={`text-[7px] font-bold ${aqiColor(cityAqi)}`} title={`AQI: ${aqiLabel(cityAqi)}`}>AQI {cityAqi}</span>}
-                    </div>
+                  <button key={c.key} onClick={() => setWeatherCityKey(c.key)}
+                    className="flex flex-col items-center gap-0 px-1.5 py-1 rounded-lg bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.05] hover:border-blue-500/20 transition-all shrink-0 cursor-pointer min-w-[42px]">
+                    <span className="text-[11px] leading-none">{icon}</span>
+                    <span className="text-[7px] text-slate-500 font-semibold mt-0.5 leading-none truncate w-full text-center">{c.name.split(' ')[0]}</span>
+                    <span className={`text-[12px] font-black tabular-nums leading-none mt-0.5 ${tempColor}`}>{c.temp}°</span>
+                    <span className="text-[6.5px] text-slate-600 tabular-nums leading-none">{windDirArrow(c.windDir)}{c.windSpeed}</span>
+                    {cityAqi > 0 && <span className={`text-[6px] font-bold leading-none mt-0.5 ${aqiColor(cityAqi)}`}>AQI{cityAqi}</span>}
                   </button>
                 )
               })}
-              {/* Sunrise/Sunset — elegant compact */}
+              {/* Sunrise/Sunset — thin animated arc */}
               {(() => {
                 const ba = stats.data?.cityTemps?.find(ct => ct.key === 'BA')
                 if (!ba) return null
@@ -609,39 +620,54 @@ export default function DaySummaryWidget() {
                 const sunPct = sunriseMin && sunsetMin ? Math.max(0, Math.min(100, ((nowMin - sunriseMin) / (sunsetMin - sunriseMin)) * 100)) : 50
                 const isDay = nowMin >= sunriseMin && nowMin <= sunsetMin
                 const ang = Math.PI * (1 - sunPct / 100)
-                const sx = 40 + 26 * Math.cos(ang)
-                const sy = 32 - 22 * Math.sin(ang)
-                const glowColor = isDay ? '#fbbf24' : '#94a3b8'
+                const sx = 40 + 28 * Math.cos(ang)
+                const sy = 34 - 18 * Math.sin(ang)
+                // thin rays: 8 spokes around the sun
+                const rays = Array.from({length:8},(_,i)=>{
+                  const a = (i*Math.PI/4)
+                  const r1=3.8, r2=5.8
+                  return { x1:sx+r1*Math.cos(a), y1:sy+r1*Math.sin(a), x2:sx+r2*Math.cos(a), y2:sy+r2*Math.sin(a) }
+                })
                 return (
-                  <div className="flex flex-col shrink-0 rounded-xl overflow-hidden" style={{ minWidth: 94, background: isDay ? 'linear-gradient(175deg,rgba(56,189,248,0.06),rgba(251,191,36,0.03))' : 'rgba(15,23,42,0.4)', border: `1px solid ${isDay ? 'rgba(251,191,36,0.12)' : 'rgba(100,116,139,0.07)'}` }}>
-                    <svg viewBox="0 0 80 36" style={{ width: '100%', height: 36 }}>
+                  <div className="shrink-0 rounded-lg overflow-hidden flex flex-col"
+                    style={{ minWidth: 82, background: isDay ? 'linear-gradient(180deg,rgba(251,191,36,0.04),rgba(56,189,248,0.03))' : 'rgba(15,23,42,0.35)', border: `1px solid ${isDay ? 'rgba(251,191,36,0.1)' : 'rgba(100,116,139,0.06)'}` }}>
+                    <svg viewBox="0 0 80 38" style={{ width: '100%', height: 34 }}>
                       <defs>
-                        <linearGradient id="sgTrack" x1="0" y1="0" x2="1" y2="0">
-                          <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.75" />
-                          <stop offset="100%" stopColor="#fb923c" stopOpacity="0.75" />
+                        <linearGradient id="sgTrack2" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.5" />
+                          <stop offset="100%" stopColor="#fb923c" stopOpacity="0.5" />
                         </linearGradient>
-                        <radialGradient id="sgGlow" cx="50%" cy="50%" r="50%">
-                          <stop offset="0%" stopColor={glowColor} stopOpacity="0.55" />
-                          <stop offset="60%" stopColor={glowColor} stopOpacity="0.1" />
-                          <stop offset="100%" stopColor={glowColor} stopOpacity="0" />
-                        </radialGradient>
                       </defs>
-                      <line x1="7" y1="32" x2="73" y2="32" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
-                      <path d="M 7 32 A 33 26 0 0 1 73 32" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1" strokeDasharray="2 3" />
-                      <path d="M 7 32 A 33 26 0 0 1 73 32" fill="none" stroke={isDay ? 'url(#sgTrack)' : 'rgba(100,116,139,0.12)'} strokeWidth="1.5" strokeLinecap="round" strokeDasharray="104" strokeDashoffset={String((1 - sunPct / 100) * 104)} />
-                      <circle cx={sx} cy={sy} r="8" fill="url(#sgGlow)" />
-                      <circle cx={sx} cy={sy} r="2.5" fill={isDay ? '#fde68a' : '#1e293b'} />
-                      {isDay && <circle cx={sx} cy={sy} r="1.2" fill="#fffbeb" />}
+                      {/* Horizon line */}
+                      <line x1="6" y1="34" x2="74" y2="34" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
+                      {/* Progress arc (thin) */}
+                      <path d="M 6 34 A 34 22 0 0 1 74 34" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="0.7" />
+                      <path d="M 6 34 A 34 22 0 0 1 74 34" fill="none"
+                        stroke={isDay ? 'url(#sgTrack2)' : 'rgba(100,116,139,0.1)'}
+                        strokeWidth="1"
+                        strokeLinecap="round"
+                        strokeDasharray="110"
+                        strokeDashoffset={String((1 - sunPct / 100) * 110)} />
+                      {/* Sun rays (only daytime) */}
+                      {isDay && rays.map((r,i) => (
+                        <line key={i} x1={r.x1} y1={r.y1} x2={r.x2} y2={r.y2}
+                          stroke="#fde68a" strokeWidth="0.6" strokeLinecap="round" opacity="0.7"
+                          style={{ transformOrigin: `${sx}px ${sy}px`, animation: `spin 8s linear infinite` }} />
+                      ))}
+                      {/* Sun body */}
+                      {isDay
+                        ? <circle cx={sx} cy={sy} r="2.2" fill="#fde68a" style={{ filter: 'drop-shadow(0 0 3px #fbbf24)' }} />
+                        : <circle cx={sx} cy={sy} r="2.2" fill="#e2e8f0" opacity="0.6" />}
                     </svg>
-                    <div className="flex items-center justify-between px-2 pb-1.5" style={{ marginTop: -4 }}>
-                      <div className="flex flex-col items-start leading-none">
-                        <span className="text-[6px] text-amber-500/60">{'🌅'}</span>
-                        <span className="text-[9px] font-bold text-amber-400/90 tabular-nums">{sunriseTime}</span>
+                    <div className="flex items-center justify-between px-1.5 pb-1" style={{marginTop:-2}}>
+                      <div className="text-left leading-none">
+                        <div className="text-[6px] text-amber-500/50">{'↑'}</div>
+                        <div className="text-[8px] font-bold text-amber-400/80 tabular-nums">{sunriseTime}</div>
                       </div>
-                      <span className="text-[7px] text-slate-600 font-mono tabular-nums">{dayH}h{String(dayM).padStart(2,'0')}m</span>
-                      <div className="flex flex-col items-end leading-none">
-                        <span className="text-[6px] text-orange-500/60">{'🌇'}</span>
-                        <span className="text-[9px] font-bold text-orange-400/90 tabular-nums">{sunsetTime}</span>
+                      <div className="text-[6.5px] text-slate-600 tabular-nums">{dayH}h{String(dayM).padStart(2,'0')}</div>
+                      <div className="text-right leading-none">
+                        <div className="text-[6px] text-orange-500/50">{'↓'}</div>
+                        <div className="text-[8px] font-bold text-orange-400/80 tabular-nums">{sunsetTime}</div>
                       </div>
                     </div>
                   </div>
