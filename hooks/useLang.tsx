@@ -16,7 +16,7 @@ const T: Record<string, { sk: string; en: string }> = {
   'sec.space': { sk: '🔭 Vesmír & Rakety', en: '🔭 Space & Rockets' },
   'sec.fun': { sk: '🎮 Zábava & Komunita', en: '🎮 Entertainment & Community' },
   'sec.history': { sk: '📖 História', en: '📖 History' },
-  'sec.news': { sk: '📰 Správy z 18 odvetví', en: '📰 News from 18 Sectors' },
+  'sec.news': { sk: '📰 Správy', en: '📰 News' },
   'sec.realestate': { sk: '🏠 Nehnuteľnosti & Reštaurácie', en: '🏠 Real Estate & Restaurants' },
   'sec.prices': { sk: '💰 Ceny & Nákupy', en: '💰 Prices & Shopping' },
   'sec.tech': { sk: '💻 Tech & Nástroje', en: '💻 Tech & Tools' },
