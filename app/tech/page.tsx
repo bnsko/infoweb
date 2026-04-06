@@ -6,12 +6,12 @@ import GitHubTrendingWidget from '@/components/widgets/GitHubTrendingWidget'
 import HackerNewsWidget from '@/components/widgets/HackerNewsWidget'
 import TwitterWidget from '@/components/widgets/TwitterWidget'
 import RedditGlobalWidget from '@/components/widgets/RedditGlobalWidget'
-import SteamWidget from '@/components/widgets/SteamWidget'
 import CloudflareRadarWidget from '@/components/widgets/CloudflareRadarWidget'
 import InternetServicesWidget from '@/components/widgets/InternetServicesWidget'
 import SKCertWidget from '@/components/widgets/SKCertWidget'
 import NBUAlertsWidget from '@/components/widgets/NBUAlertsWidget'
-import WikiWidget from '@/components/widgets/WikiWidget'
+import KrimiWidget from '@/components/widgets/KrimiWidget'
+import StolenVehiclesWidget from '@/components/widgets/StolenVehiclesWidget'
 
 export default function TechPage() {
   return (
@@ -20,16 +20,11 @@ export default function TechPage() {
       <SectionLabel icon="🤖" label="Umelá inteligencia" />
       <AINewsWidget />
 
-      {/* Dev komunita */}
-      <SectionLabel icon="💻" label="Developer komunita" />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Dev & Komunita — merged */}
+      <SectionLabel icon="💻" label="Dev & Komunita" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <GitHubTrendingWidget />
         <HackerNewsWidget />
-      </div>
-
-      {/* Sociálne siete */}
-      <SectionLabel icon="📣" label="Sociálne siete & Reddit" />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TwitterWidget />
         <RedditGlobalWidget />
       </div>
@@ -42,17 +37,12 @@ export default function TechPage() {
       </div>
 
       {/* Bezpečnosť */}
-      <SectionLabel icon="🔐" label="Kybernetická bezpečnosť" />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <SectionLabel icon="🔐" label="Kybernetická & Verejná bezpečnosť" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <SKCertWidget />
         <NBUAlertsWidget />
-      </div>
-
-      {/* Gaming & Kultúra */}
-      <SectionLabel icon="🎮" label="Gaming & Tech kultúra" />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <SteamWidget />
-        <WikiWidget />
+        <KrimiWidget />
+        <StolenVehiclesWidget />
       </div>
     </PageShell>
   )

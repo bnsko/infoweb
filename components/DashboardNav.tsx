@@ -9,6 +9,8 @@ export const DASHBOARD_TABS = [
   { id: 'zdravie',  href: '/zdravie',   icon: '🏥', label: 'Zdravie' },
   { id: 'financie', href: '/financie',  icon: '💶', label: 'Financie' },
   { id: 'tech',     href: '/tech',      icon: '🤖', label: 'Tech' },
+  { id: 'gaming',   href: '/gaming',    icon: '🎮', label: 'Gaming' },
+  { id: 'ostatne',  href: '/ostatne',   icon: '📋', label: 'Ostatné' },
 ] as const
 
 export default function DashboardNav() {

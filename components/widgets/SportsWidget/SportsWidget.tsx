@@ -33,6 +33,12 @@ const SPORTS = [
   { key: 'golf', emoji: '⛳', sk: 'Golf', en: 'Golf' },
   { key: 'baseball', emoji: '⚾', sk: 'Baseball', en: 'Baseball' },
   { key: 'cycling', emoji: '🚴', sk: 'Cyklistika', en: 'Cycling' },
+  { key: 'skiing', emoji: '⛷️', sk: 'Lyžovanie', en: 'Skiing' },
+  { key: 'athletics', emoji: '🏃', sk: 'Atletika', en: 'Athletics' },
+  { key: 'boxing', emoji: '🥊', sk: 'Box', en: 'Boxing' },
+  { key: 'snooker', emoji: '🎱', sk: 'Snooker', en: 'Snooker' },
+  { key: 'darts', emoji: '🎯', sk: 'Šípky', en: 'Darts' },
+  { key: 'esports', emoji: '🖥️', sk: 'Esports', en: 'Esports' },
 ]
 
 type MatchCategory = 'live' | 'halftime' | 'finished' | 'scheduled'

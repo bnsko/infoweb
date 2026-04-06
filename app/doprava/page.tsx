@@ -3,7 +3,6 @@ import PageShell from '@/components/PageShell'
 import SectionLabel from '@/components/SectionLabel'
 import SunriseSunsetWidget from '@/components/widgets/SunriseSunsetWidget'
 import FuelPricesWidget from '@/components/widgets/FuelPricesWidget'
-import ParkingWidget from '@/components/widgets/ParkingWidget'
 import BAParkingWidget from '@/components/widgets/BAParkingWidget'
 import RideShareWidget from '@/components/widgets/RideShareWidget'
 import NDSCameraWidget from '@/components/widgets/NDSCameraWidget'
@@ -28,11 +27,8 @@ export default function DopravaPage() {
       </div>
 
       {/* Parkovanie */}
-      <SectionLabel icon="🅿️" label="Parkovanie" />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <ParkingWidget />
-        <BAParkingWidget />
-      </div>
+      <SectionLabel icon="🅿️" label="Parkoviská Bratislava" />
+      <BAParkingWidget />
 
       {/* Zdieľanie auta */}
       <SectionLabel icon="🚗" label="Zdieľaná mobilita" />
@@ -48,9 +44,10 @@ export default function DopravaPage() {
         <TransportIntensityWidget />
       </div>
 
-      {/* Námořna + Letecka */}
-      <SectionLabel icon="⚓" label="Loďná & Letecká doprava" />
+      {/* Loďná doprava */}
+      <SectionLabel icon="⚓" label="Loďná doprava" />
       <MarineTrafficWidget />
     </PageShell>
   )
 }
+

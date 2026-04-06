@@ -9,6 +9,7 @@ const redis = new Redis({
 })
 
 const SESSION_TTL = 120 // 2 minutes
+const VISITOR_LOG_MAX = 300
 
 function todayKey(): string {
   return new Date().toISOString().slice(0, 10)
@@ -25,16 +26,56 @@ function monthKey(): string {
   return new Date().toISOString().slice(0, 7)
 }
 
+function maskIP(ip: string): string {
+  if (ip === 'unknown' || !ip) return 'unknown'
+  // IPv4: keep first 3 octets, mask last
+  const v4 = ip.match(/^(\d{1,3}\.\d{1,3}\.\d{1,3})\.\d{1,3}$/)
+  if (v4) return `${v4[1]}.xxx`
+  // IPv6: keep first 3 groups
+  const v6parts = ip.split(':')
+  if (v6parts.length >= 4) return `${v6parts.slice(0, 3).join(':')}:xxxx`
+  return ip.slice(0, 8) + '...'
+}
+
+function getClientIP(request: Request): string {
+  const forwarded = request.headers.get('x-forwarded-for')
+  const real = request.headers.get('x-real-ip')
+  return forwarded?.split(',')[0]?.trim() ?? real ?? 'unknown'
+}
+
+function parseUA(ua: string): string {
+  if (!ua) return 'Unknown'
+  if (ua.includes('Chrome') && !ua.includes('Edg')) return 'Chrome'
+  if (ua.includes('Firefox')) return 'Firefox'
+  if (ua.includes('Safari') && !ua.includes('Chrome')) return 'Safari'
+  if (ua.includes('Edg')) return 'Edge'
+  if (ua.includes('curl') || ua.includes('python') || ua.includes('bot') || ua.includes('Bot')) return 'Bot/Script'
+  return 'Other'
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const action = searchParams.get('action')
   const sid = searchParams.get('sid') ?? ''
+  const path = searchParams.get('path') ?? '/'
   const today = todayKey()
   const week = weekKey()
   const month = monthKey()
 
   try {
     if (action === 'visit') {
+      const ip = getClientIP(request)
+      const ua = request.headers.get('user-agent') ?? ''
+      const maskedIP = maskIP(ip)
+      const browser = parseUA(ua)
+
+      const logEntry = JSON.stringify({
+        ts: Date.now(),
+        ip: maskedIP,
+        browser,
+        path,
+      })
+
       const p = redis.pipeline()
       p.incr('visitors:total_views')
       p.incr(`visitors:daily:${today}`)
@@ -44,6 +85,8 @@ export async function GET(request: Request) {
       p.incr(`visitors:monthly:${month}`)
       p.expire(`visitors:monthly:${month}`, 32 * 86400)
       if (sid) p.set(`visitors:session:${sid}`, '1', { ex: SESSION_TTL })
+      p.rpush('visitors:log', logEntry)
+      p.ltrim('visitors:log', -VISITOR_LOG_MAX, -1)
       await p.exec()
     } else if (action === 'ping' && sid) {
       await redis.set(`visitors:session:${sid}`, '1', { ex: SESSION_TTL })
