@@ -22,6 +22,7 @@ interface AdminConfig {
 
 interface ApiTestResult { api: string; status: number; ok: boolean; ms: number }
 interface HistoryEntry { date: string; views: number }
+interface VisitorLogEntry { ts: number; ip: string; browser: string; path: string }
 
 const ALL_WIDGETS = [
   { id: 'daysummary', label: '🕐 Hlavný panel' },
@@ -46,14 +47,16 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [msgType, setMsgType] = useState<'ok' | 'err'>('ok')
-  const [tab, setTab] = useState<'overview' | 'dev' | 'widgets' | 'settings' | 'security' | 'apis' | 'actions'>('overview')
+  const [tab, setTab] = useState<'overview' | 'visitors' | 'counters' | 'widgets' | 'settings' | 'security' | 'apis'>('overview')
   const [initializing, setInitializing] = useState(true)
   const [apiResults, setApiResults] = useState<ApiTestResult[] | null>(null)
   const [testingApis, setTestingApis] = useState(false)
   const [history, setHistory] = useState<HistoryEntry[] | null>(null)
-  const [addViewsVal, setAddViewsVal] = useState('100')
+  const [visitorLog, setVisitorLog] = useState<VisitorLogEntry[] | null>(null)
+  const [loadingLog, setLoadingLog] = useState(false)
   const [setTotalVal, setSetTotalVal] = useState('')
-  const [devLoading, setDevLoading] = useState(false)
+  const [addViewsVal, setAddViewsVal] = useState('100')
+  const [actionLoading, setActionLoading] = useState(false)
 
   useEffect(() => {
     const savedCode = localStorage.getItem('admin-code')
@@ -86,6 +89,15 @@ export default function AdminPage() {
     } catch { /* ignore */ }
   }, [code])
 
+  const fetchVisitorLog = useCallback(async () => {
+    setLoadingLog(true)
+    try {
+      const res = await fetch(`/api/admin?code=${encodeURIComponent(code)}&action=visitorsRecent`)
+      if (res.ok) { const data = await res.json(); setVisitorLog(data.entries) }
+    } catch { /* ignore */ }
+    setLoadingLog(false)
+  }, [code])
+
   const handleLogin = async () => {
     setLoading(true); setMessage('')
     try {
@@ -109,6 +121,10 @@ export default function AdminPage() {
     return () => clearInterval(t)
   }, [authenticated, fetchStats, fetchHistory])
 
+  useEffect(() => {
+    if (authenticated && tab === 'visitors') fetchVisitorLog()
+  }, [authenticated, tab, fetchVisitorLog])
+
   const updateConfig = async (updates: Partial<AdminConfig>) => {
     const res = await fetch(`/api/admin?code=${encodeURIComponent(code)}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -120,7 +136,7 @@ export default function AdminPage() {
   const showMsg = (msg: string, type: 'ok' | 'err' = 'ok') => { setMessage(msg); setMsgType(type); setTimeout(() => setMessage(''), 4000) }
 
   const postAction = async (action: string, extra: Record<string, unknown> = {}) => {
-    setDevLoading(true)
+    setActionLoading(true)
     try {
       const res = await fetch(`/api/admin?code=${encodeURIComponent(code)}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -130,10 +146,8 @@ export default function AdminPage() {
       if (res.ok) { showMsg('✅ ' + ((data as Record<string,string>).message ?? 'Hotovo')); fetchStats(); fetchHistory() }
       else showMsg('❌ ' + ((data as Record<string,string>).error ?? 'Chyba'), 'err')
     } catch { showMsg('❌ Chyba', 'err') }
-    setDevLoading(false)
+    setActionLoading(false)
   }
-
-  const clearCache = async () => postAction('clearCache')
 
   const testApis = async () => {
     setTestingApis(true); setApiResults(null)
@@ -207,15 +221,15 @@ export default function AdminPage() {
         )}
 
         {/* Tab navigation */}
-        <div className="flex items-center gap-1 mb-6 overflow-x-auto">
+        <div className="flex items-center gap-1 mb-6 overflow-x-auto scrollbar-hide">
           {[
-            { key: 'overview', label: '📊 Prehľad' },
-            { key: 'dev', label: '🛠️ Dev nástroje' },
-            { key: 'actions', label: '⚡ Akcie' },
-            { key: 'apis', label: '🔌 API Test' },
-            { key: 'widgets', label: '🧩 Widgety' },
-            { key: 'settings', label: '⚙️ Nastavenia' },
-            { key: 'security', label: '🛡️ Bezpečnosť' },
+            { key: 'overview',  label: '📊 Prehľad' },
+            { key: 'visitors',  label: '👥 Návštevníci' },
+            { key: 'counters',  label: '🔢 Počítadlá' },
+            { key: 'widgets',   label: '🧩 Widgety' },
+            { key: 'settings',  label: '⚙️ Nastavenia' },
+            { key: 'security',  label: '🛡️ Bezpečnosť' },
+            { key: 'apis',      label: '🔌 API Test' },
           ].map(t => (
             <button key={t.key} onClick={() => setTab(t.key as typeof tab)}
               className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${
@@ -224,80 +238,196 @@ export default function AdminPage() {
           ))}
         </div>
 
-        {/* Overview */}
+        {/* ── PREHĽAD ── */}
         {tab === 'overview' && stats && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <StatCard icon="👁️" label="Zobrazenia stránky" value={stats.visitors.totalPageViews.toLocaleString('sk-SK')} color="text-blue-400" />
-              <StatCard icon="🟢" label="Teraz online" value={String(stats.visitors.activeSessions)} color="text-yellow-400" />
+          <div className="space-y-5">
+            {/* Live stats row */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              <StatCard icon="🟢" label="Teraz online" value={String(stats.visitors.activeSessions)} color="text-emerald-400" pulse />
+              <StatCard icon="📅" label="Dnes" value={stats.visitors.todayPageViews.toLocaleString('sk-SK')} color="text-orange-400" />
+              <StatCard icon="📆" label="Tento týždeň" value={stats.visitors.weekPageViews.toLocaleString('sk-SK')} color="text-yellow-400" />
+              <StatCard icon="🗓️" label="Tento mesiac" value={stats.visitors.monthPageViews.toLocaleString('sk-SK')} color="text-blue-400" />
+              <StatCard icon="👁️" label="Celkom" value={stats.visitors.totalPageViews.toLocaleString('sk-SK')} color="text-purple-400" />
             </div>
+
+            {/* History chart */}
+            {history && history.length > 0 && (
+              <div className="bg-[#13161f] border border-white/5 rounded-2xl p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide">História návštevnosti (30 dní)</h3>
+                  <button onClick={fetchHistory} className="text-[10px] text-slate-500 hover:text-slate-300 px-2 py-1 rounded-lg hover:bg-white/5">↺ Obnoviť</button>
+                </div>
+                <MiniBarChart data={history} />
+              </div>
+            )}
+
+            {/* System info */}
             <div className="bg-[#13161f] border border-white/5 rounded-2xl p-5">
               <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-3">Systém</h3>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
                 <InfoCard label="Framework" value="Next.js 14" />
-                <InfoCard label="API Routes" value="25+" />
                 <InfoCard label="Widgety" value={`${config?.enabledWidgets?.length ?? 0} sekcií`} />
                 <InfoCard label="Status" value={config?.maintenanceMode ? '🔧 Údržba' : '✅ Online'} green={!config?.maintenanceMode} />
+                <InfoCard label="Cache TTL" value="5–60 min" />
               </div>
             </div>
-          </div>
-        )}
 
-        {/* Actions */}
-        {tab === 'actions' && (
-          <div className="space-y-4">
+            {/* Quick actions */}
             <div className="bg-[#13161f] border border-white/5 rounded-2xl p-5">
               <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-4">Rýchle akcie</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <ActionButton icon="�" title="Obnoviť štatistiky" desc="Načítať aktuálne údaje z Redis" color="green" onClick={fetchStats} />
-                <ActionButton icon="🔄" title="Vymazať cache" desc="Vynúti nové načítanie dát" color="blue" onClick={clearCache} />
-                <ActionButton icon="🔌" title="Test všetkých API" desc="Overí dostupnosť endpointov" color="purple" onClick={testApis} loading={testingApis} />
-                <ActionButton icon="🔧" title={config?.maintenanceMode ? 'Vypnúť údržbu' : 'Zapnúť údržbu'} desc="Režim údržby dashboardu" color="yellow"
-                  onClick={() => updateConfig({ maintenanceMode: !config?.maintenanceMode })} />
-                <a href="/" className="flex items-center gap-3 bg-white/[0.03] border border-white/5 rounded-xl p-4 text-left hover:bg-white/[0.05] transition-all">
-                  <span className="text-2xl">🔗</span>
-                  <div><div className="text-sm font-semibold text-slate-300">Otvoriť dashboard</div><div className="text-[11px] text-slate-500">Zobraziť verejnú stránku</div></div>
-                </a>
+              <div className="flex flex-wrap gap-2">
+                <button onClick={() => postAction('clearCache')} disabled={actionLoading}
+                  className="text-[11px] bg-blue-500/15 text-blue-400 px-3 py-1.5 rounded-lg hover:bg-blue-500/25 transition-all disabled:opacity-50">🔄 Vymazať cache</button>
+                <button onClick={() => updateConfig({ maintenanceMode: !config?.maintenanceMode })}
+                  className={`text-[11px] px-3 py-1.5 rounded-lg transition-all ${config?.maintenanceMode ? 'bg-yellow-500/15 text-yellow-400 hover:bg-yellow-500/25' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'}`}>
+                  🔧 {config?.maintenanceMode ? 'Vypnúť údržbu' : 'Zapnúť údržbu'}</button>
+                <button onClick={() => { setTab('apis'); setTimeout(() => testApis(), 100) }}
+                  className="text-[11px] bg-purple-500/15 text-purple-400 px-3 py-1.5 rounded-lg hover:bg-purple-500/25 transition-all">🔌 Test API</button>
+                <a href="/" target="_blank" className="text-[11px] bg-white/5 text-slate-400 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-all">🔗 Otvoriť stránku</a>
               </div>
             </div>
           </div>
         )}
 
-        {/* API Test */}
-        {tab === 'apis' && (
-          <div className="bg-[#13161f] border border-white/5 rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide">API Endpoints</h3>
-              <button onClick={testApis} disabled={testingApis}
-                className="text-[11px] bg-blue-500/15 text-blue-400 px-3 py-1.5 rounded-lg hover:bg-blue-500/25 transition-all disabled:opacity-50">
-                {testingApis ? '⏳ Testujem...' : '▶️ Spustiť test'}
-              </button>
-            </div>
-            {apiResults ? (
-              <div className="space-y-1">
-                {apiResults.map((r, i) => (
-                  <div key={i} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/[0.03] transition-colors">
-                    <span className={`w-2 h-2 rounded-full ${r.ok ? 'bg-green-500' : 'bg-red-500'}`} />
-                    <span className="text-xs font-mono text-slate-400 flex-1">{r.api}</span>
-                    <span className={`text-[10px] font-mono ${r.ms < 500 ? 'text-green-400' : r.ms < 2000 ? 'text-yellow-400' : 'text-red-400'}`}>{r.ms}ms</span>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${r.ok ? 'bg-green-500/15 text-green-300' : 'bg-red-500/15 text-red-300'}`}>
-                      {r.ok ? r.status : '❌ Fail'}
-                    </span>
-                  </div>
-                ))}
-                <div className="mt-3 pt-3 border-t border-white/5 flex items-center gap-4 text-[10px]">
-                  <span className="text-green-400">✅ {apiResults.filter(r => r.ok).length} OK</span>
-                  <span className="text-red-400">❌ {apiResults.filter(r => !r.ok).length} Failed</span>
-                  <span className="text-slate-500">⏱ Avg {Math.round(apiResults.reduce((a, r) => a + r.ms, 0) / apiResults.length)}ms</span>
+        {/* ── NÁVŠTEVNÍCI ── */}
+        {tab === 'visitors' && (
+          <div className="space-y-4">
+            <div className="bg-[#13161f] border border-white/5 rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide">Posledné návštevy</h3>
+                <div className="flex items-center gap-2">
+                  <button onClick={fetchVisitorLog} disabled={loadingLog}
+                    className="text-[11px] bg-blue-500/15 text-blue-400 px-3 py-1.5 rounded-lg hover:bg-blue-500/25 transition-all disabled:opacity-50">
+                    {loadingLog ? '⏳ Načítavam...' : '↺ Obnoviť'}
+                  </button>
+                  <button onClick={() => postAction('clearLog')} disabled={actionLoading}
+                    className="text-[11px] bg-red-500/15 text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-500/25 transition-all disabled:opacity-50">
+                    🗑️ Vymazať log
+                  </button>
                 </div>
               </div>
-            ) : (
-              <p className="text-sm text-slate-500 py-4 text-center">Kliknite &quot;Spustiť test&quot; pre otestovanie všetkých API endpointov</p>
+
+              {visitorLog === null ? (
+                <div className="py-8 text-center text-sm text-slate-500">Kliknite &quot;Obnoviť&quot; pre načítanie logu</div>
+              ) : visitorLog.length === 0 ? (
+                <div className="py-8 text-center text-sm text-slate-500">Zatiaľ žiadne záznamy</div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-4">
+                    {[
+                      { label: 'Záznamy', value: String(visitorLog.length) },
+                      { label: 'Unique IPs', value: String(new Set(visitorLog.map(e => e.ip)).size) },
+                      { label: 'Najpop. stránka', value: Array.from(visitorLog.reduce((m, e) => { m.set(e.path, (m.get(e.path) ?? 0) + 1); return m }, new Map<string, number>())).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '-' },
+                      { label: 'Chrome / Firefox', value: `${visitorLog.filter(e => e.browser === 'Chrome').length} / ${visitorLog.filter(e => e.browser === 'Firefox').length}` },
+                    ].map(s => (
+                      <div key={s.label} className="bg-white/[0.03] rounded-xl p-3 border border-white/5">
+                        <div className="text-[9px] text-slate-500 uppercase tracking-wide">{s.label}</div>
+                        <div className="text-sm font-bold text-white mt-0.5 truncate">{s.value}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-[11px]">
+                      <thead>
+                        <tr className="border-b border-white/5 text-slate-500 uppercase tracking-wide text-left">
+                          <th className="pb-2 pr-4">Čas</th>
+                          <th className="pb-2 pr-4">IP (maskovaná)</th>
+                          <th className="pb-2 pr-4">Prehliadač</th>
+                          <th className="pb-2">Stránka</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {visitorLog.map((e, i) => (
+                          <tr key={i} className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors">
+                            <td className="py-1.5 pr-4 text-slate-400 whitespace-nowrap font-mono">
+                              {new Date(e.ts).toLocaleString('sk-SK', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                            </td>
+                            <td className="py-1.5 pr-4 text-slate-300 font-mono">{e.ip}</td>
+                            <td className="py-1.5 pr-4">
+                              <BrowserBadge browser={e.browser} />
+                            </td>
+                            <td className="py-1.5 text-blue-400 font-mono truncate max-w-[200px]">{e.path}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── POČÍTADLÁ ── */}
+        {tab === 'counters' && (
+          <div className="space-y-4">
+            {/* Current values */}
+            {stats?.visitors && (
+              <div className="bg-[#13161f] border border-white/5 rounded-2xl p-5">
+                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-4">Aktuálne počítadlá</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { label: 'Dnes', value: stats.visitors.todayPageViews, action: 'resetToday', color: 'text-orange-400', btnColor: 'bg-orange-500/15 text-orange-400 hover:bg-orange-500/25' },
+                    { label: 'Tento týždeň', value: stats.visitors.weekPageViews, action: 'resetWeek', color: 'text-yellow-400', btnColor: 'bg-yellow-500/15 text-yellow-400 hover:bg-yellow-500/25' },
+                    { label: 'Tento mesiac', value: stats.visitors.monthPageViews, action: 'resetMonth', color: 'text-blue-400', btnColor: 'bg-blue-500/15 text-blue-400 hover:bg-blue-500/25' },
+                    { label: 'Celkom', value: stats.visitors.totalPageViews, action: 'resetAll', color: 'text-purple-400', btnColor: 'bg-red-500/15 text-red-400 hover:bg-red-500/25' },
+                  ].map(c => (
+                    <div key={c.label} className="bg-white/[0.03] border border-white/5 rounded-xl p-4 space-y-2">
+                      <div className="text-[10px] text-slate-500 uppercase tracking-wide">{c.label}</div>
+                      <div className={`text-xl font-bold tabular-nums ${c.color}`}>{c.value.toLocaleString('sk-SK')}</div>
+                      <button onClick={() => { if (confirm(`Reset počítadla "${c.label}"?`)) postAction(c.action) }} disabled={actionLoading}
+                        className={`w-full text-[10px] py-1 rounded-lg transition-all disabled:opacity-50 ${c.btnColor}`}>
+                        🗑️ Reset
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Pridať zobrazenia */}
+            <div className="bg-[#13161f] border border-white/5 rounded-2xl p-5">
+              <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-4">Upraviť hodnoty</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-slate-500 block mb-2">Pridať zobrazenia (všetky počítadlá)</label>
+                  <div className="flex gap-2">
+                    <input type="number" value={addViewsVal} onChange={e => setAddViewsVal(e.target.value)}
+                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500/50" />
+                    <button onClick={() => postAction('addViews', { value: Number(addViewsVal) })} disabled={actionLoading}
+                      className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm px-4 py-2 rounded-xl transition-all">+ Pridať</button>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500 block mb-2">Nastaviť celkový počet na</label>
+                  <div className="flex gap-2">
+                    <input type="number" value={setTotalVal} onChange={e => setSetTotalVal(e.target.value)} placeholder="napr. 1000"
+                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500/50" />
+                    <button onClick={() => { if (setTotalVal && !isNaN(Number(setTotalVal))) postAction('setTotal', { value: Number(setTotalVal) }) }} disabled={actionLoading}
+                      className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm px-4 py-2 rounded-xl transition-all">Nastaviť</button>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 pt-4 border-t border-white/5">
+                <button onClick={() => { if (confirm('Naozaj resetovať VŠETKY počítadlá?')) postAction('resetAll') }} disabled={actionLoading}
+                  className="text-sm bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/15 px-5 py-2 rounded-xl transition-all disabled:opacity-50">
+                  ⚠️ Reset všetkých počítadiel
+                </button>
+              </div>
+            </div>
+
+            {/* History */}
+            {history && history.length > 0 && (
+              <div className="bg-[#13161f] border border-white/5 rounded-2xl p-5">
+                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-4">História (30 dní)</h3>
+                <MiniBarChart data={history} />
+              </div>
             )}
           </div>
         )}
 
-        {/* Widgets */}
+        {/* ── WIDGETS ── */}
         {tab === 'widgets' && config && (
           <div className="bg-[#13161f] border border-white/5 rounded-2xl p-5">
             <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-4">Sekcie dashboardu</h3>
@@ -322,7 +452,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Settings */}
+        {/* ── SETTINGS ── */}
         {tab === 'settings' && config && (
           <div className="space-y-4">
             <div className="bg-[#13161f] border border-white/5 rounded-2xl p-5 space-y-4">
@@ -343,10 +473,10 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Security */}
+        {/* ── SECURITY ── */}
         {tab === 'security' && stats && (
           <div className="bg-[#13161f] border border-white/5 rounded-2xl p-5">
-            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-4">🛡️ IP Ban & Shadow Ban</h3>
+            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">🛡️ IP Ban & Shadow Ban</h3>
             <p className="text-xs text-slate-500 mb-4">Po 3 neúspešných pokusoch o prihlásenie je IP automaticky zablokovaná na 24h.</p>
             {stats.banList && Object.keys(stats.banList).length > 0 ? (
               <div className="space-y-2">
@@ -381,9 +511,48 @@ export default function AdminPage() {
             )}
           </div>
         )}
+
+        {/* ── API TEST ── */}
+        {tab === 'apis' && (
+          <div className="bg-[#13161f] border border-white/5 rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide">API Endpoints</h3>
+              <button onClick={testApis} disabled={testingApis}
+                className="text-[11px] bg-blue-500/15 text-blue-400 px-3 py-1.5 rounded-lg hover:bg-blue-500/25 transition-all disabled:opacity-50">
+                {testingApis ? '⏳ Testujem...' : '▶️ Spustiť test'}
+              </button>
+            </div>
+            {apiResults ? (
+              <div className="space-y-1">
+                {apiResults.map((r, i) => (
+                  <div key={i} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/[0.03] transition-colors">
+                    <span className={`w-2 h-2 rounded-full ${r.ok ? 'bg-green-500' : 'bg-red-500'}`} />
+                    <span className="text-xs font-mono text-slate-400 flex-1">{r.api}</span>
+                    <span className={`text-[10px] font-mono ${r.ms < 500 ? 'text-green-400' : r.ms < 2000 ? 'text-yellow-400' : 'text-red-400'}`}>{r.ms}ms</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${r.ok ? 'bg-green-500/15 text-green-300' : 'bg-red-500/15 text-red-300'}`}>
+                      {r.ok ? r.status : '❌ Fail'}
+                    </span>
+                  </div>
+                ))}
+                <div className="mt-3 pt-3 border-t border-white/5 flex items-center gap-4 text-[10px]">
+                  <span className="text-green-400">✅ {apiResults.filter(r => r.ok).length} OK</span>
+                  <span className="text-red-400">❌ {apiResults.filter(r => !r.ok).length} Failed</span>
+                  <span className="text-slate-500">⏱ Avg {Math.round(apiResults.reduce((a, r) => a + r.ms, 0) / apiResults.length)}ms</span>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500 py-4 text-center">Kliknite &quot;Spustiť test&quot; pre otestovanie všetkých API endpointov</p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
+}
+
+function BrowserBadge({ browser }: { browser: string }) {
+  const map: Record<string, string> = { Chrome: 'bg-green-500/20 text-green-300', Firefox: 'bg-orange-500/20 text-orange-300', Safari: 'bg-blue-500/20 text-blue-300', Edge: 'bg-sky-500/20 text-sky-300', 'Bot/Script': 'bg-red-500/20 text-red-300' }
+  return <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${map[browser] ?? 'bg-slate-700 text-slate-400'}`}>{browser}</span>
 }
 
 function MiniBarChart({ data }: { data: HistoryEntry[] }) {
@@ -438,23 +607,5 @@ function InfoCard({ label, value, green }: { label: string; value: string; green
       <div className="text-[10px] text-slate-500">{label}</div>
       <div className={`font-semibold ${green ? 'text-green-400' : 'text-white'}`}>{value}</div>
     </div>
-  )
-}
-
-function ActionButton({ icon, title, desc, color, onClick, loading }: { icon: string; title: string; desc: string; color: string; onClick: () => void; loading?: boolean }) {
-  const colors: Record<string, string> = {
-    red: 'bg-red-500/10 border-red-500/20 hover:bg-red-500/15',
-    blue: 'bg-blue-500/10 border-blue-500/20 hover:bg-blue-500/15',
-    green: 'bg-green-500/10 border-green-500/20 hover:bg-green-500/15',
-    purple: 'bg-purple-500/10 border-purple-500/20 hover:bg-purple-500/15',
-    yellow: 'bg-yellow-500/10 border-yellow-500/20 hover:bg-yellow-500/15',
-  }
-  const titleColors: Record<string, string> = { red: 'text-red-400', blue: 'text-blue-400', green: 'text-green-400', purple: 'text-purple-400', yellow: 'text-yellow-400' }
-  return (
-    <button onClick={onClick} disabled={loading}
-      className={`flex items-center gap-3 border rounded-xl p-4 text-left transition-all disabled:opacity-50 ${colors[color]}`}>
-      <span className="text-2xl">{loading ? '⏳' : icon}</span>
-      <div><div className={`text-sm font-semibold ${titleColors[color]}`}>{title}</div><div className="text-[11px] text-slate-500">{desc}</div></div>
-    </button>
   )
 }

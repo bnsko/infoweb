@@ -11,31 +11,38 @@ interface HistoryPoint { month: string; price: number }
 interface EUCountry { country: string; flag: string; petrol: number; diesel: number }
 interface SourceLink { name: string; url: string }
 interface ApiData {
-  fuels: FuelData[]; energy: FuelData[]; updatedAt: string
+  fuels: FuelData[]; energy?: FuelData[]; updatedAt: string
   brent: { price: number; change: number }
   history: HistoryPoint[]; euComparison: EUCountry[]; sources: SourceLink[]
 }
 
-type Tab = 'fuel' | 'energy' | 'eu' | 'chart'
+/* Direct neighbors of Slovakia */
+const NEIGHBOR_KEYS = ['Slovensko','Česko','Maďarsko','Rakúsko','Poľsko','Ukrajina']
+
+type Tab = 'fuel' | 'neighbors' | 'chart'
 
 export default function FuelPricesWidget() {
   const { lang } = useLang()
   const [tab, setTab] = useState<Tab>('fuel')
   const [selectedFuel, setSelectedFuel] = useState(0)
-  const { data, loading, refetch } = useWidget<ApiData>('/api/fuelprices', 60 * 60 * 1000)
+  const { data, loading, refetch } = useWidget<ApiData>('/api/fuelprices', 30 * 60 * 1000)
 
-  const items = tab === 'fuel' ? (data?.fuels ?? []) : tab === 'energy' ? (data?.energy ?? []) : []
+  const items = tab === 'fuel' ? (data?.fuels ?? []) : []
   const current = items[selectedFuel] ?? items[0]
 
   const TABS: { key: Tab; icon: string; label: string }[] = [
-    { key: 'fuel', icon: '⛽', label: lang === 'sk' ? 'Palivo' : 'Fuel' },
-    { key: 'energy', icon: '⚡', label: lang === 'sk' ? 'Energie' : 'Energy' },
-    { key: 'eu', icon: '🇪🇺', label: lang === 'sk' ? 'EÚ' : 'EU' },
+    { key: 'fuel', icon: '⛽', label: lang === 'sk' ? 'Palivo SK' : 'Fuel SK' },
+    { key: 'neighbors', icon: '🗺️', label: lang === 'sk' ? 'Okolie' : 'Neighbors' },
     { key: 'chart', icon: '📊', label: lang === 'sk' ? 'Vývoj' : 'History' },
   ]
 
+  /* Filter euComparison to neighbors first, then rest */
+  const euAll = data?.euComparison ?? []
+  const neighbors = euAll.filter(c => NEIGHBOR_KEYS.includes(c.country))
+  const restEU = euAll.filter(c => !NEIGHBOR_KEYS.includes(c.country)).sort((a,b) => a.petrol - b.petrol)
+
   return (
-    <WidgetCard accent="orange" title={lang === 'sk' ? '⛽ Ceny pohonných hmôt & Energie' : '⛽ Fuel & Energy Prices'} icon="" onRefresh={refetch}>
+    <WidgetCard accent="orange" title={lang === 'sk' ? '⛽ Ceny pohonných hmôt' : '⛽ Fuel Prices'} icon="" onRefresh={refetch}>
       {/* Brent banner */}
       {data?.brent && (
         <div className="flex items-center justify-between bg-slate-500/8 rounded-xl px-3 py-2 mb-3 border border-slate-500/15">
@@ -67,12 +74,11 @@ export default function FuelPricesWidget() {
 
       {loading && <div className="space-y-2">{[1,2,3,4,5,6].map(i => <div key={i} className="skeleton h-10 rounded-xl" />)}</div>}
 
-      {/* Fuel / Energy tabs */}
-      {!loading && (tab === 'fuel' || tab === 'energy') && (
+      {/* FuelTab */}
+      {!loading && tab === 'fuel' && (
         <>
-          {/* Fuel type selector */}
           <div className="flex gap-1 mb-3 flex-wrap">
-            {items.map((item, i) => (
+            {(data?.fuels ?? []).map((item, i) => (
               <button key={item.fuel} onClick={() => setSelectedFuel(i)}
                 className={`flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1.5 rounded-xl transition-all border ${
                   selectedFuel === i
@@ -86,7 +92,6 @@ export default function FuelPricesWidget() {
 
           {current && (
             <>
-              {/* Average price header */}
               <div className="flex items-center justify-between bg-orange-500/8 rounded-xl p-3 mb-3 border border-orange-500/15">
                 <div>
                   <div className="text-[10px] text-orange-300/70 uppercase font-semibold">{lang === 'sk' ? 'Priemerná cena SK' : 'SK avg price'}</div>
@@ -98,7 +103,6 @@ export default function FuelPricesWidget() {
                 </div>
               </div>
 
-              {/* Station breakdown */}
               {current.stations.length > 0 ? (
                 <div className="space-y-1.5 max-h-[260px] overflow-y-auto scrollbar-hide">
                   {current.stations.map((s, i) => (
@@ -136,27 +140,56 @@ export default function FuelPricesWidget() {
         </>
       )}
 
-      {/* EU Comparison tab */}
-      {!loading && tab === 'eu' && (
-        <div className="space-y-1.5 max-h-[380px] overflow-y-auto scrollbar-hide">
-          <div className="flex items-center gap-2 text-[9px] text-slate-500 px-2 mb-1 border-b border-white/5 pb-1">
+      {/* Neighbors tab */}
+      {!loading && tab === 'neighbors' && (
+        <div className="space-y-2">
+          <p className="text-[9px] text-slate-500 mb-3">€/liter · {lang === 'sk' ? 'Okolité krajiny a EÚ porovnanie' : 'Neighboring countries & EU comparison'}</p>
+
+          {/* Header */}
+          <div className="flex items-center gap-2 text-[9px] text-slate-500 px-2 pb-1 border-b border-white/5">
             <span className="flex-1">Krajina</span>
             <span className="w-16 text-center">⛽ Benzín</span>
             <span className="w-16 text-center">🛢️ Nafta</span>
           </div>
-          {(data?.euComparison ?? [])
-            .sort((a, b) => a.petrol - b.petrol)
-            .map((c, i) => (
-            <div key={c.country} className={`flex items-center gap-2 rounded-lg px-2 py-2 border transition-all ${
-              c.country === 'Slovensko' ? 'bg-orange-500/10 border-orange-500/20' : 'bg-white/[0.02] border-white/5'
-            }`}>
-              <span className="text-sm">{c.flag}</span>
-              <span className={`flex-1 text-[11px] font-medium ${c.country === 'Slovensko' ? 'text-orange-300' : 'text-slate-300'}`}>{c.country}</span>
-              <span className="w-16 text-center text-[11px] font-bold text-white tabular-nums">{c.petrol.toFixed(3)}</span>
-              <span className="w-16 text-center text-[11px] font-bold text-white tabular-nums">{c.diesel.toFixed(3)}</span>
+
+          {/* Neighbors first — highlighted */}
+          {neighbors.length > 0 && (
+            <div className="space-y-1">
+              <div className="text-[8px] text-orange-400/70 uppercase tracking-wider font-bold px-1 mb-0.5">Okolité krajiny</div>
+              {neighbors.map(c => (
+                <div key={c.country} className={`flex items-center gap-2 rounded-lg px-2 py-2 border transition-all ${
+                  c.country === 'Slovensko' ? 'bg-orange-500/12 border-orange-500/25' : 'bg-white/[0.03] border-white/8'
+                }`}>
+                  <span className="text-sm">{c.flag}</span>
+                  <span className={`flex-1 text-[11px] font-semibold ${c.country === 'Slovensko' ? 'text-orange-300' : 'text-slate-200'}`}>{c.country}</span>
+                  <span className="w-16 text-center text-[12px] font-bold text-white tabular-nums">{c.petrol.toFixed(3)}</span>
+                  <span className="w-16 text-center text-[12px] font-bold text-white tabular-nums">{c.diesel.toFixed(3)}</span>
+                </div>
+              ))}
             </div>
-          ))}
-          <p className="text-[9px] text-slate-600 text-center mt-2">€/l · Zdroj: European Commission Oil Bulletin</p>
+          )}
+
+          {/* Rest of EU */}
+          {restEU.length > 0 && (
+            <div className="space-y-1 mt-3">
+              <div className="text-[8px] text-slate-500 uppercase tracking-wider font-bold px-1 mb-0.5">Zvyšok EÚ</div>
+              <div className="max-h-[260px] overflow-y-auto scrollbar-hide space-y-1">
+                {restEU.map(c => (
+                  <div key={c.country} className="flex items-center gap-2 rounded-lg px-2 py-1.5 border border-white/4 bg-white/[0.01] hover:bg-white/[0.03] transition-colors">
+                    <span className="text-sm">{c.flag}</span>
+                    <span className="flex-1 text-[10px] text-slate-400">{c.country}</span>
+                    <span className="w-16 text-center text-[11px] font-bold text-white tabular-nums">{c.petrol.toFixed(3)}</span>
+                    <span className="w-16 text-center text-[11px] font-bold text-white tabular-nums">{c.diesel.toFixed(3)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!neighbors.length && !restEU.length && (
+            <div className="text-center py-8 text-[11px] text-slate-500">Dáta nie sú dostupné</div>
+          )}
+          <p className="text-[9px] text-slate-600 text-center mt-2">Zdroj: European Commission Oil Bulletin</p>
         </div>
       )}
 

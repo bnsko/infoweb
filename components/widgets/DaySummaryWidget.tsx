@@ -505,9 +505,6 @@ export default function DaySummaryWidget() {
           <EnergyMini onOpenChange={setEnergyMiniOpen} />
 
           <div className="ml-auto flex items-center gap-2">
-            <div className="hidden xl:flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 anim-pulse-dot" />
-            </div>
           </div>
         </div>
 

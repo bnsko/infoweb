@@ -52,40 +52,59 @@ function getWorldCounters(lang: string): { icon: string; label: string; value: s
   return [
     { icon: '📧', label: lang === 'sk' ? 'E-maily dnes' : 'Emails today', value: formatNum(Math.round(350_000_000_000 * elapsed)), color: 'text-blue-300', detail: '~350B/day' },
     { icon: '🔍', label: lang === 'sk' ? 'Google hľadania' : 'Google searches', value: formatNum(Math.round(8_500_000_000 * elapsed)), color: 'text-green-300', detail: '~8.5B/day' },
-    { icon: '📱', label: lang === 'sk' ? 'Tweety dnes' : 'Tweets today', value: formatNum(Math.round(500_000_000 * elapsed)), color: 'text-sky-300', detail: '~500M/day' },
-    { icon: '📺', label: lang === 'sk' ? 'YouTube videá' : 'YouTube videos', value: formatNum(Math.round(720_000 * elapsed)), color: 'text-red-300', detail: lang === 'sk' ? 'nahrané dnes' : 'uploaded today' },
-    { icon: '🔓', label: lang === 'sk' ? 'Hacknuté stránky' : 'Websites hacked', value: formatNum(Math.round(30_000 * elapsed)), color: 'text-orange-300', detail: '~30k/day' },
     { icon: '🤖', label: lang === 'sk' ? 'AI požiadavky' : 'AI requests', value: formatNum(Math.round(2_000_000_000 * elapsed)), color: 'text-purple-300', detail: '~2B/day' },
-    { icon: '🛒', label: lang === 'sk' ? 'Online nákupy' : 'Online purchases', value: formatNum(Math.round(6_000_000_000 * elapsed)), color: 'text-emerald-300', detail: '$6B/day' },
     { icon: '📸', label: lang === 'sk' ? 'Instagram fotky' : 'Instagram photos', value: formatNum(Math.round(95_000_000 * elapsed)), color: 'text-pink-300', detail: '~95M/day' },
-    { icon: '🌍', label: 'CO₂ ppm', value: '425', color: 'text-amber-300', detail: lang === 'sk' ? 'atmosférické' : 'atmospheric' },
-    { icon: '🛰️', label: 'Starlink', value: '~6,800', color: 'text-blue-300', detail: lang === 'sk' ? 'satelity na orbite' : 'satellites in orbit' },
-    { icon: '🌐', label: lang === 'sk' ? 'Webové stránky' : 'Websites', value: '~2B', color: 'text-cyan-300', detail: lang === 'sk' ? 'na internete' : 'on internet' },
-    { icon: '💾', label: lang === 'sk' ? 'Dáta vytvorené' : 'Data created', value: formatNum(Math.round(2_500_000_000_000_000_000 * elapsed / 1e18)) + 'EB', color: 'text-violet-300', detail: '~2.5 EB/day' },
-    { icon: '🗣️', label: lang === 'sk' ? 'Jazyky sveta' : 'World languages', value: '~7,100', color: 'text-amber-300', detail: '' },
+    { icon: '🛒', label: lang === 'sk' ? 'Online nákupy' : 'Online purchases', value: formatNum(Math.round(6_000_000_000 * elapsed)), color: 'text-emerald-300', detail: '$6B/day' },
+    { icon: '🔓', label: lang === 'sk' ? 'Hacknuté stránky' : 'Websites hacked', value: formatNum(Math.round(30_000 * elapsed)), color: 'text-orange-300', detail: '~30k/day' },
+    { icon: '👶', label: lang === 'sk' ? 'Narodenia dnes' : 'Births today', value: formatNum(Math.round(360_000 * elapsed)), color: 'text-green-300', detail: '~360k/day' },
+    { icon: '☠️', label: lang === 'sk' ? 'Zosnulí dnes' : 'Deaths today', value: formatNum(Math.round(165_000 * elapsed)), color: 'text-slate-400', detail: '~165k/day' },
+    { icon: '🌲', label: lang === 'sk' ? 'Vyrúbané stromy' : 'Trees cut', value: formatNum(Math.round(41_000_000 * elapsed)), color: 'text-amber-300', detail: '~15B/year' },
+    { icon: '✈️', label: lang === 'sk' ? 'Lety dnes' : 'Flights today', value: formatNum(Math.round(118_000 * elapsed)), color: 'text-sky-300', detail: '~118k/day' },
+    { icon: '📱', label: lang === 'sk' ? 'Nové smartfóny' : 'New smartphones', value: formatNum(Math.round(4_100_000 * elapsed)), color: 'text-cyan-300', detail: '~1.5B/year' },
     { icon: '⚡', label: lang === 'sk' ? 'Blesky dnes' : 'Lightning today', value: formatNum(Math.round(8_000_000 * elapsed)), color: 'text-yellow-300', detail: '~8M/day' },
+    { icon: '🌍', label: 'CO₂ ppm', value: '425', color: 'text-amber-300', detail: lang === 'sk' ? 'atmosférické' : 'atmospheric' },
+    { icon: '🛰️', label: 'Starlink sats', value: '~6,800', color: 'text-blue-300', detail: lang === 'sk' ? 'na orbite' : 'in orbit' },
+    { icon: '💾', label: lang === 'sk' ? 'Dáta vytvorené' : 'Data created', value: formatNum(Math.round(2_500_000_000_000_000_000 * elapsed / 1e18)) + 'EB', color: 'text-violet-300', detail: '~2.5 EB/day' },
     { icon: '🌊', label: lang === 'sk' ? 'Oceány pokrývajú' : 'Oceans cover', value: '71%', color: 'text-cyan-300', detail: lang === 'sk' ? 'povrchu Zeme' : 'of Earth' },
+    { icon: '🍔', label: lang === 'sk' ? 'Big Maců dnes' : 'Big Macs today', value: formatNum(Math.round(6_500_000 * elapsed)), color: 'text-yellow-400', detail: '~6.5M/day' },
+    { icon: '🚗', label: lang === 'sk' ? 'Autá vyrobené' : 'Cars made today', value: formatNum(Math.round(240_000 * elapsed)), color: 'text-red-300', detail: '~87M/year' },
+    { icon: '💊', label: lang === 'sk' ? 'Lieky predané' : 'Pills sold', value: formatNum(Math.round(50_000_000_000 * elapsed)), color: 'text-rose-300', detail: '~50B/day' },
+    { icon: '🗣️', label: lang === 'sk' ? 'Jazyky sveta' : 'World languages', value: '~7,100', color: 'text-amber-300', detail: '' },
   ]
 }
 
-// Slovakia stats
+// Slovakia stats — mix of static landmark facts + live time-based counters
 function getSlovakCounters(lang: string): { icon: string; label: string; value: string; color: string; detail: string }[] {
+  const now = new Date()
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const elapsed = (now.getTime() - startOfDay) / 86400000
+
+  const yearStart = new Date(now.getFullYear(), 0, 1).getTime()
+  const yearElapsed = (now.getTime() - yearStart) / (365.25 * 86400000)
+
   return [
-    { icon: '👥', label: lang === 'sk' ? 'Obyvateľov' : 'Population', value: '5,460,000', color: 'text-blue-300', detail: '2026 est.' },
-    { icon: '🗺️', label: lang === 'sk' ? 'Rozloha' : 'Area', value: '49,035 km²', color: 'text-emerald-300', detail: '' },
-    { icon: '🏰', label: lang === 'sk' ? 'Hrady a zámky' : 'Castles', value: '180+', color: 'text-amber-300', detail: lang === 'sk' ? 'zachovaných' : 'preserved' },
-    { icon: '♨️', label: lang === 'sk' ? 'Termálne pramene' : 'Thermal springs', value: '1,500+', color: 'text-orange-300', detail: '' },
+    // Live counters
+    { icon: '👶', label: lang === 'sk' ? 'Narodení dnes' : 'Births today', value: String(Math.round(132 * elapsed)), color: 'text-green-300', detail: '~48k/rok' },
+    { icon: '⚰️', label: lang === 'sk' ? 'Zosnulí dnes' : 'Deaths today', value: String(Math.round(143 * elapsed)), color: 'text-slate-400', detail: '~52k/rok' },
+    { icon: '🚗', label: lang === 'sk' ? 'Autá z linky dnes' : 'Cars off line', value: formatNum(Math.round(3_014 * elapsed)), color: 'text-red-300', detail: '#1 per capita' },
+    { icon: '🍺', label: lang === 'sk' ? 'Pivo dnes (litre)' : 'Beer consumed (L)', value: formatNum(Math.round(1_090_000 * elapsed)), color: 'text-amber-300', detail: '73L/os./rok' },
+    { icon: '💊', label: lang === 'sk' ? 'Balíky liekov dnes' : 'Medicine packs', value: formatNum(Math.round(280_000 * elapsed)), color: 'text-rose-300', detail: '~100M/rok' },
+    { icon: '🏥', label: lang === 'sk' ? 'Návštevy lekára dnes' : 'Doctor visits', value: formatNum(Math.round(110_000 * elapsed)), color: 'text-blue-300', detail: '~40M/rok' },
+    { icon: '🏦', label: lang === 'sk' ? 'Výdavky štátu dnes' : 'State spending', value: '€' + formatNum(Math.round(45_000_000_000 / 365 * elapsed)), color: 'text-emerald-300', detail: '~€45B/rok' },
+    { icon: '📦', label: lang === 'sk' ? 'Balíky doručené' : 'Parcels delivered', value: formatNum(Math.round(120_000 * elapsed)), color: 'text-orange-300', detail: '~44M/rok' },
+    // Static landmark facts
+    { icon: '👥', label: lang === 'sk' ? 'Obyvateľov' : 'Population', value: '5,460,000', color: 'text-blue-400', detail: '2026 est.' },
     { icon: '⛰️', label: lang === 'sk' ? 'Najvyšší bod' : 'Highest point', value: '2,655 m', color: 'text-cyan-300', detail: 'Gerlachovský štít' },
-    { icon: '🏞️', label: lang === 'sk' ? 'Národné parky' : 'National parks', value: '9', color: 'text-green-300', detail: 'TANAP, Pieniny...' },
+    { icon: '🏰', label: lang === 'sk' ? 'Hrady & zámky' : 'Castles', value: '180+', color: 'text-amber-300', detail: lang === 'sk' ? 'zachovaných' : 'preserved' },
+    { icon: '♨️', label: lang === 'sk' ? 'Termálne pramene' : 'Thermal springs', value: '1,500+', color: 'text-orange-300', detail: '' },
+    { icon: '🕳️', label: lang === 'sk' ? 'Jaskyne objavené' : 'Caves discovered', value: '7,000+', color: 'text-slate-300', detail: '' },
     { icon: '✝️', label: 'UNESCO', value: '8', color: 'text-purple-300', detail: lang === 'sk' ? 'svetové dedičstvo' : 'world heritage' },
-    { icon: '🕳️', label: lang === 'sk' ? 'Jaskyne' : 'Caves', value: '7,000+', color: 'text-slate-300', detail: lang === 'sk' ? 'objavených' : 'discovered' },
-    { icon: '🚗', label: lang === 'sk' ? 'Autá vyrobené/rok' : 'Cars made/year', value: '~1.1M', color: 'text-red-300', detail: lang === 'sk' ? '#1 na obyvateľa' : '#1 per capita' },
-    { icon: '🍺', label: lang === 'sk' ? 'Spotreba piva' : 'Beer consumption', value: '73 l', color: 'text-amber-300', detail: lang === 'sk' ? 'na osobu/rok' : 'per person/year' },
-    { icon: '🎓', label: lang === 'sk' ? 'Univerzity' : 'Universities', value: '35', color: 'text-blue-300', detail: lang === 'sk' ? 'verejné a súkromné' : 'public & private' },
-    { icon: '🏥', label: lang === 'sk' ? 'Nemocnice' : 'Hospitals', value: '86', color: 'text-emerald-300', detail: '' },
+    { icon: '🏞️', label: lang === 'sk' ? 'Národné parky' : 'National parks', value: '9', color: 'text-green-300', detail: 'TANAP, Pieniny...' },
+    { icon: '🗺️', label: lang === 'sk' ? 'Rozloha' : 'Area', value: '49,035 km²', color: 'text-emerald-300', detail: '' },
+    { icon: '🎓', label: lang === 'sk' ? 'Univerzity' : 'Universities', value: '35', color: 'text-blue-300', detail: lang === 'sk' ? 'verejné & súkromné' : 'public & private' },
+    { icon: '📱', label: lang === 'sk' ? 'Internet' : 'Internet penetration', value: '92%', color: 'text-cyan-300', detail: '' },
     { icon: '✈️', label: lang === 'sk' ? 'Letiská' : 'Airports', value: '6', color: 'text-sky-300', detail: 'BA, KE, PO, SL, ZA, PP' },
-    { icon: '🚂', label: lang === 'sk' ? 'Železničné stanice' : 'Railway stations', value: '800+', color: 'text-orange-300', detail: '3,600 km tratí' },
-    { icon: '📱', label: lang === 'sk' ? 'Internet penetrácia' : 'Internet penetration', value: '92%', color: 'text-cyan-300', detail: '' },
+    { icon: '🚂', label: lang === 'sk' ? 'Žel. stanice' : 'Rail stations', value: '800+', color: 'text-orange-300', detail: '3,600 km tratí' },
   ]
 }
 
@@ -126,7 +145,7 @@ export default function CountersWidget() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2">
         {counters.map((c, i) => (
           <div key={i} className="bg-white/[0.03] rounded-xl p-2.5 border border-white/5 hover:border-rose-500/15 transition-all group">
             <div className="flex items-center gap-1.5 mb-1">
@@ -142,7 +161,7 @@ export default function CountersWidget() {
       </div>
 
       <p className="text-[9px] text-slate-600 mt-3 text-center">
-        {tab === 'sk' ? 'ŠÚ SR · Slovensko' : 'Worldometer · Statista · NASA'}
+        {tab === 'sk' ? 'ŠÚ SR · RÚVZ · MF SR · Slovensko' : 'Worldometer · Statista · NASA · IATA'}
       </p>
     </WidgetCard>
   )

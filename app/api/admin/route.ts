@@ -147,6 +147,19 @@ export async function GET(request: Request) {
     })
   }
 
+  if (action === 'visitorsRecent') {
+    try {
+      const raw = await redis.lrange('visitors:log', -100, -1)
+      const entries = (raw as string[])
+        .map(s => { try { return JSON.parse(s) } catch { return null } })
+        .filter(Boolean)
+        .reverse() // newest first
+      return NextResponse.json({ entries })
+    } catch {
+      return NextResponse.json({ entries: [] })
+    }
+  }
+
   if (action === 'config') {
     return NextResponse.json({ config: { ...adminConfig } })
   }
@@ -183,11 +196,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, message: 'Dnešné počítadlo resetované' })
   }
 
-  if (action === 'resetVisitors') {
-    // Legacy compat — same as resetAll
-    const today = todayKey(); const week = weekKey(); const month = monthKey()
-    await redis.del('visitors:total_views', `visitors:daily:${today}`, `visitors:weekly:${week}`, `visitors:monthly:${month}`)
-    return NextResponse.json({ ok: true, message: 'Visitors reset' })
+  if (action === 'resetWeek') {
+    await redis.del(`visitors:weekly:${weekKey()}`)
+    return NextResponse.json({ ok: true, message: 'Týždenné počítadlo resetované' })
+  }
+
+  if (action === 'resetMonth') {
+    await redis.del(`visitors:monthly:${monthKey()}`)
+    return NextResponse.json({ ok: true, message: 'Mesačné počítadlo resetované' })
+  }
+
+  if (action === 'clearLog') {
+    await redis.del('visitors:log')
+    return NextResponse.json({ ok: true, message: 'Log návštevníkov vymazaný' })
   }
 
   if (action === 'setTotal') {

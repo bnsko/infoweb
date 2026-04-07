@@ -8,7 +8,7 @@ import SkeletonRows from '@/components/ui/SkeletonRows'
 interface SKEvent {
   title: string; date: string; venue: string; city: string
   category: string; emoji: string; url?: string; source: 'events' | 'goout'
-  time?: string; price?: string; soldOut?: boolean
+  time?: string; price?: string; soldOut?: boolean; country?: string
 }
 interface EventsData { events: SKEvent[]; today: string }
 interface GoOutEvent {
@@ -16,6 +16,15 @@ interface GoOutEvent {
   date: string; time: string; price: string; soldOut: boolean
 }
 interface GoOutData { events: GoOutEvent[]; timestamp: number }
+
+const COUNTRY_TABS = [
+  { key: 'SK', flag: '🇸🇰', label: 'Slovensko' },
+  { key: 'CZ', flag: '🇨🇿', label: 'Česko' },
+  { key: 'HU', flag: '🇭🇺', label: 'Maďarsko' },
+  { key: 'AT', flag: '🇦🇹', label: 'Rakúsko' },
+  { key: 'PL', flag: '🇵🇱', label: 'Poľsko' },
+  { key: 'UA', flag: '🇺🇦', label: 'Ukrajina' },
+]
 
 const CITY_MAP: Record<string, { label: string; flag: string; lat: number; lng: number }> = {
   Bratislava: { label: 'Bratislava', flag: '🏙️', lat: 48.148, lng: 17.107 },
@@ -73,10 +82,57 @@ function formatDate(dateStr: string): { day: number; weekday: string; month: str
   }
 }
 
+/* ── International events panel for non-SK countries ── */
+function IntlEventsPanel({ country }: { country: string }) {
+  const { data, loading } = useWidget<EventsData>(`/api/events?country=${country}`, 60 * 60 * 1000)
+
+  if (loading) return <SkeletonRows rows={6} />
+
+  const events = data?.events ?? []
+  if (events.length === 0) {
+    const info = COUNTRY_TABS.find(c => c.key === country)
+    return (
+      <div className="text-center py-10 space-y-3">
+        <div className="text-3xl">{info?.flag}</div>
+        <p className="text-sm font-semibold text-slate-300">{info?.label}</p>
+        <p className="text-[11px] text-slate-500">Podujatia z tejto krajiny nie sú momentálne dostupné.</p>
+        <p className="text-[9px] text-slate-600">API podpora pre túto krajinu môže byť v príprave.</p>
+      </div>
+    )
+  }
+
+  const now = new Date().toISOString().slice(0, 10)
+  const todayEvents = events.filter(e => e.date.startsWith(now))
+  const upcoming = events.filter(e => !e.date.startsWith(now))
+
+  return (
+    <div className="space-y-3">
+      {todayEvents.length > 0 && (
+        <div>
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+            <span className="text-[9px] font-bold text-green-300 uppercase tracking-wider">Dnes</span>
+            <div className="flex-1 h-px bg-green-500/10" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+            {todayEvents.slice(0, 4).map((e, i) => <EventCard key={i} event={e} highlight />)}
+          </div>
+        </div>
+      )}
+      {upcoming.length > 0 && (
+        <div className="space-y-1 max-h-[380px] overflow-y-auto scrollbar-hide">
+          {upcoming.slice(0, 20).map((e, i) => <EventCard key={i} event={e} />)}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function EventsCombinedWidget() {
   const eventsData = useWidget<EventsData>('/api/events', 60 * 60 * 1000)
   const gooutData = useWidget<GoOutData>('/api/goout', 60 * 60 * 1000)
 
+  const [filterCountry, setFilterCountry] = useState<string>('SK')
   const [filterCity, setFilterCity] = useState<string>('all')
   const [filterCat, setFilterCat] = useState<string>('all')
   const [userCity, setUserCity] = useState<string | null>(null)
@@ -122,7 +178,6 @@ export default function EventsCombinedWidget() {
       })
     }
   }
-  // Deduplicate and sort by date
   const seen = new Set<string>()
   const unique = allEvents.filter(e => {
     const k = `${e.title}|${e.date}|${e.venue}`
@@ -131,7 +186,6 @@ export default function EventsCombinedWidget() {
     return true
   }).sort((a, b) => a.date.localeCompare(b.date))
 
-  // Filters
   const filtered = unique.filter(e => {
     if (filterCity !== 'all' && e.city !== filterCity) return false
     if (filterCat !== 'all' && e.category !== filterCat) return false
@@ -147,87 +201,106 @@ export default function EventsCombinedWidget() {
 
   return (
     <WidgetCard accent="purple" title="Podujatia & GoOut" icon="🎪" onRefresh={refetchAll}>
-      {isLoading ? <SkeletonRows rows={8} /> : (
-        <div className="space-y-3">
-          {/* Stats bar */}
-          <div className="flex items-center gap-3 px-3 py-2 rounded-xl border" style={{ background: 'rgba(168,85,247,0.04)', borderColor: 'rgba(168,85,247,0.1)' }}>
-            <div className="text-center">
-              <div className="text-[15px] font-bold text-purple-300">{todayEvents.length}</div>
-              <div className="text-[7px] text-slate-500">Dnes</div>
-            </div>
-            <div className="w-px h-6 bg-white/5" />
-            <div className="text-center">
-              <div className="text-[15px] font-bold text-white">{unique.length}</div>
-              <div className="text-[7px] text-slate-500">Spolu</div>
-            </div>
-            <div className="flex-1" />
-            {userCity && (
-              <div className="flex items-center gap-1 text-[9px] text-purple-300">
-                <span>📍</span>
-                <span className="font-semibold">{CITY_MAP[userCity]?.label ?? userCity}</span>
+      {/* Country tabs */}
+      <div className="flex items-center gap-1 mb-3 overflow-x-auto scrollbar-hide pb-0.5">
+        {COUNTRY_TABS.map(ct => (
+          <button key={ct.key} onClick={() => setFilterCountry(ct.key)}
+            className={`flex items-center gap-1 text-[9px] font-bold px-2.5 py-1.5 rounded-lg whitespace-nowrap transition-all shrink-0 ${
+              filterCountry === ct.key
+                ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                : 'text-slate-500 hover:text-slate-300 border border-transparent hover:bg-white/5'
+            }`}>
+            <span>{ct.flag}</span>
+            <span className="hidden sm:inline">{ct.label}</span>
+            <span className="inline sm:hidden">{ct.key}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Non-SK countries */}
+      {filterCountry !== 'SK' && <IntlEventsPanel country={filterCountry} />}
+
+      {/* SK content */}
+      {filterCountry === 'SK' && (
+        isLoading ? <SkeletonRows rows={8} /> : (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 px-3 py-2 rounded-xl border" style={{ background: 'rgba(168,85,247,0.04)', borderColor: 'rgba(168,85,247,0.1)' }}>
+              <div className="text-center">
+                <div className="text-[15px] font-bold text-purple-300">{todayEvents.length}</div>
+                <div className="text-[7px] text-slate-500">Dnes</div>
               </div>
-            )}
-            {geoLoading && <span className="text-[9px] text-slate-500 animate-pulse">📍 Hľadám...</span>}
-          </div>
-
-          {/* City filter */}
-          <div className="flex gap-1 flex-wrap">
-            <button onClick={() => setFilterCity('all')} className={`text-[8px] px-2.5 py-1 rounded-full font-semibold transition-all border ${filterCity === 'all' ? 'bg-purple-500/15 text-purple-300 border-purple-500/25' : 'bg-white/[0.02] text-slate-500 border-white/5 hover:text-slate-300'}`}>Všetky</button>
-            {Object.entries(CITY_MAP).map(([city, info]) => (
-              <button key={city} onClick={() => setFilterCity(city)} className={`text-[8px] px-2.5 py-1 rounded-full font-semibold transition-all border ${filterCity === city ? 'bg-purple-500/15 text-purple-300 border-purple-500/25' : 'bg-white/[0.02] text-slate-500 border-white/5 hover:text-slate-300'}`}>
-                {info.flag} {info.label}
-                {city === userCity && <span className="ml-0.5">•</span>}
-              </button>
-            ))}
-          </div>
-
-          {/* Category filter */}
-          <div className="flex gap-1 flex-wrap">
-            <button onClick={() => setFilterCat('all')} className={`text-[7px] px-2 py-0.5 rounded-full transition-all border ${filterCat === 'all' ? 'bg-white/8 text-white border-white/10' : 'text-slate-600 border-white/4 hover:text-slate-400'}`}>Všetky kategórie</button>
-            {categories.map(cat => (
-              <button key={cat} onClick={() => setFilterCat(cat)} className={`text-[7px] px-2 py-0.5 rounded-full transition-all border ${filterCat === cat ? (CAT_COLORS[cat] ?? CAT_COLORS.default) + ' border-opacity-50' : 'text-slate-600 border-white/4 hover:text-slate-400'}`}>
-                {CAT_ICONS[cat] ?? '📅'} {cat}
-              </button>
-            ))}
-          </div>
-
-          {/* Today's events */}
-          {todayEvents.length > 0 && (
-            <div>
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-[9px] font-bold text-green-300 uppercase tracking-wider">Dnes</span>
-                <div className="flex-1 h-px bg-green-500/10" />
+              <div className="w-px h-6 bg-white/5" />
+              <div className="text-center">
+                <div className="text-[15px] font-bold text-white">{unique.length}</div>
+                <div className="text-[7px] text-slate-500">Spolu</div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                {todayEvents.slice(0, 4).map((e, i) => (
-                  <EventCard key={`today-${i}`} event={e} highlight />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Upcoming events */}
-          {upcomingEvents.length > 0 && (
-            <div>
-              {todayEvents.length > 0 && (
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Najbližšie</span>
-                  <div className="flex-1 h-px bg-white/5" />
+              <div className="flex-1" />
+              {userCity && (
+                <div className="flex items-center gap-1 text-[9px] text-purple-300">
+                  <span>📍</span>
+                  <span className="font-semibold">{CITY_MAP[userCity]?.label ?? userCity}</span>
                 </div>
               )}
-              <div className="space-y-1 max-h-[380px] overflow-y-auto scrollbar-hide">
-                {upcomingEvents.slice(0, 20).map((e, i) => (
-                  <EventCard key={`upcoming-${i}`} event={e} />
-                ))}
-              </div>
+              {geoLoading && <span className="text-[9px] text-slate-500 animate-pulse">📍 Hľadám...</span>}
             </div>
-          )}
 
-          {filtered.length === 0 && (
-            <div className="text-center py-8 text-slate-500 text-[11px]">Žiadne podujatia pre vybraný filter</div>
-          )}
-        </div>
+            {/* City filter */}
+            <div className="flex gap-1 flex-wrap">
+              <button onClick={() => setFilterCity('all')} className={`text-[8px] px-2.5 py-1 rounded-full font-semibold transition-all border ${filterCity === 'all' ? 'bg-purple-500/15 text-purple-300 border-purple-500/25' : 'bg-white/[0.02] text-slate-500 border-white/5 hover:text-slate-300'}`}>Všetky</button>
+              {Object.entries(CITY_MAP).map(([city, info]) => (
+                <button key={city} onClick={() => setFilterCity(city)} className={`text-[8px] px-2.5 py-1 rounded-full font-semibold transition-all border ${filterCity === city ? 'bg-purple-500/15 text-purple-300 border-purple-500/25' : 'bg-white/[0.02] text-slate-500 border-white/5 hover:text-slate-300'}`}>
+                  {info.flag} {info.label}
+                  {city === userCity && <span className="ml-0.5">•</span>}
+                </button>
+              ))}
+            </div>
+
+            {/* Category filter */}
+            <div className="flex gap-1 flex-wrap">
+              <button onClick={() => setFilterCat('all')} className={`text-[7px] px-2 py-0.5 rounded-full transition-all border ${filterCat === 'all' ? 'bg-white/8 text-white border-white/10' : 'text-slate-600 border-white/4 hover:text-slate-400'}`}>Všetky kategórie</button>
+              {categories.map(cat => (
+                <button key={cat} onClick={() => setFilterCat(cat)} className={`text-[7px] px-2 py-0.5 rounded-full transition-all border ${filterCat === cat ? (CAT_COLORS[cat] ?? CAT_COLORS.default) + ' border-opacity-50' : 'text-slate-600 border-white/4 hover:text-slate-400'}`}>
+                  {CAT_ICONS[cat] ?? '📅'} {cat}
+                </button>
+              ))}
+            </div>
+
+            {todayEvents.length > 0 && (
+              <div>
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                  <span className="text-[9px] font-bold text-green-300 uppercase tracking-wider">Dnes</span>
+                  <div className="flex-1 h-px bg-green-500/10" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  {todayEvents.slice(0, 4).map((e, i) => (
+                    <EventCard key={`today-${i}`} event={e} highlight />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {upcomingEvents.length > 0 && (
+              <div>
+                {todayEvents.length > 0 && (
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Najbližšie</span>
+                    <div className="flex-1 h-px bg-white/5" />
+                  </div>
+                )}
+                <div className="space-y-1 max-h-[380px] overflow-y-auto scrollbar-hide">
+                  {upcomingEvents.slice(0, 20).map((e, i) => (
+                    <EventCard key={`upcoming-${i}`} event={e} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {filtered.length === 0 && (
+              <div className="text-center py-8 text-slate-500 text-[11px]">Žiadne podujatia pre vybraný filter</div>
+            )}
+          </div>
+        )
       )}
       <p className="text-[8px] text-slate-600 mt-2">GoOut.net · Ticketportal · Ticketmaster · Hodie</p>
     </WidgetCard>

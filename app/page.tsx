@@ -9,15 +9,10 @@ import HealthWidget from '@/components/widgets/HealthWidget'
 import NewsFeedWidget from '@/components/widgets/NewsFeedWidget'
 import EventsCombinedWidget from '@/components/widgets/EventsCombinedWidget'
 import SportsWidget from '@/components/widgets/SportsWidget'
-import CurrencyWidget from '@/components/widgets/CurrencyWidget'
-import CryptoWidget from '@/components/widgets/CryptoWidget'
-import FearGreedWidget from '@/components/widgets/FearGreedWidget'
-import InflationWidget from '@/components/widgets/InflationWidget'
-import EnvironmentWidget from '@/components/widgets/EnvironmentWidget'
 import FuelPricesWidget from '@/components/widgets/FuelPricesWidget'
-import TrendingSearchesWidget from '@/components/widgets/TrendingSearchesWidget'
-import AINewsWidget from '@/components/widgets/AINewsWidget'
-import RandomFactWidget from '@/components/widgets/RandomFactWidget'
+import EnvironmentWidget from '@/components/widgets/EnvironmentWidget'
+import ForestsFloodsWidget from '@/components/widgets/ForestsFloodsWidget'
+import TourismWidget from '@/components/widgets/TourismWidget'
 
 export default function HomePage() {
   return (
@@ -26,7 +21,7 @@ export default function HomePage() {
       <SunriseSunsetWidget />
       <FlashNewsWidget />
 
-      <SectionLabel icon="🌤️" label="Počasie & Zdravie" />
+      <SectionLabel icon="📊" label="Sumarizácia" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <SummaryWidget />
         <HealthWidget />
@@ -41,28 +36,16 @@ export default function HomePage() {
       <SectionLabel icon="⚽" label="Šport" />
       <SportsWidget />
 
-      <SectionLabel icon="💶" label="Financie & Trhy" />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <CurrencyWidget />
-        <CryptoWidget />
-        <FearGreedWidget />
-        <InflationWidget />
-      </div>
+      <SectionLabel icon="⛽" label="Ceny pohonných hmôt" />
+      <FuelPricesWidget />
 
-      <SectionLabel icon="🌿" label="Prostredie & Palivo" />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <SectionLabel icon="🌿" label="Prostredie & Turistika" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <EnvironmentWidget />
-        <FuelPricesWidget />
+        <ForestsFloodsWidget />
+        <TourismWidget />
       </div>
-
-      <SectionLabel icon="🔍" label="Čo ľudia hľadajú" />
-      <TrendingSearchesWidget />
-
-      <SectionLabel icon="🤖" label="AI & Tech správy" />
-      <AINewsWidget />
-
-      <SectionLabel icon="💡" label="Zaujímavosť dňa" />
-      <RandomFactWidget />
     </PageShell>
   )
 }
+
