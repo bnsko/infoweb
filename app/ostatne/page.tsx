@@ -6,7 +6,6 @@ import SchoolsWidget from '@/components/widgets/SchoolsWidget'
 import OfficeWaitWidget from '@/components/widgets/OfficeWaitWidget'
 import PetitionsWidget from '@/components/widgets/PetitionsWidget'
 import WaterQualityWidget from '@/components/widgets/WaterQualityWidget'
-import LotteryWidget from '@/components/widgets/LotteryWidget'
 
 export default function OstatнePage() {
   return (
@@ -29,7 +28,6 @@ export default function OstatнePage() {
       <SectionLabel icon="🎲" label="Rôzne" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <WaterQualityWidget />
-        <LotteryWidget />
       </div>
     </PageShell>
   )

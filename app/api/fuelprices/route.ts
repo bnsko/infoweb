@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-export const revalidate = 3600
+export const revalidate = 14400
 
 interface StationPrice { station: string; logo: string; price95: number; price98: number; priceD: number; priceDPrem: number; priceLpg: number | null; priceCng: number | null }
 interface FuelType { id: string; name: string; nameSk: string; emoji: string; unit: string }

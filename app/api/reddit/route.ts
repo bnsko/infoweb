@@ -4,6 +4,32 @@ export const dynamic = 'force-dynamic'
 
 const VALID_SORTS = ['hot', 'new', 'best', 'top']
 
+const REDDIT_CLIENT_ID = process.env.REDDIT_CLIENT_ID ?? ''
+const REDDIT_CLIENT_SECRET = process.env.REDDIT_CLIENT_SECRET ?? ''
+
+let cachedToken: { value: string; expiresAt: number } | null = null
+
+async function getOAuthToken(): Promise<string | null> {
+  if (!REDDIT_CLIENT_ID || !REDDIT_CLIENT_SECRET) return null
+  if (cachedToken && cachedToken.expiresAt > Date.now() + 30_000) return cachedToken.value
+  try {
+    const res = await fetch('https://www.reddit.com/api/v1/access_token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Authorization: `Basic ${Buffer.from(`${REDDIT_CLIENT_ID}:${REDDIT_CLIENT_SECRET}`).toString('base64')}`,
+        'User-Agent': 'infoweb2/1.0 (by /u/infoweb_bot)',
+      },
+      body: 'grant_type=client_credentials',
+      signal: AbortSignal.timeout(5000),
+    })
+    if (!res.ok) return null
+    const data = await res.json()
+    cachedToken = { value: data.access_token, expiresAt: Date.now() + data.expires_in * 1000 }
+    return cachedToken.value
+  } catch { return null }
+}
+
 function parseRSSPosts(xml: string) {
   const posts: {
     id: string; title: string; url: string; permalink: string; score: number;
@@ -62,7 +88,43 @@ export async function GET(request: Request) {
   const sort = VALID_SORTS.includes(rawSort) ? rawSort : 'hot'
   const rssSort = sort === 'best' ? 'top' : sort
 
-  // Try JSON API first — multiple endpoints for reliability
+  // Try OAuth2 API first (most reliable, Netlify-friendly)
+  const token = await getOAuthToken()
+  if (token) {
+    try {
+      const apiUrl = sort === 'best'
+        ? `https://oauth.reddit.com/r/Slovakia/top.json?limit=25&t=week&raw_json=1`
+        : `https://oauth.reddit.com/r/Slovakia/${sort}.json?limit=25&raw_json=1`
+      const res = await fetch(apiUrl, {
+        cache: 'no-store',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'User-Agent': 'infoweb2/1.0 (by /u/infoweb_bot)',
+        },
+        signal: AbortSignal.timeout(8000),
+      })
+      if (res.ok) {
+        const text = await res.text()
+        if (text.startsWith('{') || text.startsWith('[')) {
+          const json = JSON.parse(text)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const posts = (json.data?.children ?? []).map((child: any) => {
+            const d = child.data
+            return {
+              id: d.id, title: d.title, url: d.url,
+              permalink: `https://reddit.com${d.permalink}`,
+              score: d.score ?? 0, numComments: d.num_comments ?? 0, author: d.author,
+              createdUtc: d.created_utc, flair: d.link_flair_text ?? null,
+              isSelf: d.is_self, selftext: (d.selftext ?? '').slice(0, 250), thumbnail: null,
+            }
+          })
+          if (posts.length > 0) return NextResponse.json({ posts, sort, source: 'oauth' })
+        }
+      }
+    } catch { /* fall through */ }
+  }
+
+  // Fallback: try public JSON API with rotating User-Agents
   const UAs = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.15',
@@ -92,7 +154,6 @@ export async function GET(request: Request) {
       })
       if (!res.ok) continue
       const text = await res.text()
-      // Verify it's actually JSON (Reddit sometimes returns HTML login pages)
       if (!text.startsWith('{') && !text.startsWith('[')) continue
       const json = JSON.parse(text)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -110,7 +171,7 @@ export async function GET(request: Request) {
     } catch { /* try next */ }
   }
 
-  // Fallback: try RSS feed
+  // Last resort: RSS feed
   const rssUrls = [
     `https://www.reddit.com/r/Slovakia/${rssSort}.rss?limit=25`,
     `https://old.reddit.com/r/Slovakia/${rssSort}.rss?limit=25`,
@@ -127,11 +188,9 @@ export async function GET(request: Request) {
         signal: AbortSignal.timeout(8000),
       })
       if (!res.ok) continue
-
       const xml = await res.text()
       const posts = parseRSSPosts(xml)
       if (posts.length > 0) {
-        // Try to enrich RSS posts with scores via individual JSON lookups
         const enriched = await enrichWithScores(posts.slice(0, 15))
         return NextResponse.json({ posts: enriched, sort, source: 'rss' })
       }

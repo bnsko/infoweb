@@ -22,21 +22,23 @@ interface AdminConfig {
 
 interface ApiTestResult { api: string; status: number; ok: boolean; ms: number }
 interface HistoryEntry { date: string; views: number }
-interface VisitorLogEntry { ts: number; ip: string; browser: string; path: string }
+interface VisitorLogEntry { ts: number; ip: string; browser: string; path: string; country?: string }
 
 const ALL_WIDGETS = [
-  { id: 'daysummary', label: '🕐 Hlavný panel' },
-  { id: 'flashnews', label: '📢 Flash správy' },
-  { id: 'stats', label: '🌤️ Počasie & Prehľad' },
-  { id: 'news', label: '📰 Správy' },
-  { id: 'slovensko', label: '🇸🇰 Slovensko' },
-  { id: 'financie', label: '💶 Financie' },
-  { id: 'podnikanie', label: '💼 Podnikanie' },
-  { id: 'fun', label: '🎮 Zábava' },
-  { id: 'restaurants', label: '🍽️ Reštaurácie' },
-  { id: 'ai', label: '🤖 AI & Tech' },
-  { id: 'extras', label: '🔭 Objavy' },
-  { id: 'history', label: '📚 História' },
+  { id: 'main:daysummary', label: '🕐 Hlavný panel (DaySummary + Sunrise + Flash)' },
+  { id: 'main:nameday', label: '📅 Meniny & Zaujímavý fakt' },
+  { id: 'main:news', label: '📰 Správy (News + Events)' },
+  { id: 'main:food', label: '🍽️ Jedlo (Obed + Rozvoz + Reštaurácie)' },
+  { id: 'main:fuel', label: '⛽ Ceny pohonných hmôt' },
+  { id: 'main:environment', label: '🌿 Prostredie & Turistika' },
+  { id: 'main:wiki', label: '📚 Wikipedia dňa' },
+  { id: 'tab:doprava', label: '🚗 Tab: Doprava' },
+  { id: 'tab:zdravie', label: '🏥 Tab: Zdravie' },
+  { id: 'tab:financie', label: '💶 Tab: Financie' },
+  { id: 'tab:sport', label: '⚽ Tab: Šport & Lotérie' },
+  { id: 'tab:tech', label: '🤖 Tab: Tech & AI' },
+  { id: 'tab:gaming', label: '🎮 Tab: Gaming' },
+  { id: 'tab:ostatne', label: '🔵 Tab: Ostatné' },
 ]
 
 export default function AdminPage() {
@@ -57,6 +59,7 @@ export default function AdminPage() {
   const [setTotalVal, setSetTotalVal] = useState('')
   const [addViewsVal, setAddViewsVal] = useState('100')
   const [actionLoading, setActionLoading] = useState(false)
+  const [liveNow, setLiveNow] = useState<number | null>(null)
 
   useEffect(() => {
     const savedCode = localStorage.getItem('admin-code')
@@ -117,12 +120,28 @@ export default function AdminPage() {
   useEffect(() => {
     if (!authenticated) return
     fetchHistory()
-    const t = setInterval(fetchStats, 30_000)
+    const t = setInterval(fetchStats, 10_000)
     return () => clearInterval(t)
   }, [authenticated, fetchStats, fetchHistory])
 
+  // Fast live counter (every 5s)
   useEffect(() => {
-    if (authenticated && tab === 'visitors') fetchVisitorLog()
+    if (!authenticated) return
+    const t = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/admin?code=${encodeURIComponent(code)}&action=liveCount`)
+        if (res.ok) { const d = await res.json(); setLiveNow(d.activeNow) }
+      } catch { /* ignore */ }
+    }, 5_000)
+    return () => clearInterval(t)
+  }, [authenticated, code])
+
+  useEffect(() => {
+    if (authenticated && tab === 'visitors') {
+      fetchVisitorLog()
+      const iv = setInterval(fetchVisitorLog, 60_000)
+      return () => clearInterval(iv)
+    }
   }, [authenticated, tab, fetchVisitorLog])
 
   const updateConfig = async (updates: Partial<AdminConfig>) => {
@@ -200,7 +219,7 @@ export default function AdminPage() {
           <div className="flex items-center gap-2">
             {stats?.visitors && (
               <div className="hidden sm:flex items-center gap-3 mr-3 text-[10px]">
-                <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /><span className="text-emerald-300 font-bold">{stats.visitors.activeSessions}</span><span className="text-slate-600">live</span></span>
+                <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" /><span className="text-emerald-300 font-bold tabular-nums">{liveNow ?? stats.visitors.activeSessions}</span><span className="text-slate-600">live</span></span>
                 <span className="text-slate-700">|</span>
                 <span className="text-orange-300 font-bold">{stats.visitors.todayPageViews}</span><span className="text-slate-600">dnes</span>
                 <span className="text-slate-700">|</span>
@@ -243,7 +262,7 @@ export default function AdminPage() {
           <div className="space-y-5">
             {/* Live stats row */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-              <StatCard icon="🟢" label="Teraz online" value={String(stats.visitors.activeSessions)} color="text-emerald-400" pulse />
+              <StatCard icon="🟢" label="Teraz online" value={String(liveNow ?? stats.visitors.activeSessions)} color="text-emerald-400" pulse />
               <StatCard icon="📅" label="Dnes" value={stats.visitors.todayPageViews.toLocaleString('sk-SK')} color="text-orange-400" />
               <StatCard icon="📆" label="Tento týždeň" value={stats.visitors.weekPageViews.toLocaleString('sk-SK')} color="text-yellow-400" />
               <StatCard icon="🗓️" label="Tento mesiac" value={stats.visitors.monthPageViews.toLocaleString('sk-SK')} color="text-blue-400" />
@@ -333,6 +352,7 @@ export default function AdminPage() {
                         <tr className="border-b border-white/5 text-slate-500 uppercase tracking-wide text-left">
                           <th className="pb-2 pr-4">Čas</th>
                           <th className="pb-2 pr-4">IP (maskovaná)</th>
+                          <th className="pb-2 pr-2">Krajina</th>
                           <th className="pb-2 pr-4">Prehliadač</th>
                           <th className="pb-2">Stránka</th>
                         </tr>
@@ -344,6 +364,9 @@ export default function AdminPage() {
                               {new Date(e.ts).toLocaleString('sk-SK', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
                             </td>
                             <td className="py-1.5 pr-4 text-slate-300 font-mono">{e.ip}</td>
+                            <td className="py-1.5 pr-2 text-center text-base" title={e.country}>
+                              {e.country ? countryFlag(e.country) : '🌐'}
+                            </td>
                             <td className="py-1.5 pr-4">
                               <BrowserBadge browser={e.browser} />
                             </td>
@@ -548,6 +571,12 @@ export default function AdminPage() {
       </div>
     </div>
   )
+}
+
+function countryFlag(code: string): string {
+  if (!code || code.length !== 2) return '🌐'
+  const cp = Array.from(code.toUpperCase()).map(c => 0x1F1E6 + c.charCodeAt(0) - 65)
+  return String.fromCodePoint(...cp)
 }
 
 function BrowserBadge({ browser }: { browser: string }) {

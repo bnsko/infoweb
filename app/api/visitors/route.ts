@@ -53,6 +53,16 @@ function parseUA(ua: string): string {
   return 'Other'
 }
 
+function getCountry(request: Request): string {
+  // Netlify, Cloudflare, Vercel all inject country headers
+  return (
+    request.headers.get('x-nf-country-code') ??
+    request.headers.get('cf-ipcountry') ??
+    request.headers.get('x-vercel-ip-country') ??
+    ''
+  ).toUpperCase().slice(0, 2)
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const action = searchParams.get('action')
@@ -69,11 +79,13 @@ export async function GET(request: Request) {
       const maskedIP = maskIP(ip)
       const browser = parseUA(ua)
 
+      const country = getCountry(request)
       const logEntry = JSON.stringify({
         ts: Date.now(),
         ip: maskedIP,
         browser,
         path,
+        country,
       })
 
       const p = redis.pipeline()

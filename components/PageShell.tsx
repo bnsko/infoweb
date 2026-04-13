@@ -3,12 +3,14 @@ import Header from '@/components/Header'
 import DashboardNav from '@/components/DashboardNav'
 import SettingsPanel from '@/components/SettingsPanel'
 import { SpeedtestMini } from '@/components/widgets/SpeedtestWidget'
+import FloatingBackground from '@/components/FloatingBackground'
 import { useLang } from '@/hooks/useLang'
 
 export default function PageShell({ children }: { children: React.ReactNode }) {
   const { t } = useLang()
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg-root)', backgroundImage: 'var(--theme-bg-image, none)' }}>
+    <div className="min-h-screen relative" style={{ background: 'var(--bg-root)', backgroundImage: 'var(--theme-bg-image, none)' }}>
+      <FloatingBackground />
       <Header />
       <DashboardNav />
       <main className="max-w-[1680px] mx-auto px-4 pt-4 pb-10 space-y-6">
