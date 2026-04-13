@@ -7,7 +7,6 @@ import RestaurantsWidget from '@/components/widgets/RestaurantsWidget'
 import FoodDeliveryWidget from '@/components/widgets/FoodDeliveryWidget'
 import HotelWidget from '@/components/widgets/HotelWidget'
 import RandomFactWidget from '@/components/widgets/RandomFactWidget'
-import SportSuggestionsWidget from '@/components/widgets/SportSuggestionsWidget'
 import TourismWidget from '@/components/widgets/TourismWidget'
 import WikiWidget from '@/components/widgets/WikiWidget'
 
@@ -31,12 +30,9 @@ export default function DailyPage() {
         <HotelWidget />
       </div>
 
-      {/* Voľný čas */}
-      <SectionLabel icon="🏃" label="Pohyb & Výlety" />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <SportSuggestionsWidget />
-        <TourismWidget />
-      </div>
+      {/* Výlety & turistika */}
+      <SectionLabel icon="🏔️" label="Výlety & Turistika" />
+      <TourismWidget />
 
       {/* Wikipedia */}
       <SectionLabel icon="📖" label="Wikipedia dňa" />

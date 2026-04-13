@@ -2,6 +2,31 @@ import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
+const REDDIT_CLIENT_ID = process.env.REDDIT_CLIENT_ID ?? ''
+const REDDIT_CLIENT_SECRET = process.env.REDDIT_CLIENT_SECRET ?? ''
+let cachedToken: { value: string; expiresAt: number } | null = null
+
+async function getOAuthToken(): Promise<string | null> {
+  if (!REDDIT_CLIENT_ID || !REDDIT_CLIENT_SECRET) return null
+  if (cachedToken && cachedToken.expiresAt > Date.now() + 30_000) return cachedToken.value
+  try {
+    const res = await fetch('https://www.reddit.com/api/v1/access_token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Authorization: `Basic ${Buffer.from(`${REDDIT_CLIENT_ID}:${REDDIT_CLIENT_SECRET}`).toString('base64')}`,
+        'User-Agent': 'infoweb2/1.0 (by /u/infoweb_bot)',
+      },
+      body: 'grant_type=client_credentials',
+      signal: AbortSignal.timeout(5000),
+    })
+    if (!res.ok) return null
+    const data = await res.json()
+    cachedToken = { value: data.access_token, expiresAt: Date.now() + data.expires_in * 1000 }
+    return cachedToken.value
+  } catch { return null }
+}
+
 function parseRSSEntries(xml: string) {
   const posts: {
     id: string; title: string; subreddit: string; permalink: string;
@@ -54,7 +79,31 @@ export async function GET() {
   ]
   const ua = UAs[Math.floor(Math.random() * UAs.length)]
 
-  // Try JSON API first — multiple endpoints for reliability
+  // Try OAuth2 first
+  const token = await getOAuthToken()
+  if (token) {
+    try {
+      const res = await fetch('https://oauth.reddit.com/r/all/top.json?limit=10&t=day&raw_json=1', {
+        cache: 'no-store',
+        headers: { Authorization: `Bearer ${token}`, 'User-Agent': 'infoweb2/1.0 (by /u/infoweb_bot)' },
+        signal: AbortSignal.timeout(8000),
+      })
+      if (res.ok) {
+        const text = await res.text()
+        if (text.startsWith('{') || text.startsWith('[')) {
+          const json = JSON.parse(text)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const posts = (json.data?.children ?? []).slice(0, 10).map((child: any) => {
+            const d = child.data
+            return { id: d.id, title: d.title, subreddit: d.subreddit_name_prefixed, permalink: `https://reddit.com${d.permalink}`, score: d.score ?? 0, numComments: d.num_comments ?? 0, author: d.author, createdUtc: d.created_utc, thumbnail: null }
+          })
+          if (posts.length > 0) return NextResponse.json({ posts, source: 'oauth' })
+        }
+      }
+    } catch { /* fall through */ }
+  }
+
+  // Fallback: Try JSON API with rotating User-Agents
   const jsonUrls = [
     'https://old.reddit.com/r/all/top.json?limit=10&t=day&raw_json=1',
     'https://www.reddit.com/r/all/top.json?limit=10&t=day&raw_json=1',
@@ -88,7 +137,7 @@ export async function GET() {
     } catch { /* try next */ }
   }
 
-  // Fallback: RSS feed
+  // Last resort: RSS feed
   const rssUrls = [
     'https://www.reddit.com/r/all/top.rss?t=day&limit=10',
     'https://old.reddit.com/r/all/top.rss?t=day&limit=10',

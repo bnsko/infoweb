@@ -4,10 +4,10 @@ import { usePathname } from 'next/navigation'
 
 export const DASHBOARD_TABS = [
   { id: 'home',     href: '/',          icon: '🏠', label: 'Hlavný' },
-  { id: 'daily',    href: '/daily',     icon: '📅', label: 'Denný' },
   { id: 'doprava',  href: '/doprava',   icon: '🚗', label: 'Doprava' },
   { id: 'zdravie',  href: '/zdravie',   icon: '🏥', label: 'Zdravie' },
   { id: 'financie', href: '/financie',  icon: '💶', label: 'Financie' },
+  { id: 'sport',    href: '/sport',     icon: '⚽', label: 'Šport' },
   { id: 'tech',     href: '/tech',      icon: '🤖', label: 'Tech' },
   { id: 'gaming',   href: '/gaming',    icon: '🎮', label: 'Gaming' },
   { id: 'ostatne',  href: '/ostatne',   icon: '📋', label: 'Ostatné' },

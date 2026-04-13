@@ -1,8 +1,96 @@
 'use client'
 import { useEffect, useState } from 'react'
 
-/** Compact sunrise/sunset strip with animated sun position dot */
+/** Minimal sunrise/sunset strip — slider ball shows current daylight position */
 export default function SunriseSunsetWidget() {
+  const [now, setNow] = useState(() => new Date())
+  const [sunData, setSunData] = useState<{ rise: string; set: string; daylightH: number } | null>(null)
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000)
+    return () => clearInterval(id)
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/stats')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!d) return
+        const city = d.cities?.BA ?? d.cities?.[Object.keys(d.cities ?? {})[0]]
+        if (!city?.sunrise || !city?.sunset) return
+        const rise = city.sunrise as string
+        const set  = city.sunset as string
+        const riseMin = parseTime(rise)
+        const setMin  = parseTime(set)
+        setSunData({ rise, set, daylightH: Math.round((setMin - riseMin) / 60 * 10) / 10 })
+      })
+      .catch(() => setSunData({ rise: '06:15', set: '20:00', daylightH: 13.8 }))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  if (!sunData) return null
+
+  const riseMin  = parseTime(sunData.rise)
+  const setMin   = parseTime(sunData.set)
+  const nowMin   = now.getHours() * 60 + now.getMinutes()
+  const t        = Math.max(0, Math.min(1, (nowMin - riseMin) / (setMin - riseMin)))
+  const isDaytime = nowMin >= riseMin && nowMin <= setMin
+  const pct      = isDaytime ? t * 100 : nowMin < riseMin ? 0 : 100
+
+  return (
+    <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] select-none">
+      {/* Sunrise */}
+      <div className="shrink-0 text-right">
+        <div className="text-[9px] text-slate-500 uppercase tracking-wide leading-none mb-0.5">Východ</div>
+        <div className="text-[13px] font-mono font-semibold text-amber-300">{sunData.rise}</div>
+      </div>
+
+      {/* Slider track */}
+      <div className="flex-1 relative h-[6px] rounded-full overflow-visible" style={{ background: 'rgba(255,255,255,0.06)' }}>
+        {/* Filled portion */}
+        <div
+          className="absolute left-0 top-0 h-full rounded-full transition-all duration-[800ms]"
+          style={{
+            width: `${pct}%`,
+            background: isDaytime
+              ? 'linear-gradient(90deg, #f59e0b, #fbbf24)'
+              : 'rgba(100,116,139,0.3)',
+          }}
+        />
+        {/* Ball */}
+        <div
+          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 transition-all duration-[800ms]"
+          style={{ left: `${pct}%` }}
+        >
+          <div
+            className={[
+              'w-[14px] h-[14px] rounded-full border-2',
+              isDaytime
+                ? 'bg-amber-300 border-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]'
+                : 'bg-slate-600 border-slate-500',
+            ].join(' ')}
+          />
+        </div>
+      </div>
+
+      {/* Sunset */}
+      <div className="shrink-0">
+        <div className="text-[9px] text-slate-500 uppercase tracking-wide leading-none mb-0.5">Západ</div>
+        <div className="text-[13px] font-mono font-semibold text-orange-300">{sunData.set}</div>
+      </div>
+
+      {/* Daylight */}
+      <div className="shrink-0 pl-3 border-l border-white/5 text-[11px] text-slate-500">
+        {sunData.daylightH}h
+      </div>
+    </div>
+  )
+}
+
+function parseTime(s: string): number {
+  const [h, m] = s.split(':').map(Number)
+  return h * 60 + (m ?? 0)
+}
   const [now, setNow] = useState(() => new Date())
   const [sunData, setSunData] = useState<{ rise: string; set: string; noon: string; daylightH: number } | null>(null)
 

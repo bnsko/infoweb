@@ -28,15 +28,51 @@ interface BanRecord {
   shadowBanned: boolean
 }
 
-const adminConfig: AdminConfig = {
+const DEFAULT_CONFIG: AdminConfig = {
   siteName: 'InfoSK',
   refreshRates: {},
-  enabledWidgets: ['weather', 'stats', 'currency', 'crypto', 'flights', 'iss', 'earthquakes', 'launches', 'reddit', 'onthisday', 'news', 'population', 'nameday', 'steam', 'sports', 'slovakfacts', 'redditglobal', 'metrics', 'realestate', 'webcams', 'restaurants'],
+  enabledWidgets: [
+    'main:daysummary', 'main:nameday', 'main:news', 'main:events',
+    'main:food', 'main:fuel', 'main:environment', 'main:wiki',
+    'tab:doprava', 'tab:zdravie', 'tab:financie', 'tab:sport',
+    'tab:tech', 'tab:gaming', 'tab:ostatne',
+  ],
   announcement: '',
   maintenanceMode: false,
 }
 
-const banList: Record<string, BanRecord> = {}
+async function getConfig(): Promise<AdminConfig> {
+  try {
+    const raw = await redis.get<AdminConfig>('admin:config')
+    if (raw) return { ...DEFAULT_CONFIG, ...raw }
+  } catch { /* fallback */ }
+  return { ...DEFAULT_CONFIG }
+}
+
+async function saveConfig(cfg: AdminConfig): Promise<void> {
+  await redis.set('admin:config', JSON.stringify(cfg))
+}
+
+async function getBans(): Promise<Record<string, BanRecord>> {
+  try {
+    const raw = await redis.hgetall('admin:bans')
+    if (!raw) return {}
+    const bans: Record<string, BanRecord> = {}
+    for (const [k, v] of Object.entries(raw)) {
+      try { bans[k] = typeof v === 'string' ? JSON.parse(v) : (v as BanRecord) } catch { /* skip */ }
+    }
+    return bans
+  } catch { return {} }
+}
+
+async function saveBan(ipHash: string, record: BanRecord): Promise<void> {
+  await redis.hset('admin:bans', { [ipHash]: JSON.stringify(record) })
+  await redis.expire('admin:bans', 30 * 24 * 3600)
+}
+
+async function deleteBan(ipHash: string): Promise<void> {
+  await redis.hdel('admin:bans', ipHash)
+}
 
 function todayKey() { return new Date().toISOString().slice(0, 10) }
 function weekKey() {
@@ -56,36 +92,29 @@ function getClientIP(request: Request): string {
   return forwarded?.split(',')[0]?.trim() ?? real ?? 'unknown'
 }
 
-function checkBan(ipHash: string): { blocked: boolean; shadowBanned: boolean } {
-  const record = banList[ipHash]
-  if (!record) return { blocked: false, shadowBanned: false }
-  if (record.shadowBanned) return { blocked: false, shadowBanned: true }
-  if (record.banned) {
-    if (Date.now() - record.lastAttempt > BAN_DURATION_MS) {
-      record.banned = false; record.attempts = 0
-      return { blocked: false, shadowBanned: false }
-    }
-    return { blocked: true, shadowBanned: false }
-  }
-  return { blocked: false, shadowBanned: false }
-}
-
-function recordFailedAttempt(ipHash: string): boolean {
-  const record = banList[ipHash] ?? { attempts: 0, lastAttempt: 0, banned: false, shadowBanned: false }
-  record.attempts += 1; record.lastAttempt = Date.now()
-  if (record.attempts >= MAX_ATTEMPTS) record.banned = true
-  banList[ipHash] = record
-  return record.banned
-}
-
-function verifyAuth(request: Request, code: string | null): NextResponse | null {
+async function verifyAuth(request: Request, code: string | null): Promise<NextResponse | null> {
   const ip = getClientIP(request)
   const ipHash = hashIP(ip)
-  const ban = checkBan(ipHash)
-  if (ban.blocked) return NextResponse.json({ error: 'Prístup zablokovaný' }, { status: 403 })
-  if (ban.shadowBanned) return NextResponse.json({ error: 'Neplatný prístupový kód' }, { status: 401 })
+  const bans = await getBans()
+  const record = bans[ipHash]
+
+  if (record) {
+    if (record.shadowBanned) return NextResponse.json({ error: 'Neplatný prístupový kód' }, { status: 401 })
+    if (record.banned) {
+      if (Date.now() - record.lastAttempt > BAN_DURATION_MS) {
+        await deleteBan(ipHash)
+      } else {
+        return NextResponse.json({ error: 'Prístup zablokovaný' }, { status: 403 })
+      }
+    }
+  }
+
   if (code !== ADMIN_CODE) {
-    recordFailedAttempt(ipHash)
+    const existing = bans[ipHash] ?? { attempts: 0, lastAttempt: 0, banned: false, shadowBanned: false }
+    existing.attempts += 1
+    existing.lastAttempt = Date.now()
+    if (existing.attempts >= MAX_ATTEMPTS) existing.banned = true
+    await saveBan(ipHash, existing)
     return NextResponse.json({ error: 'Neplatný prístupový kód' }, { status: 401 })
   }
   return null
@@ -100,7 +129,6 @@ async function getVisitorStats() {
   p.get(`visitors:monthly:${month}`)
   const [total, daily, weekly, monthly] = await p.exec()
 
-  // Count active sessions
   let activeNow = 0; let cursor = 0
   do {
     const [next, keys] = await redis.scan(cursor, { match: 'visitors:session:*', count: 100 })
@@ -121,16 +149,36 @@ export async function GET(request: Request) {
   const code = searchParams.get('code')
   const action = searchParams.get('action')
 
-  const authError = verifyAuth(request, code)
+  // Public endpoint — no auth required
+  if (action === 'publicConfig') {
+    const cfg = await getConfig()
+    return NextResponse.json({
+      enabledWidgets: cfg.enabledWidgets,
+      maintenanceMode: cfg.maintenanceMode,
+      announcement: cfg.announcement,
+    })
+  }
+
+  const authError = await verifyAuth(request, code)
   if (authError) return authError
 
   if (action === 'stats') {
-    const visitors = await getVisitorStats().catch(() => ({ totalPageViews: 0, todayPageViews: 0, weekPageViews: 0, monthPageViews: 0, activeSessions: 0 }))
-    return NextResponse.json({
-      visitors,
-      config: { ...adminConfig },
-      banList: { ...banList },
-    })
+    const [visitors, config, banList] = await Promise.all([
+      getVisitorStats().catch(() => ({ totalPageViews: 0, todayPageViews: 0, weekPageViews: 0, monthPageViews: 0, activeSessions: 0 })),
+      getConfig(),
+      getBans(),
+    ])
+    return NextResponse.json({ visitors, config, banList })
+  }
+
+  if (action === 'liveCount') {
+    let activeNow = 0; let cursor = 0
+    do {
+      const [next, keys] = await redis.scan(cursor, { match: 'visitors:session:*', count: 100 })
+      cursor = Number(next); activeNow += keys.length
+    } while (cursor !== 0)
+    const today = await redis.get(`visitors:daily:${todayKey()}`)
+    return NextResponse.json({ activeNow, todayViews: Number(today) || 0 })
   }
 
   if (action === 'history') {
@@ -149,11 +197,11 @@ export async function GET(request: Request) {
 
   if (action === 'visitorsRecent') {
     try {
-      const raw = await redis.lrange('visitors:log', -100, -1)
+      const raw = await redis.lrange('visitors:log', -200, -1)
       const entries = (raw as string[])
         .map(s => { try { return JSON.parse(s) } catch { return null } })
         .filter(Boolean)
-        .reverse() // newest first
+        .reverse()
       return NextResponse.json({ entries })
     } catch {
       return NextResponse.json({ entries: [] })
@@ -161,7 +209,8 @@ export async function GET(request: Request) {
   }
 
   if (action === 'config') {
-    return NextResponse.json({ config: { ...adminConfig } })
+    const config = await getConfig()
+    return NextResponse.json({ config })
   }
 
   return NextResponse.json({ ok: true })
@@ -171,18 +220,20 @@ export async function POST(request: Request) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
 
-  const authError = verifyAuth(request, code)
+  const authError = await verifyAuth(request, code)
   if (authError) return authError
 
   const body = await request.json()
   const action = body.action
 
   if (action === 'updateConfig') {
-    if (body.siteName !== undefined) adminConfig.siteName = String(body.siteName)
-    if (body.announcement !== undefined) adminConfig.announcement = String(body.announcement)
-    if (body.maintenanceMode !== undefined) adminConfig.maintenanceMode = Boolean(body.maintenanceMode)
-    if (body.enabledWidgets !== undefined) adminConfig.enabledWidgets = body.enabledWidgets
-    return NextResponse.json({ ok: true, config: { ...adminConfig } })
+    const config = await getConfig()
+    if (body.siteName !== undefined) config.siteName = String(body.siteName)
+    if (body.announcement !== undefined) config.announcement = String(body.announcement)
+    if (body.maintenanceMode !== undefined) config.maintenanceMode = Boolean(body.maintenanceMode)
+    if (body.enabledWidgets !== undefined) config.enabledWidgets = body.enabledWidgets
+    await saveConfig(config)
+    return NextResponse.json({ ok: true, config })
   }
 
   if (action === 'resetAll') {
@@ -238,17 +289,17 @@ export async function POST(request: Request) {
   if (action === 'testApis') {
     const apis = [
       '/api/weather', '/api/news', '/api/stats', '/api/traffic', '/api/currency',
-      '/api/crypto', '/api/flights', '/api/reddit', '/api/flashnews', '/api/podcasts',
-      '/api/randomfact', '/api/outages', '/api/pollen', '/api/flu', '/api/doctors',
-      '/api/pharmacies', '/api/unemployment', '/api/jobs', '/api/streaming', '/api/trending',
-      '/api/evcharging', '/api/hotels', '/api/lunchmenu', '/api/slovakfacts',
+      '/api/crypto', '/api/flights', '/api/reddit', '/api/flashnews',
+      '/api/randomfact', '/api/pollen', '/api/flu', '/api/doctors',
+      '/api/unemployment', '/api/jobs', '/api/lunchmenu', '/api/fuelprices',
+      '/api/events', '/api/tourism', '/api/wikipedia', '/api/airquality',
     ]
     const origin = new URL(request.url).origin
     const results: { api: string; status: number; ok: boolean; ms: number }[] = []
     for (const api of apis) {
       const start = Date.now()
       try {
-        const res = await fetch(`${origin}${api}`, { cache: 'no-store', signal: AbortSignal.timeout(5000) })
+        const res = await fetch(`${origin}${api}`, { cache: 'no-store', signal: AbortSignal.timeout(6000) })
         results.push({ api, status: res.status, ok: res.ok, ms: Date.now() - start })
       } catch {
         results.push({ api, status: 0, ok: false, ms: Date.now() - start })
@@ -260,18 +311,19 @@ export async function POST(request: Request) {
   if (action === 'shadowBan') {
     const targetHash = body.ipHash
     if (!targetHash) return NextResponse.json({ error: 'Missing ipHash' }, { status: 400 })
-    const existing = banList[targetHash] ?? { attempts: 0, lastAttempt: Date.now(), banned: false, shadowBanned: false }
-    existing.shadowBanned = true; banList[targetHash] = existing
+    const bans = await getBans()
+    const existing = bans[targetHash] ?? { attempts: 0, lastAttempt: Date.now(), banned: false, shadowBanned: false }
+    existing.shadowBanned = true
+    await saveBan(targetHash, existing)
     return NextResponse.json({ ok: true })
   }
 
   if (action === 'unban') {
     const targetHash = body.ipHash
     if (!targetHash) return NextResponse.json({ error: 'Missing ipHash' }, { status: 400 })
-    delete banList[targetHash]
+    await deleteBan(targetHash)
     return NextResponse.json({ ok: true })
   }
 
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
 }
-
